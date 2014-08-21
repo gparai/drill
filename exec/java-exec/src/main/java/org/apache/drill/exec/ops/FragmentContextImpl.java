@@ -513,6 +513,9 @@ public class FragmentContextImpl extends BaseFragmentContext implements Executor
   }
 
   @Override
+  public String getQueryId() { return QueryIdHelper.getQueryId(fragment.getHandle().getQueryId());}
+
+  @Override
   public boolean isImpersonationEnabled() {
     // TODO(DRILL-2097): Until SimpleRootExec tests are removed, we need to consider impersonation disabled if there is
     // no config
@@ -605,5 +608,13 @@ public class FragmentContextImpl extends BaseFragmentContext implements Executor
         runtimeFilterWritable.close();
       }
     }
+  }
+
+  @Override
+  public QueryContext.StatementType getStatementType() {
+    if (queryContext != null) {
+      return queryContext.getStatementType();
+    }
+    return QueryContext.StatementType.UNKNOWN;
   }
 }

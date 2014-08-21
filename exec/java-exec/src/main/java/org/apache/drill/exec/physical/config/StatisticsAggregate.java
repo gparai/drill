@@ -32,7 +32,6 @@ import java.util.List;
 @JsonTypeName("statistics-aggregate")
 public class StatisticsAggregate extends StreamingAggregate {
   // private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(StatisticsAggregate.class);
-
   private final List<String> functions;
 
   @JsonCreator

@@ -17,6 +17,11 @@
  */
 package org.apache.drill.exec.planner.physical;
 
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
@@ -31,16 +36,13 @@ import org.apache.drill.common.exceptions.ExecutionSetupException;
 import org.apache.drill.exec.physical.base.GroupScan;
 import org.apache.drill.exec.physical.base.PhysicalOperator;
 import org.apache.drill.exec.physical.base.ScanStats;
-import org.apache.drill.exec.planner.cost.DrillCostBase;
 import org.apache.drill.exec.planner.fragment.DistributionAffinity;
 import org.apache.drill.exec.planner.physical.visitor.PrelVisitor;
 import org.apache.drill.exec.record.BatchSchema;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import org.apache.drill.exec.planner.cost.DrillCostBase.DrillCostFactory;
 
+//public class DirectScanPrel extends AbstractRelNode implements DrillScanPrel
 public class DirectScanPrel extends AbstractRelNode implements Prel, HasDistributionAffinity {
   static final org.slf4j.Logger logger = org.slf4j.LoggerFactory
           .getLogger(DirectScanPrel.class);
@@ -51,6 +53,7 @@ public class DirectScanPrel extends AbstractRelNode implements Prel, HasDistribu
   DirectScanPrel(RelOptCluster cluster, RelTraitSet traits,
                  GroupScan groupScan, RelDataType rowType) {
     super(cluster, traits);
+    //this.groupScan = getCopy(groupScan);
     this.groupScan = groupScan;
     this.rowType = rowType;
   }
@@ -107,12 +110,19 @@ public class DirectScanPrel extends AbstractRelNode implements Prel, HasDistribu
 
   @Override
   public <T, X, E extends Throwable> T accept(PrelVisitor<T, X, E> logicalVisitor, X value) throws E {
+    //return logicalVisitor.visitScan(this, value);
     return logicalVisitor.visitPrel(this, value);
   }
 
   @Override
   public Iterator<Prel> iterator() {
     return Collections.emptyIterator();
+  }
+
+  public static DirectScanPrel create(RelNode old, RelTraitSet traitSets,
+      GroupScan scan, RelDataType rowType) {
+    return new DirectScanPrel(old.getCluster(), traitSets,
+        getCopy(scan), rowType);
   }
 
   @Override
@@ -147,15 +157,24 @@ public class DirectScanPrel extends AbstractRelNode implements Prel, HasDistribu
 
     double rowCount = stats.getRecordCount();
 
-
+    // As DRILL-4083 points out, when columnCount == 0, cpuCost becomes zero,
+    // which makes the costs of HiveScan and HiveDrillNativeParquetScan the same
+    // For now, assume cpu cost is proportional to row count.
     double cpuCost = rowCount * Math.max(columnCount, 1);
 
+    // If a positive value for CPU cost is given multiply the default CPU cost by given CPU cost.
     if (stats.getCpuCost() > 0) {
       cpuCost *= stats.getCpuCost();
     }
 
+    // Even though scan is reading from disk, in the currently generated plans all plans will
+    // need to read the same amount of data, so keeping the disk io cost 0 is ok for now.
+    // In the future we might consider alternative scans that go against projections or
+    // different compression schemes etc that affect the amount of data read. Such alternatives
+    // would affect both cpu and io cost.
+    //double ioCost = 0;
     double ioCost = stats.getDiskCost();
-    DrillCostBase.DrillCostFactory costFactory = (DrillCostBase.DrillCostFactory)planner.getCostFactory();
+    DrillCostFactory costFactory = (DrillCostFactory)planner.getCostFactory();
     return costFactory.makeCost(rowCount, cpuCost, ioCost, 0);
   }
 

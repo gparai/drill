@@ -93,13 +93,14 @@ public interface FragmentContext extends UdfUtilities, AutoCloseable {
       throws ClassTransformationException, IOException;
 
   /**
-   * Generates code for a class given a {@link CodeGenerator}, and returns the
-   * specified number of instances of the generated class. (Note that the name
-   * is a misnomer, it would be better called
-   * <tt>getImplementationInstances</tt>.)
-   *
-   * @param cg the code generator
-   * @return list of instances of the generated class
+   * Tells the statement type (e.g. SELECT, CTAS, ANALYZE) from the query context.
+   * @return query statement type {@link QueryContext.StatementType}, if known.
+   */
+  public QueryContext.StatementType getStatementType();
+
+  /**
+   * Get this node's identity.
+   * @return A DrillbitEndpoint object.
    */
   <T> List<T> getImplementationClass(final CodeGenerator<T> cg, final int instanceCount)
       throws ClassTransformationException, IOException;
@@ -138,6 +139,8 @@ public interface FragmentContext extends UdfUtilities, AutoCloseable {
   ExecProtos.FragmentHandle getHandle();
 
   BufferAllocator getAllocator();
+
+  public String getQueryId();
 
   OperatorContext newOperatorContext(PhysicalOperator popConfig);
 

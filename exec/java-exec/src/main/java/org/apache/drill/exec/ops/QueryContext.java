@@ -61,6 +61,9 @@ import io.netty.buffer.DrillBuf;
 // in fragment contexts
 public class QueryContext implements AutoCloseable, OptimizerRulesContext, SchemaConfigInfoProvider {
 
+  private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(QueryContext.class);
+  public enum StatementType {UNKNOWN, ANALYZE, CTAS, EXPLAIN, REFRESH, SELECT, SETOPTION};
+
   private final DrillbitContext drillbitContext;
   private final UserSession session;
   private final QueryId queryId;
@@ -76,6 +79,7 @@ public class QueryContext implements AutoCloseable, OptimizerRulesContext, Schem
   private final SchemaTreeProvider schemaTreeProvider;
   /** Stores constants and their holders by type */
   private final Map<String, Map<MinorType, ValueHolder>> constantValueHolderCache;
+  private StatementType stmtType = StatementType.UNKNOWN;
 
   /*
    * Flag to indicate if close has been called, after calling close the first
@@ -101,7 +105,9 @@ public class QueryContext implements AutoCloseable, OptimizerRulesContext, Schem
       this.table = drillbitContext.getOperatorTable();
     }
 
-    queryContextInfo = Utilities.createQueryContextInfo(session.getDefaultSchemaPath(), session.getSessionId());
+    queryContextInfo = Utilities.createQueryContextInfo(session.getDefaultSchemaPath(), session.getSessionId(),
+        queryOptions);
+
     contextInformation = new ContextInformation(session.getCredentials(), queryContextInfo);
 
     allocator = drillbitContext.getAllocator().newChildAllocator(
@@ -324,5 +330,13 @@ public class QueryContext implements AutoCloseable, OptimizerRulesContext, Schem
     } finally {
       closed = true;
     }
+  }
+
+  public void setStatementType(StatementType stmtType) {
+    this.stmtType = stmtType;
+  }
+
+  public StatementType getStatementType() {
+    return this.stmtType;
   }
 }
