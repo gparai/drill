@@ -344,8 +344,8 @@ SqlNode SqlDropFunction() :
 
 /**
  * Parses a analyze statement.
- * ANALYZE TABLE tblname {COMPUTE | ESTIMATE} | STATISTICS FOR
- *      {ALL COLUMNS | COLUMNS (field1, field2, ...)} [ SAMPLE numeric PERCENT ]
+ * ANALYZE TABLE tblname {COMPUTE | ESTIMATE} | STATISTICS
+ *      [(column1, column2, ...)] [ SAMPLE numeric PERCENT ]
  */
 SqlNode SqlAnalyzeTable() :
 {
@@ -364,12 +364,10 @@ SqlNode SqlAnalyzeTable() :
         |
         <ESTIMATE> { estimate = SqlLiteral.createBoolean(true, pos); }
     )
-    <STATISTICS> <FOR>
-    (
-        ( <ALL> <COLUMNS> )
-        |
-        ( <COLUMNS> fieldList = ParseRequiredFieldList("Table") )
-    )
+    <STATISTICS>
+    [
+        (fieldList = ParseRequiredFieldList("Table"))
+    ]
     [
         <SAMPLE> percent = UnsignedNumericLiteral() <PERCENT>
         {

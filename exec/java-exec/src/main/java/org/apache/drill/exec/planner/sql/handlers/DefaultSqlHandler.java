@@ -223,6 +223,7 @@ public class DefaultSqlHandler extends AbstractSqlHandler {
     }
 
     try {
+      // Materialize the statistics, if available.
       StatsMaterializationVisitor.materialize(relNode, context);
 
       final RelNode convertedRelNode;

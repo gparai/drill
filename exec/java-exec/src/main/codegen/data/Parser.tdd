@@ -45,7 +45,7 @@
     "ESTIMATE",
     "STATISTICS",
     "COLUMNS",
-    "SAMPLE"
+    "SAMPLE",
     "PERCENT"
   ]
 
@@ -64,7 +64,7 @@
     "ESTIMATE",
     "STATISTICS",
     "COLUMNS",
-    "SAMPLE"
+    "SAMPLE",
     "PERCENT"
   ]
 

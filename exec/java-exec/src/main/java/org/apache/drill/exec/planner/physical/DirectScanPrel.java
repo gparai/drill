@@ -22,54 +22,51 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
-import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
-import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.RelWriter;
-import org.apache.calcite.rel.metadata.RelMetadataQuery;
-import org.apache.calcite.rel.type.RelDataType;
 import org.apache.drill.common.exceptions.DrillRuntimeException;
 import org.apache.drill.common.exceptions.ExecutionSetupException;
 import org.apache.drill.exec.physical.base.GroupScan;
 import org.apache.drill.exec.physical.base.PhysicalOperator;
 import org.apache.drill.exec.physical.base.ScanStats;
 import org.apache.drill.exec.planner.cost.DrillCostBase.DrillCostFactory;
-import org.apache.drill.exec.planner.common.DrillScanRelBase;
 import org.apache.drill.exec.planner.fragment.DistributionAffinity;
 import org.apache.drill.exec.planner.physical.visitor.PrelVisitor;
 import org.apache.drill.exec.record.BatchSchema.SelectionVectorMode;
+import org.apache.calcite.rel.AbstractRelNode;
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelWriter;
+import org.apache.calcite.rel.type.RelDataType;
 
-public class ScanPrel extends DrillScanRelBase implements DrillScanPrel {
+public class DirectScanPrel extends AbstractRelNode implements DrillScanPrel {
   static final org.slf4j.Logger logger = org.slf4j.LoggerFactory
       .getLogger(ScanPrel.class);
 
   protected final GroupScan groupScan;
   private final RelDataType rowType;
 
-  public ScanPrel(Convention convention, RelOptCluster cluster, RelTraitSet traits,
-      GroupScan groupScan, RelDataType rowType, RelOptTable table) {
-    super(convention, cluster, traits, table);
+  public DirectScanPrel(RelOptCluster cluster, RelTraitSet traits,
+      GroupScan groupScan, RelDataType rowType) {
+    super(cluster, traits);
     this.groupScan = getCopy(groupScan);
     this.rowType = rowType;
   }
 
   @Override
   public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-    return new ScanPrel(this.getConvention(), this.getCluster(), traitSet, groupScan,
-        this.rowType, this.getTable());
+    return new DirectScanPrel(this.getCluster(), traitSet, groupScan,
+        this.rowType);
   }
 
   @Override
   protected Object clone() throws CloneNotSupportedException {
-    return new ScanPrel(this.getConvention(), this.getCluster(), this.getTraitSet(),
-        getCopy(groupScan), this.rowType, this.getTable());
+    return new DirectScanPrel(this.getCluster(), this.getTraitSet(),
+        getCopy(groupScan), this.rowType);
   }
 
-  private static GroupScan getCopy(GroupScan scan){
+  private static GroupScan getCopy(GroupScan scan) {
     try {
       return (GroupScan) scan.getNewWithChildren((List<PhysicalOperator>) (Object)
           Collections.emptyList());
@@ -86,23 +83,23 @@ public class ScanPrel extends DrillScanRelBase implements DrillScanPrel {
 
   @Override
   public GroupScan getGroupScan() {
-    return groupScan;
+      return groupScan;
   }
 
-  public static ScanPrel create(RelNode old, RelTraitSet traitSets,
+  public static DirectScanPrel create(RelNode old, RelTraitSet traitSets,
       GroupScan scan, RelDataType rowType) {
-    return new ScanPrel(old.getConvention(), old.getCluster(), traitSets,
-        getCopy(scan), rowType, old.getTable());
+    return new DirectScanPrel(old.getCluster(), traitSets,
+        getCopy(scan), rowType);
   }
 
   @Override
   public RelWriter explainTerms(RelWriter pw) {
-    return super.explainTerms(pw).item("groupscan", groupScan.getDigest());
+      return super.explainTerms(pw).item("groupscan", groupScan.getDigest());
   }
 
   @Override
   public RelDataType deriveRowType() {
-    return this.rowType;
+      return this.rowType;
   }
 
   @Override
@@ -122,8 +119,7 @@ public class ScanPrel extends DrillScanRelBase implements DrillScanPrel {
           stats.getCpuCost(), stats.getDiskCost());
     }
 
-    double rowCount = RelMetadataQuery.getRowCount(this);
-    //double rowCount = stats.getRecordCount();
+    double rowCount = stats.getRecordCount();
 
     // As DRILL-4083 points out, when columnCount == 0, cpuCost becomes zero,
     // which makes the costs of HiveScan and HiveDrillNativeParquetScan the same

@@ -82,8 +82,15 @@ public class StreamingAggBatch extends AbstractRecordBatch<StreamingAggregate> {
   private boolean specialBatchSent = false;
   private static final int SPECIAL_BATCH_COUNT = 1;
 
-  public StreamingAggBatch(StreamingAggregate popConfig, RecordBatch incoming, FragmentContext context) throws OutOfMemoryException {
+  public StreamingAggBatch(StreamingAggregate popConfig, RecordBatch incoming, FragmentContext context)
+      throws OutOfMemoryException {
     super(popConfig, context);
+    this.incoming = incoming;
+  }
+
+  public StreamingAggBatch(StreamingAggregate popConfig, RecordBatch incoming, FragmentContext context,
+                           final boolean buildSchema) throws OutOfMemoryException {
+    super(popConfig, context, buildSchema);
     this.incoming = incoming;
   }
 
@@ -257,7 +264,7 @@ public class StreamingAggBatch extends AbstractRecordBatch<StreamingAggregate> {
     }
   }
 
-  private StreamingAggregator createAggregatorInternal() throws SchemaChangeException, ClassTransformationException, IOException{
+  protected StreamingAggregator createAggregatorInternal() throws SchemaChangeException, ClassTransformationException, IOException{
     ClassGenerator<StreamingAggregator> cg = CodeGenerator.getRoot(StreamingAggTemplate.TEMPLATE_DEFINITION,
         context.getFunctionRegistry(), context.getOptions());
     cg.getCodeGenerator().plainJavaCapable(true);

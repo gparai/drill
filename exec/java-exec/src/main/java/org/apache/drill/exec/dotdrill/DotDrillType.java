@@ -22,8 +22,8 @@ import org.apache.hadoop.fs.Path;
 
 public enum DotDrillType {
   VIEW,
-  // ,FORMAT
   STATS
+  // ,FORMAT
   ;
 
   private final String ending;

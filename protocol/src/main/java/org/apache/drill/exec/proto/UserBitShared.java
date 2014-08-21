@@ -518,9 +518,13 @@ public final class UserBitShared {
      */
     STATISTICS_AGGREGATE(37, 37),
     /**
-     * <code>UNPIVOT_MAPS = 38;</code>
+     * <code>STATISTICS_MERGE = 38;</code>
      */
-    UNPIVOT_MAPS(38, 38),
+    STATISTICS_MERGE(38, 38),
+    /**
+     * <code>UNPIVOT_MAPS = 39;</code>
+     */
+    UNPIVOT_MAPS(39, 39),
     ;
 
     /**
@@ -676,9 +680,13 @@ public final class UserBitShared {
      */
     public static final int STATISTICS_AGGREGATE_VALUE = 37;
     /**
-     * <code>UNPIVOT_MAPS = 38;</code>
+     * <code>STATISTICS_MERGE = 38;</code>
      */
-    public static final int UNPIVOT_MAPS_VALUE = 38;
+    public static final int STATISTICS_MERGE_VALUE = 38;
+    /**
+     * <code>UNPIVOT_MAPS = 39;</code>
+     */
+    public static final int UNPIVOT_MAPS_VALUE = 39;
 
 
     public final int getNumber() { return value; }
@@ -723,7 +731,8 @@ public final class UserBitShared {
         case 35: return NESTED_LOOP_JOIN;
         case 36: return AVRO_SUB_SCAN;
         case 37: return STATISTICS_AGGREGATE;
-        case 38: return UNPIVOT_MAPS;
+        case 38: return STATISTICS_MERGE;
+        case 39: return UNPIVOT_MAPS;
         default: return null;
       }
     }
@@ -23517,7 +23526,7 @@ public final class UserBitShared {
       "ENT\020\005*\207\001\n\rFragmentState\022\013\n\007SENDING\020\000\022\027\n\023" +
       "AWAITING_ALLOCATION\020\001\022\013\n\007RUNNING\020\002\022\014\n\010FI" +
       "NISHED\020\003\022\r\n\tCANCELLED\020\004\022\n\n\006FAILED\020\005\022\032\n\026C" +
-      "ANCELLATION_REQUESTED\020\006*\335\005\n\020CoreOperator" +
+      "ANCELLATION_REQUESTED\020\006*\237\006\n\020CoreOperator" +
       "Type\022\021\n\rSINGLE_SENDER\020\000\022\024\n\020BROADCAST_SEN" +
       "DER\020\001\022\n\n\006FILTER\020\002\022\022\n\016HASH_AGGREGATE\020\003\022\r\n" +
       "\tHASH_JOIN\020\004\022\016\n\nMERGE_JOIN\020\005\022\031\n\025HASH_PAR" +
@@ -23535,10 +23544,10 @@ public final class UserBitShared {
       "\rJSON_SUB_SCAN\020\035\022\030\n\024INFO_SCHEMA_SUB_SCAN" +
       "\020\036\022\023\n\017COMPLEX_TO_JSON\020\037\022\025\n\021PRODUCER_CONS" +
       "UMER\020 \022\022\n\016HBASE_SUB_SCAN\020!\022\n\n\006WINDOW\020\"\022\024" +
-      "\n\020NESTED_LOOP_JOIN\020#\022\021\n\rAVRO_SUB_SCAN\020$\022",
-      "\030\n\024STATISTICS_AGGREGATE\020%\022\020\n\014UNPIVOT_MAP" +
-      "S\020&B.\n\033org.apache.drill.exec.protoB\rUser" +
-      "BitSharedH\001"
+      "\n\020NESTED_LOOP_JOIN\020#\022\021\n\rAVRO_SUB_SCAN\020$\022" +
+      "\030\n\024STATISTICS_AGGREGATE\020%\022\024\n\020STATISTICS_" +
+      "MERGE\020&\022\020\n\014UNPIVOT_MAPS\020\'B.\n\033org.apache." +
+      "drill.exec.protoB\rUserBitSharedH\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {

@@ -34,11 +34,11 @@ import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.util.Util;
 import org.apache.drill.exec.planner.sql.handlers.AbstractSqlHandler;
 import org.apache.drill.exec.planner.sql.handlers.AnalyzeTableHandler;
+import org.apache.drill.exec.planner.sql.handlers.SqlHandlerConfig;
+import org.apache.drill.exec.util.Pointer;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import org.apache.drill.exec.planner.sql.handlers.SqlHandlerConfig;
-import org.apache.drill.exec.util.Pointer;
 
 /**
  * SQL tree for ANALYZE statement.
@@ -89,10 +89,8 @@ public class SqlAnalyzeTable extends DrillSqlCall {
     tblName.unparse(writer, leftPrec, rightPrec);
     writer.keyword(estimate.booleanValue() ? "ESTIMATE" : "COMPUTE");
     writer.keyword("STATISTICS");
-    writer.keyword("FOR");
 
     if (fieldList != null && fieldList.size() > 0) {
-      writer.keyword("COLUMNS");
       writer.keyword("(");
       fieldList.get(0).unparse(writer, leftPrec, rightPrec);
       for (int i = 1; i < fieldList.size(); i++) {
@@ -100,9 +98,6 @@ public class SqlAnalyzeTable extends DrillSqlCall {
         fieldList.get(i).unparse(writer, leftPrec, rightPrec);
       }
       writer.keyword(")");
-    } else {
-      writer.keyword("ALL");
-      writer.keyword("COLUMNS");
     }
     writer.keyword("SAMPLE");
     percent.unparse(writer, leftPrec, rightPrec);
