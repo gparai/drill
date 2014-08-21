@@ -585,7 +585,8 @@ public class WorkspaceSchemaFactory {
         if (table.getStatsTable() == null) {
           Table statsTable = getStatsTable(tableName);
           if (statsTable != null) {
-            table.setStatsTable(new DrillStatsTable(getFullSchemaName(), getStatsTableName(tableName)));
+            table.setStatsTable(new DrillStatsTable(getFullSchemaName(), getStatsTableName(tableName),
+                getStatsTablePath(tableName), fs));
           }
         }
       } catch (final Exception e) {
@@ -601,6 +602,22 @@ public class WorkspaceSchemaFactory {
           return tableName + Path.SEPARATOR + STATS.getEnding();
         } else {
           return tableName + STATS.getEnding();
+        }
+      } catch (final Exception e) {
+        throw new DrillRuntimeException(
+            String.format("Failed to find the location of the stats for table [%s] in schema [%s]",
+                tableName, getFullSchemaName()));
+      }
+    }
+
+    // Get stats table name for a given table name.
+    private Path getStatsTablePath(final String tableName) {
+      final Path tablePath = new Path(config.getLocation(), tableName);
+      try {
+        if (fs.isDirectory(tablePath)) {
+          return new Path(tablePath, STATS.getEnding()+"/0_0.json");
+        } else {
+          return null;
         }
       } catch (final Exception e) {
         throw new DrillRuntimeException(
@@ -626,7 +643,8 @@ public class WorkspaceSchemaFactory {
     public CreateTableEntry createNewTable(String tableName, List<String> partitionColumns, StorageStrategy storageStrategy) {
       String storage = schemaConfig.getOption(ExecConstants.OUTPUT_FORMAT_OPTION).string_val;
       FormatPlugin formatPlugin = plugin.getFormatPlugin(storage);
-      return createOrAppendToTable(tableName, false, formatPlugin, partitionColumns, storageStrategy);
+
+      return createOrAppendToTable(tableName, formatPlugin, partitionColumns, storageStrategy);
     }
 
     @Override
@@ -634,7 +652,7 @@ public class WorkspaceSchemaFactory {
       ensureNotStatsTable(tableName);
       final String statsTableName = getStatsTableName(tableName);
       FormatPlugin formatPlugin = plugin.getFormatPlugin(JSONFormatPlugin.DEFAULT_NAME);
-      return createOrAppendToTable(statsTableName, false, formatPlugin, ImmutableList.<String>of(),
+      return createOrAppendToTable(statsTableName, formatPlugin, ImmutableList.<String>of(),
           StorageStrategy.DEFAULT);
     }
 
@@ -643,7 +661,7 @@ public class WorkspaceSchemaFactory {
       ensureNotStatsTable(tableName);
       final String statsTableName = getStatsTableName(tableName);
       FormatPlugin formatPlugin = plugin.getFormatPlugin(JSONFormatPlugin.DEFAULT_NAME);
-      return createOrAppendToTable(statsTableName, true, formatPlugin, ImmutableList.<String>of(),
+      return createOrAppendToTable(statsTableName, formatPlugin, ImmutableList.<String>of(),
           StorageStrategy.DEFAULT);
     }
 
@@ -652,8 +670,8 @@ public class WorkspaceSchemaFactory {
       return getTable(getStatsTableName(tableName));
     }
 
-    private CreateTableEntry createOrAppendToTable(String tableName, boolean append, FormatPlugin formatPlugin,
-        List<String> partitonColumns, StorageStrategy storageStrategy) {
+    private CreateTableEntry createOrAppendToTable(String tableName, FormatPlugin formatPlugin,
+        List<String> partitionColumns, StorageStrategy storageStrategy) {
       if (formatPlugin == null) {
         throw new UnsupportedOperationException(
           String.format("Unsupported format '%s' in workspace '%s'", config.getDefaultInputFormat(),
@@ -664,8 +682,7 @@ public class WorkspaceSchemaFactory {
           (FileSystemConfig) plugin.getConfig(),
           formatPlugin,
           config.getLocation() + Path.SEPARATOR + tableName,
-          append,
-          partitonColumns,
+          partitionColumns,
           storageStrategy);
     }
 

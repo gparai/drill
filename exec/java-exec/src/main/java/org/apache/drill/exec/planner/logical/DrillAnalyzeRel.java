@@ -17,6 +17,7 @@
  */
 package org.apache.drill.exec.planner.logical;
 
+import java.util.List;
 
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
@@ -30,8 +31,6 @@ import org.apache.drill.common.logical.data.Analyze;
 import org.apache.drill.common.logical.data.LogicalOperator;
 import org.apache.drill.exec.planner.cost.DrillCostBase;
 import org.apache.drill.exec.planner.torel.ConversionContext;
-
-import java.util.List;
 
 /**
  * Drill logical node for "Analyze".
@@ -60,11 +59,11 @@ public class DrillAnalyzeRel extends SingleRel implements DrillRel {
     final LogicalOperator inputOp = implementor.visitChild(this, 0, getInput());
     final Analyze rel = new Analyze();
     rel.setInput(inputOp);
-
     return rel;
   }
 
-  public static DrillAnalyzeRel convert(Analyze analyze, ConversionContext context) throws InvalidRelException {
+  public static DrillAnalyzeRel convert(Analyze analyze, ConversionContext context)
+      throws InvalidRelException {
     RelNode input = context.toRel(analyze.getInput());
     return new DrillAnalyzeRel(context.getCluster(), context.getLogicalTraits(), input);
   }

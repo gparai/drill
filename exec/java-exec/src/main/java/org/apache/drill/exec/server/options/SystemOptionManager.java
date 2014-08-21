@@ -270,7 +270,9 @@ public class SystemOptionManager extends BaseOptionManager implements AutoClosea
       new OptionDefinition(ExecConstants.FRAG_RUNNER_RPC_TIMEOUT_VALIDATOR, new OptionMetaData(OptionValue.AccessibleScopes.SYSTEM, true, true)),
       new OptionDefinition(ExecConstants.LIST_FILES_RECURSIVELY_VALIDATOR),
       new OptionDefinition(ExecConstants.QUERY_ROWKEYJOIN_BATCHSIZE),
-      new OptionDefinition(ExecConstants.RETURN_RESULT_SET_FOR_DDL_VALIDATOR)
+      new OptionDefinition(ExecConstants.RETURN_RESULT_SET_FOR_DDL_VALIDATOR),
+      new OptionDefinition(ExecConstants.NDV_MEMORY_LIMIT_VALIDATOR),
+      new OptionDefinition(ExecConstants.STATISTICS_VERSION_VALIDATOR)
     };
 
     CaseInsensitiveMap<OptionDefinition> map = Arrays.stream(definitions)

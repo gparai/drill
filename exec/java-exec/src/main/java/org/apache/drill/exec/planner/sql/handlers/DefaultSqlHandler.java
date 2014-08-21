@@ -231,6 +231,7 @@ public class DefaultSqlHandler extends AbstractSqlHandler {
     }
 
     try {
+      // Materialize the statistics, if available.
       StatsMaterializationVisitor.materialize(relNode, context);
 
       // HEP for rules, which are failed at the LOGICAL_PLANNING stage for Volcano planner

@@ -39,51 +39,56 @@ import org.apache.drill.exec.record.BatchSchema.SelectionVectorMode;
 import org.apache.drill.exec.record.MaterializedField;
 import org.apache.drill.exec.record.RecordBatch;
 import org.apache.drill.exec.record.TypedFieldId;
+import org.apache.drill.exec.store.ColumnExplorer;
 import org.apache.drill.exec.vector.ValueVector;
 import org.apache.drill.exec.vector.complex.FieldIdUtil;
 import org.apache.drill.exec.vector.complex.MapVector;
 
 import java.io.IOException;
+import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.TimeZone;
 
 /**
- * TODO: This needs cleanup. Currently the key values are constants and we compare the constants for
- * every record. Seems unnecessary.
+ * TODO: This needs cleanup. Currently the key values are constants and we compare the constants
+ * for every record. Seems unnecessary.
  *
  * Example input and output:
  * Schema of incoming batch: region_id (VARCHAR), sales_city (VARCHAR), cnt (BIGINT)
  * Schema of output:
  *    "schema" : BIGINT - Schema number. For each schema change this number is incremented.
  *    "computed" : BIGINT - What time is it computed?
- *    "columns" : MAP - Column names
- *       "region_id" : VARCHAR
+ *    "columns"       : MAP - Column names
+ *       "region_id"  : VARCHAR
  *       "sales_city" : VARCHAR
- *       "cnt" : VARCHAR
+ *       "cnt"        : VARCHAR
  *    "statscount" : MAP
- *       "region_id" : BIGINT - statscount(region_id) - aggregation over all values of region_id in incoming batch
+ *       "region_id"  : BIGINT - statscount(region_id) - aggregation over all values of region_id
+ *                      in incoming batch
  *       "sales_city" : BIGINT - statscount(sales_city)
- *       "cnt" : BIGINT - statscount(cnt)
+ *       "cnt"        : BIGINT - statscount(cnt)
  *    "nonnullstatcount" : MAP
- *       "region_id" : BIGINT - nonnullstatcount(region_id)
+ *       "region_id"  : BIGINT - nonnullstatcount(region_id)
  *       "sales_city" : BIGINT - nonnullstatcount(sales_city)
- *       "cnt" : BIGINT - nonnullstatcount(cnt)
+ *       "cnt"        : BIGINT - nonnullstatcount(cnt)
  *   .... another map for next stats function ....
  */
 public class StatisticsAggBatch extends StreamingAggBatch {
   private List<String> functions;
   private int schema = 0;
 
-  public StatisticsAggBatch(StatisticsAggregate popConfig, RecordBatch incoming, FragmentContext context)
-      throws OutOfMemoryException {
+  public StatisticsAggBatch(StatisticsAggregate popConfig, RecordBatch incoming,
+                            FragmentContext context) throws OutOfMemoryException {
     super(popConfig, incoming, context);
     this.functions = popConfig.getFunctions();
   }
 
-  private void createKeyColumn(String name, LogicalExpression expr, List<LogicalExpression> keyExprs, List<TypedFieldId> keyOutputIds)
-      throws SchemaChangeException {
+  private void createKeyColumn(String name, LogicalExpression expr, List<LogicalExpression> keyExprs,
+                               List<TypedFieldId> keyOutputIds) throws SchemaChangeException {
     ErrorCollector collector = new ErrorCollectorImpl();
 
-    LogicalExpression mle = ExpressionTreeMaterializer.materialize(expr, incoming, collector, context.getFunctionRegistry());
+    LogicalExpression mle = ExpressionTreeMaterializer.materialize(expr, incoming, collector,
+        context.getFunctionRegistry());
 
     MaterializedField outputField = MaterializedField.create(name, mle.getMajorType());
     ValueVector vector = TypeHelper.getNewVector(outputField, oContext.getAllocator());
@@ -92,18 +97,22 @@ public class StatisticsAggBatch extends StreamingAggBatch {
     keyOutputIds.add(container.add(vector));
 
     if (collector.hasErrors()) {
-      throw new SchemaChangeException("Failure while materializing expression. " + collector.toErrorString());
+      throw new SchemaChangeException("Failure while materializing expression. "
+          + collector.toErrorString());
     }
   }
 
-  private void createNestedKeyColumn(MapVector parent, String name, LogicalExpression expr, List<LogicalExpression> keyExprs, List<TypedFieldId> keyOutputIds)
-      throws SchemaChangeException {
+  private void createNestedKeyColumn(MapVector parent, String name, LogicalExpression expr,
+                                     List<LogicalExpression> keyExprs, List<TypedFieldId> keyOutputIds)
+                                        throws SchemaChangeException {
     ErrorCollector collector = new ErrorCollectorImpl();
 
-    LogicalExpression mle = ExpressionTreeMaterializer.materialize(expr, incoming, collector, context.getFunctionRegistry());
+    LogicalExpression mle = ExpressionTreeMaterializer.materialize(expr, incoming, collector,
+        context.getFunctionRegistry());
 
     Class<? extends ValueVector> vvc =
-        TypeHelper.getValueVectorClass(mle.getMajorType().getMinorType(), mle.getMajorType().getMode());
+        TypeHelper.getValueVectorClass(mle.getMajorType().getMinorType(),
+            mle.getMajorType().getMode());
 
     ValueVector vv = parent.addOrGet(name, mle.getMajorType(), vvc);
 
@@ -119,15 +128,17 @@ public class StatisticsAggBatch extends StreamingAggBatch {
     keyOutputIds.add(id);
 
     if (collector.hasErrors()) {
-      throw new SchemaChangeException("Failure while materializing expression. " + collector.toErrorString());
+      throw new SchemaChangeException("Failure while materializing expression. "
+          + collector.toErrorString());
     }
   }
 
-  private void addMapVector(String name, MapVector parent, LogicalExpression expr, List<LogicalExpression> valueExprs)
-      throws SchemaChangeException {
+  private void addMapVector(String name, MapVector parent, LogicalExpression expr,
+                            List<LogicalExpression> valueExprs) throws SchemaChangeException {
     ErrorCollector collector = new ErrorCollectorImpl();
 
-    LogicalExpression mle = ExpressionTreeMaterializer.materialize(expr, incoming, collector, context.getFunctionRegistry());
+    LogicalExpression mle = ExpressionTreeMaterializer.materialize(expr, incoming, collector,
+        context.getFunctionRegistry());
 
     Class<? extends ValueVector> vvc =
         TypeHelper.getValueVectorClass(mle.getMajorType().getMinorType(), mle.getMajorType().getMode());
@@ -143,12 +154,15 @@ public class StatisticsAggBatch extends StreamingAggBatch {
     valueExprs.add(new ValueVectorWriteExpression(id, mle, true));
 
     if (collector.hasErrors()) {
-      throw new SchemaChangeException("Failure while materializing expression. " + collector.toErrorString());
+      throw new SchemaChangeException("Failure while materializing expression. "
+          + collector.toErrorString());
     }
   }
 
-  private StreamingAggregator codegenAggregator(List<LogicalExpression> keyExprs, List<LogicalExpression> valueExprs, List<TypedFieldId> keyOutputIds)
+  private StreamingAggregator codegenAggregator(List<LogicalExpression> keyExprs,
+      List<LogicalExpression> valueExprs, List<TypedFieldId> keyOutputIds)
       throws SchemaChangeException, ClassTransformationException, IOException {
+
     ClassGenerator<StreamingAggregator> cg = CodeGenerator.getRoot(StreamingAggTemplate.TEMPLATE_DEFINITION, context.getOptions());
 
     LogicalExpression[] keyExprsArray = new LogicalExpression[keyExprs.size()];
@@ -174,6 +188,10 @@ public class StatisticsAggBatch extends StreamingAggBatch {
     return agg;
   }
 
+  private boolean isImplicitFileColumn(MaterializedField mf) {
+    return ColumnExplorer.initImplicitFileColumns(context.getOptions()).get(mf.getName()) != null;
+  }
+
   protected StreamingAggregator createAggregatorInternal()
       throws SchemaChangeException, ClassTransformationException, IOException {
     container.clear();
@@ -181,6 +199,8 @@ public class StatisticsAggBatch extends StreamingAggBatch {
     List<LogicalExpression> keyExprs = Lists.newArrayList();
     List<LogicalExpression> valueExprs = Lists.newArrayList();
     List<TypedFieldId> keyOutputIds = Lists.newArrayList();
+    GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+    calendar.setTimeInMillis(System.currentTimeMillis());
 
     createKeyColumn("schema",
         ValueExpressions.getBigInt(schema++),
@@ -188,7 +208,7 @@ public class StatisticsAggBatch extends StreamingAggBatch {
         keyOutputIds
     );
     createKeyColumn("computed",
-        ValueExpressions.getBigInt(System.currentTimeMillis()),
+        ValueExpressions.getDate(calendar),
         keyExprs,
         keyOutputIds
     );
@@ -196,13 +216,16 @@ public class StatisticsAggBatch extends StreamingAggBatch {
     MapVector cparent = new MapVector("column", oContext.getAllocator(), null);
     container.add(cparent);
     for (MaterializedField mf : incoming.getSchema()) {
-      createNestedKeyColumn(
-          cparent,
-          mf.getName(),
-          ValueExpressions.getChar(mf.getName(), 0),
-          keyExprs,
-          keyOutputIds
-      );
+      // Ignore implicit columns
+      if (!isImplicitFileColumn(mf)) {
+        createNestedKeyColumn(
+            cparent,
+            mf.getName(),
+            ValueExpressions.getChar(mf.getName(), 0),
+            keyExprs,
+            keyOutputIds
+        );
+      }
     }
 
     for (String func : functions) {
@@ -210,11 +233,12 @@ public class StatisticsAggBatch extends StreamingAggBatch {
       container.add(parent);
 
       for (MaterializedField mf : incoming.getSchema()) {
-        List<LogicalExpression> args = Lists.newArrayList();
-        args.add(SchemaPath.getSimplePath(mf.getName()));
-        LogicalExpression call = FunctionCallFactory.createExpression(func, args);
-
-        addMapVector(mf.getName(), parent, call, valueExprs);
+        if (!isImplicitFileColumn(mf)) {
+          List<LogicalExpression> args = Lists.newArrayList();
+          args.add(SchemaPath.getSimplePath(mf.getName()));
+          LogicalExpression call = FunctionCallFactory.createExpression(func, args);
+          addMapVector(mf.getName(), parent, call, valueExprs);
+        }
       }
     }
 
