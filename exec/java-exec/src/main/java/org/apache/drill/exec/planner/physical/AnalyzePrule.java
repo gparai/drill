@@ -35,29 +35,33 @@ public class AnalyzePrule extends Prule {
   public static final RelOptRule INSTANCE = new AnalyzePrule();
 
   private static final List<String> FUNCTIONS = ImmutableList.of(
-      "statcount", // total number of entries in the table
+      "statcount",        // total number of entries in the table
       "nonnullstatcount", // total number of non-null entries in the table
-      "ndv",  // total distinctive values in table
-      "hll" // HyperLogLog
+      "ndv",              // total distinctive values in table
+      "avg_width"         // Average column width
+      //TODO: hll         // Hyperloglog
   );
 
   public AnalyzePrule() {
-    super(RelOptHelper.some(DrillAnalyzeRel.class, DrillRel.DRILL_LOGICAL, RelOptHelper.any(RelNode.class)), "Prel.AnalyzePrule");
+    super(RelOptHelper.some(DrillAnalyzeRel.class, DrillRel.DRILL_LOGICAL,
+        RelOptHelper.any(RelNode.class)), "Prel.AnalyzePrule");
   }
 
   @Override
   public void onMatch(RelOptRuleCall call) {
-    final DrillAnalyzeRel analyze = (DrillAnalyzeRel) call.rel(0);
+    final DrillAnalyzeRel analyze = call.rel(0);
     final RelNode input = call.rel(1);
 
-    final RelTraitSet traits = input.getTraitSet().plus(Prel.DRILL_PHYSICAL).plus(DrillDistributionTrait.SINGLETON);
+    final RelTraitSet traits = input.getTraitSet().plus(Prel.DRILL_PHYSICAL).plus(
+        DrillDistributionTrait.SINGLETON);
     final RelNode convertedInput = convert(input, traits);
+    final StatsAggPrel statsAggPrel = new StatsAggPrel(convertedInput, analyze.getCluster(),
+        FUNCTIONS);
 
-    final StatsAggPrel statsAggPrel = new StatsAggPrel(convertedInput, analyze.getCluster(), FUNCTIONS);
-
-    final List<String> mapFileds = Lists.newArrayList(FUNCTIONS);
-    mapFileds.add(DrillStatsTable.COL_COLUMN);
-    final SingleRel newAnalyze = new UnpivotMapsPrel(statsAggPrel, analyze.getCluster(), mapFileds);
+    final List<String> mapFields = Lists.newArrayList(FUNCTIONS);
+    mapFields.add(DrillStatsTable.COL_COLUMN);
+    final SingleRel newAnalyze = new UnpivotMapsPrel(statsAggPrel, analyze.getCluster(),
+        mapFields);
 
     call.transformTo(newAnalyze);
   }

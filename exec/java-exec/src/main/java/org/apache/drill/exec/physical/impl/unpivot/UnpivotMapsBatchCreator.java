@@ -32,8 +32,8 @@ import com.google.common.base.Preconditions;
 public class UnpivotMapsBatchCreator implements BatchCreator<UnpivotMaps>{
 
   @Override
-  public CloseableRecordBatch getBatch(FragmentContext context, UnpivotMaps config, List<RecordBatch> children)
-      throws ExecutionSetupException {
+  public CloseableRecordBatch getBatch(FragmentContext context, UnpivotMaps config,
+                                       List<RecordBatch> children) throws ExecutionSetupException {
     Preconditions.checkArgument(children.size() == 1);
     return new UnpivotMapsRecordBatch(config, children.iterator().next(), context);
   }

@@ -17,26 +17,40 @@
  */
 package org.apache.drill.exec.planner.common;
 
+import java.io.IOException;
+import java.util.List;
 import java.util.Map;
-
-import com.google.common.base.Preconditions;
+import java.util.concurrent.TimeUnit;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.Maps;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelVisitor;
 import org.apache.calcite.rel.core.TableScan;
-import org.apache.drill.exec.client.DrillClient;
 import org.apache.drill.exec.ops.QueryContext;
 import org.apache.drill.exec.planner.logical.DrillTable;
-import org.apache.drill.exec.proto.UserBitShared;
-import org.apache.drill.exec.server.DrillbitContext;
-import org.apache.drill.exec.server.rest.QueryWrapper.Listener;
+import org.apache.drill.exec.util.ImpersonationUtil;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.joda.time.DateTime;
 
 /**
- * Wraps the stats table info including schema and tableName. Also materializes stats from storage and keeps them in
- * memory.
+ * Wraps the stats table info including schema and tableName. Also materializes stats from storage
+ * and keeps them in memory.
  */
 public class DrillStatsTable {
   private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(DrillStatsTable.class);
+  private final FileSystem fs;
+  private final Path tablePath;
 
   /**
    * List of columns in stats table.
@@ -54,13 +68,25 @@ public class DrillStatsTable {
 
   private boolean materialized = false;
 
-  public DrillStatsTable(String schemaName, String tableName) {
+  private TableStatistics statistics = null;
+
+  public DrillStatsTable(String schemaName, String tableName, Path tablePath, FileSystem fs) {
     this.schemaName = schemaName;
     this.tableName = tableName;
+    this.tablePath = tablePath;
+    this.fs = ImpersonationUtil.createFileSystem(ImpersonationUtil.getProcessUserName(), fs.getConf());
   }
 
+  public String getSchemaName() {
+    return schemaName;
+  }
+
+  public String getTableName() {
+    return tableName;
+  }
   /**
-   * Get number of distinct values of given column. If stats are not present for the given column, a null is returned.
+   * Get number of distinct values of given column. If stats are not present for the given column,
+   * a null is returned.
    *
    * Note: returned data may not be accurate. Accuracy depends on whether the table data has changed after the
    * stats are computed.
@@ -69,27 +95,32 @@ public class DrillStatsTable {
    * @return
    */
   public Double getNdv(String col) {
-    Preconditions.checkState(materialized, "Stats are not yet materialized.");
-
+    // Stats might not have materialized because of errors.
+    if (!materialized) {
+      return null;
+    }
     final String upperCol = col.toUpperCase();
     final Long ndvCol = ndv.get(upperCol);
+    // Ndv estimation techniques like HLL may over-estimate, hence cap it at rowCount
     if (ndvCol != null) {
       return Math.min(ndvCol, rowCount);
     }
-
     return null;
   }
 
   /**
    * Get row count of the table. Returns null if stats are not present.
    *
-   * Note: returned data may not be accurate. Accuracy depends on whether the table data has changed after the
-   * stats are computed.
+   * Note: returned data may not be accurate. Accuracy depends on whether the table data has
+   * changed after the stats are computed.
    *
    * @return
    */
   public Double getRowCount() {
-    Preconditions.checkState(materialized, "Stats are not yet materialized.");
+    // Stats might not have materialized because of errors.
+    if (!materialized) {
+      return null;
+    }
     return rowCount > 0 ? rowCount : null;
   }
 
@@ -98,37 +129,33 @@ public class DrillStatsTable {
    * @param context
    * @throws Exception
    */
-  public void materialize(final QueryContext context) throws Exception {
+  public void materialize(final QueryContext context) throws IOException {
     if (materialized) {
       return;
     }
-
-    final String fullTableName = "`" + schemaName + "`.`" + tableName + "`";
-    final String sql = "SELECT a.* FROM " + fullTableName + " AS a INNER JOIN " +
-        "(SELECT `" + COL_COLUMN + "`, max(`" + COL_COMPUTED +"`) AS `" + COL_COMPUTED + "` " +
-        "FROM " + fullTableName + " GROUP BY `" + COL_COLUMN + "`) AS b " +
-        "ON a.`" + COL_COLUMN + "` = b.`" + COL_COLUMN +"` and a.`" + COL_COMPUTED + "` = b.`" + COL_COMPUTED + "`";
-
-    final DrillbitContext dc = context.getDrillbitContext();
-    try(final DrillClient client = new DrillClient(dc.getConfig(), dc.getClusterCoordinator(), dc.getAllocator())) {
-      final Listener listener = new Listener(dc.getAllocator());
-
-      client.connect();
-      client.runQuery(UserBitShared.QueryType.SQL, sql, listener);
-
-      listener.waitForCompletion();
-
-      for (Map<String, String> r : listener.results) {
-        ndv.put(r.get(COL_COLUMN).toUpperCase(), Long.valueOf(r.get(COL_NDV)));
-        rowCount = Math.max(rowCount, Long.valueOf(r.get(COL_STATCOUNT)));
+    // Deserialize statistics from JSON
+    try {
+      this.statistics = readStatistics(tablePath);
+      //Handle based on the statistics version read from the file
+      if (statistics instanceof Statistics_v0) {
+        //Do nothing
+      } else if (statistics instanceof Statistics_v1) {
+        for (DirectoryStatistics_v1 ds : ((Statistics_v1) statistics).getDirectoryStatistics()) {
+          for (ColumnStatistics_v1 cs : ds.getColumnStatistics()) {
+            ndv.put(cs.getName().toUpperCase(), cs.getNdv());
+            rowCount = Math.max(rowCount, cs.getCount());
+          }
+        }
       }
+      materialized = true;
+    } catch (IOException ex) {
+      logger.warn("Failed to read the stats file.", ex);
+      throw ex;
     }
-
-    materialized = true;
   }
 
   /**
-   * materialize on nodes that have an attached stats table
+   * Materialize on nodes that have an attached stats table
    */
   public static class StatsMaterializationVisitor extends RelVisitor {
     private QueryContext context;
@@ -157,5 +184,159 @@ public class DrillStatsTable {
       }
       super.visit(node, ordinal, parent);
     }
+  }
+
+  /* Each change to the format SHOULD increment the default and/or the max values of the option
+   * exec.statistics.capability_version
+   */
+  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY,
+      property = "statistics_version")
+  @JsonSubTypes({
+          @JsonSubTypes.Type(value = DrillStatsTable.Statistics_v1.class, name="v0"),
+          @JsonSubTypes.Type(value = DrillStatsTable.Statistics_v1.class, name="v1")
+  })
+  public static abstract class TableStatistics {
+    @JsonIgnore public abstract List<? extends DirectoryStatistics> getDirectoryStatistics();
+  }
+
+  public static abstract class DirectoryStatistics {
+  }
+
+  public static abstract class ColumnStatistics {
+  }
+
+  @JsonTypeName("v0")
+  public static class Statistics_v0 extends TableStatistics {
+    @JsonProperty ("directories") List<DirectoryStatistics_v0> directoryStatistics;
+    // Default constructor required for deserializer
+    public Statistics_v0 () { }
+    @JsonGetter ("directories")
+    public List<DirectoryStatistics_v0> getDirectoryStatistics() {
+      return directoryStatistics;
+    }
+    @JsonSetter ("directories")
+    public void setDirectoryStatistics(List<DirectoryStatistics_v0> directoryStatistics) {
+      this.directoryStatistics = directoryStatistics;
+    }
+  }
+
+  public static class DirectoryStatistics_v0 extends DirectoryStatistics {
+    @JsonProperty private double computed;
+    // Default constructor required for deserializer
+    public DirectoryStatistics_v0() { }
+    @JsonGetter ("computed")
+    public double getComputedTime() {
+      return this.computed;
+    }
+    @JsonSetter ("computed")
+    public void setComputedTime(double computed) {
+      this.computed = computed;
+    }
+  }
+
+  /**
+   * Struct which contains the statistics for the entire directory structure
+   */
+  @JsonTypeName("v1")
+  public static class Statistics_v1 extends TableStatistics {
+    @JsonProperty ("directories") List<DirectoryStatistics_v1> directoryStatistics;
+    // Default constructor required for deserializer
+    public Statistics_v1 () { }
+    @JsonGetter ("directories")
+    public List<DirectoryStatistics_v1> getDirectoryStatistics() {
+      return directoryStatistics;
+    }
+    @JsonSetter ("directories")
+    public void setDirectoryStatistics(List<DirectoryStatistics_v1> directoryStatistics) {
+      this.directoryStatistics = directoryStatistics;
+    }
+  }
+
+  public static class DirectoryStatistics_v1 extends DirectoryStatistics {
+    @JsonProperty private String computed;
+    @JsonProperty ("columns") private List<ColumnStatistics_v1> columnStatistics;
+    // Default constructor required for deserializer
+    public DirectoryStatistics_v1() { }
+    @JsonGetter ("computed")
+    public String getComputedTime() {
+      return this.computed;
+    }
+    @JsonSetter ("computed")
+    public void setComputedTime(String computed) {
+      this.computed = computed;
+    }
+    @JsonGetter ("columns")
+    public List<ColumnStatistics_v1> getColumnStatistics() {
+      return this.columnStatistics;
+    }
+    @JsonSetter ("columns")
+    public void setColumnStatistics(List<ColumnStatistics_v1> columnStatistics) {
+      this.columnStatistics = columnStatistics;
+    }
+  }
+
+  public static class ColumnStatistics_v1 extends ColumnStatistics {
+    @JsonProperty ("column") private String name = null;
+    @JsonProperty ("schema") private long schema = -1;
+    @JsonProperty ("statcount") private long count = -1;
+    @JsonProperty ("nonnullstatcount") private long nonNullCount = -1;
+    @JsonProperty ("ndv") private long ndv = -1;
+    @JsonProperty ("avgwidth") private double width = -1;
+
+    public ColumnStatistics_v1() {}
+    @JsonGetter ("column")
+    public String getName() { return this.name; }
+    @JsonSetter ("column")
+    public void setName(String name) {
+      this.name = name;
+    }
+    @JsonGetter ("schema")
+    public double getSchema() {
+      return this.schema;
+    }
+    @JsonSetter ("schema")
+    public void setSchema(long schema) {
+      this.schema = schema;
+    }
+    @JsonGetter ("statcount")
+    public double getCount() {
+      return this.count;
+    }
+    @JsonSetter ("statcount")
+    public void setCount(long count) {
+      this.count = count;
+    }
+    @JsonGetter ("nonnullstatcount")
+    public double getNonNullCount() {
+      return this.nonNullCount;
+    }
+    @JsonSetter ("nonnullstatcount")
+    public void setNonNullCount(long nonNullCount) {
+      this.nonNullCount = nonNullCount;
+    }
+    @JsonGetter ("ndv")
+    public long getNdv() {
+      return this.ndv;
+    }
+    @JsonSetter ("ndv")
+    public void setNdv(long ndv) { this.ndv = ndv; }
+    @JsonGetter ("avgwidth")
+    public double getAvgWidth() {
+      return this.width;
+    }
+    @JsonSetter ("avgwidth")
+    public void setAvgWidth(double width) { this.width = width; }
+  }
+
+  private TableStatistics readStatistics(Path path) throws IOException {
+    Stopwatch timer = Stopwatch.createStarted();
+    ObjectMapper mapper = new ObjectMapper();
+    mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    FSDataInputStream is = fs.open(path);
+
+    TableStatistics statistics = mapper.readValue(is, TableStatistics.class);
+    logger.info("Took {} ms to read metadata from cache file", timer.elapsed(TimeUnit.MILLISECONDS));
+    timer.stop();
+    return statistics;
   }
 }

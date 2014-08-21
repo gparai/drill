@@ -6896,6 +6896,24 @@ public final class BitControl {
      */
     com.google.protobuf.ByteString
         getSessionIdBytes();
+
+    // optional int32 hll_accuracy = 5;
+    /**
+     * <code>optional int32 hll_accuracy = 5;</code>
+     *
+     * <pre>
+     * hll accuracy
+     * </pre>
+     */
+    boolean hasHllAccuracy();
+    /**
+     * <code>optional int32 hll_accuracy = 5;</code>
+     *
+     * <pre>
+     * hll accuracy
+     * </pre>
+     */
+    int getHllAccuracy();
   }
   /**
    * Protobuf type {@code exec.bit.control.QueryContextInformation}
@@ -6966,6 +6984,11 @@ public final class BitControl {
             case 34: {
               bitField0_ |= 0x00000008;
               sessionId_ = input.readBytes();
+              break;
+            }
+            case 40: {
+              bitField0_ |= 0x00000010;
+              hllAccuracy_ = input.readInt32();
               break;
             }
           }
@@ -7166,11 +7189,36 @@ public final class BitControl {
       }
     }
 
+    // optional int32 hll_accuracy = 5;
+    public static final int HLL_ACCURACY_FIELD_NUMBER = 5;
+    private int hllAccuracy_;
+    /**
+     * <code>optional int32 hll_accuracy = 5;</code>
+     *
+     * <pre>
+     * hll accuracy
+     * </pre>
+     */
+    public boolean hasHllAccuracy() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    /**
+     * <code>optional int32 hll_accuracy = 5;</code>
+     *
+     * <pre>
+     * hll accuracy
+     * </pre>
+     */
+    public int getHllAccuracy() {
+      return hllAccuracy_;
+    }
+
     private void initFields() {
       queryStartTime_ = 0L;
       timeZone_ = 0;
       defaultSchemaName_ = "";
       sessionId_ = "";
+      hllAccuracy_ = 0;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -7196,6 +7244,9 @@ public final class BitControl {
       if (((bitField0_ & 0x00000008) == 0x00000008)) {
         output.writeBytes(4, getSessionIdBytes());
       }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeInt32(5, hllAccuracy_);
+      }
       getUnknownFields().writeTo(output);
     }
 
@@ -7220,6 +7271,10 @@ public final class BitControl {
       if (((bitField0_ & 0x00000008) == 0x00000008)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(4, getSessionIdBytes());
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(5, hllAccuracy_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -7345,6 +7400,8 @@ public final class BitControl {
         bitField0_ = (bitField0_ & ~0x00000004);
         sessionId_ = "";
         bitField0_ = (bitField0_ & ~0x00000008);
+        hllAccuracy_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000010);
         return this;
       }
 
@@ -7389,6 +7446,10 @@ public final class BitControl {
           to_bitField0_ |= 0x00000008;
         }
         result.sessionId_ = sessionId_;
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.hllAccuracy_ = hllAccuracy_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -7420,6 +7481,9 @@ public final class BitControl {
           bitField0_ |= 0x00000008;
           sessionId_ = other.sessionId_;
           onChanged();
+        }
+        if (other.hasHllAccuracy()) {
+          setHllAccuracy(other.getHllAccuracy());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -7738,6 +7802,55 @@ public final class BitControl {
   }
   bitField0_ |= 0x00000008;
         sessionId_ = value;
+        onChanged();
+        return this;
+      }
+
+      // optional int32 hll_accuracy = 5;
+      private int hllAccuracy_ ;
+      /**
+       * <code>optional int32 hll_accuracy = 5;</code>
+       *
+       * <pre>
+       * hll accuracy
+       * </pre>
+       */
+      public boolean hasHllAccuracy() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      /**
+       * <code>optional int32 hll_accuracy = 5;</code>
+       *
+       * <pre>
+       * hll accuracy
+       * </pre>
+       */
+      public int getHllAccuracy() {
+        return hllAccuracy_;
+      }
+      /**
+       * <code>optional int32 hll_accuracy = 5;</code>
+       *
+       * <pre>
+       * hll accuracy
+       * </pre>
+       */
+      public Builder setHllAccuracy(int value) {
+        bitField0_ |= 0x00000010;
+        hllAccuracy_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional int32 hll_accuracy = 5;</code>
+       *
+       * <pre>
+       * hll accuracy
+       * </pre>
+       */
+      public Builder clearHllAccuracy() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        hllAccuracy_ = 0;
         onChanged();
         return this;
       }
@@ -9209,26 +9322,27 @@ public final class BitControl {
       ".control.Collector\"\210\001\n\tCollector\022\"\n\032oppo" +
       "site_major_fragment_id\030\001 \001(\005\022#\n\027incoming" +
       "_minor_fragment\030\002 \003(\005B\002\020\001\022\035\n\025supports_ou" +
-      "t_of_order\030\003 \001(\010\022\023\n\013is_spooling\030\004 \001(\010\"w\n",
-      "\027QueryContextInformation\022\030\n\020query_start_" +
-      "time\030\001 \001(\003\022\021\n\ttime_zone\030\002 \001(\005\022\033\n\023default" +
-      "_schema_name\030\003 \001(\t\022\022\n\nsession_id\030\004 \001(\t\"f" +
-      "\n\017WorkQueueStatus\022(\n\010endpoint\030\001 \001(\0132\026.ex" +
-      "ec.DrillbitEndpoint\022\024\n\014queue_length\030\002 \001(" +
-      "\005\022\023\n\013report_time\030\003 \001(\003\"h\n\020FinishedReceiv" +
-      "er\022*\n\010receiver\030\001 \001(\0132\030.exec.bit.Fragment" +
-      "Handle\022(\n\006sender\030\002 \001(\0132\030.exec.bit.Fragme" +
-      "ntHandle*\364\002\n\007RpcType\022\r\n\tHANDSHAKE\020\000\022\007\n\003A" +
-      "CK\020\001\022\013\n\007GOODBYE\020\002\022\034\n\030REQ_INITIALIZE_FRAG",
-      "MENTS\020\003\022\027\n\023REQ_CANCEL_FRAGMENT\020\006\022\031\n\025REQ_" +
-      "RECEIVER_FINISHED\020\007\022\027\n\023REQ_FRAGMENT_STAT" +
-      "US\020\010\022\022\n\016REQ_BIT_STATUS\020\t\022\024\n\020REQ_QUERY_ST" +
-      "ATUS\020\n\022\024\n\020REQ_QUERY_CANCEL\020\017\022\030\n\024REQ_UNPA" +
-      "USE_FRAGMENT\020\020\022\016\n\nREQ_CUSTOM\020\021\022\030\n\024RESP_F" +
-      "RAGMENT_HANDLE\020\013\022\030\n\024RESP_FRAGMENT_STATUS" +
-      "\020\014\022\023\n\017RESP_BIT_STATUS\020\r\022\025\n\021RESP_QUERY_ST" +
-      "ATUS\020\016\022\017\n\013RESP_CUSTOM\020\022B+\n\033org.apache.dr" +
-      "ill.exec.protoB\nBitControlH\001"
+      "t_of_order\030\003 \001(\010\022\023\n\013is_spooling\030\004 \001(\010\"\215\001",
+      "\n\027QueryContextInformation\022\030\n\020query_start" +
+      "_time\030\001 \001(\003\022\021\n\ttime_zone\030\002 \001(\005\022\033\n\023defaul" +
+      "t_schema_name\030\003 \001(\t\022\022\n\nsession_id\030\004 \001(\t\022" +
+      "\024\n\014hll_accuracy\030\005 \001(\005\"f\n\017WorkQueueStatus" +
+      "\022(\n\010endpoint\030\001 \001(\0132\026.exec.DrillbitEndpoi" +
+      "nt\022\024\n\014queue_length\030\002 \001(\005\022\023\n\013report_time\030" +
+      "\003 \001(\003\"h\n\020FinishedReceiver\022*\n\010receiver\030\001 " +
+      "\001(\0132\030.exec.bit.FragmentHandle\022(\n\006sender\030" +
+      "\002 \001(\0132\030.exec.bit.FragmentHandle*\364\002\n\007RpcT" +
+      "ype\022\r\n\tHANDSHAKE\020\000\022\007\n\003ACK\020\001\022\013\n\007GOODBYE\020\002",
+      "\022\034\n\030REQ_INITIALIZE_FRAGMENTS\020\003\022\027\n\023REQ_CA" +
+      "NCEL_FRAGMENT\020\006\022\031\n\025REQ_RECEIVER_FINISHED" +
+      "\020\007\022\027\n\023REQ_FRAGMENT_STATUS\020\010\022\022\n\016REQ_BIT_S" +
+      "TATUS\020\t\022\024\n\020REQ_QUERY_STATUS\020\n\022\024\n\020REQ_QUE" +
+      "RY_CANCEL\020\017\022\030\n\024REQ_UNPAUSE_FRAGMENT\020\020\022\016\n" +
+      "\nREQ_CUSTOM\020\021\022\030\n\024RESP_FRAGMENT_HANDLE\020\013\022" +
+      "\030\n\024RESP_FRAGMENT_STATUS\020\014\022\023\n\017RESP_BIT_ST" +
+      "ATUS\020\r\022\025\n\021RESP_QUERY_STATUS\020\016\022\017\n\013RESP_CU" +
+      "STOM\020\022B+\n\033org.apache.drill.exec.protoB\nB" +
+      "itControlH\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -9282,7 +9396,7 @@ public final class BitControl {
           internal_static_exec_bit_control_QueryContextInformation_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_exec_bit_control_QueryContextInformation_descriptor,
-              new java.lang.String[] { "QueryStartTime", "TimeZone", "DefaultSchemaName", "SessionId", });
+              new java.lang.String[] { "QueryStartTime", "TimeZone", "DefaultSchemaName", "SessionId", "HllAccuracy", });
           internal_static_exec_bit_control_WorkQueueStatus_descriptor =
             getDescriptor().getMessageTypes().get(8);
           internal_static_exec_bit_control_WorkQueueStatus_fieldAccessorTable = new

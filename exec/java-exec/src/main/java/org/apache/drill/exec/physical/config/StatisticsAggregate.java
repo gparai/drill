@@ -17,7 +17,6 @@
  */
 package org.apache.drill.exec.physical.config;
 
-import com.google.common.collect.ImmutableList;
 import org.apache.drill.exec.physical.base.PhysicalOperator;
 import org.apache.drill.exec.physical.base.PhysicalVisitor;
 import org.apache.drill.exec.proto.UserBitShared.CoreOperatorType;
@@ -26,12 +25,13 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 
+import com.google.common.collect.ImmutableList;
+
 import java.util.List;
 
 @JsonTypeName("statistics-aggregate")
 public class StatisticsAggregate extends StreamingAggregate {
   // private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(StatisticsAggregate.class);
-
   private final List<String> functions;
 
   @JsonCreator

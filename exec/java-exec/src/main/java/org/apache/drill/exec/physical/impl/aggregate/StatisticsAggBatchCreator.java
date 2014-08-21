@@ -32,8 +32,8 @@ import com.google.common.base.Preconditions;
 public class StatisticsAggBatchCreator implements BatchCreator<StatisticsAggregate>{
 
   @Override
-  public CloseableRecordBatch getBatch(FragmentContext context, StatisticsAggregate config, List<RecordBatch> children)
-      throws ExecutionSetupException {
+  public CloseableRecordBatch getBatch(FragmentContext context, StatisticsAggregate config,
+                                       List<RecordBatch> children) throws ExecutionSetupException {
     Preconditions.checkArgument(children.size() == 1);
     return new StatisticsAggBatch(config, children.iterator().next(), context);
   }

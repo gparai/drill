@@ -17,11 +17,13 @@
  */
 package org.apache.drill.exec.planner.common;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
-import com.google.common.collect.ImmutableList;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.logical.LogicalJoin;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
@@ -43,8 +45,6 @@ import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexNode;
-
-import com.google.common.collect.Lists;
 
 /**
  * Base class for logical and physical Joins implemented in Drill.
@@ -114,7 +114,7 @@ public abstract class DrillJoinRelBase extends Join implements DrillRelNode {
         this.getCondition(),
         this.getJoinType(),
         this.getVariablesStopped(),
-        false /* TODO - verify if this the correct value */,
+        false,
         ImmutableList.<RelDataTypeField>of());
 
     if (RelOptUtil.analyzeSimpleEquiJoin(jr, joinFields)) {
