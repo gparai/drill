@@ -88,4 +88,8 @@ public abstract class DrillAggregateRelBase extends Aggregate implements DrillRe
     return computeHashAggCost(planner, mq);
   }
 
+  @Override
+  public double estimateRowCount(RelMetadataQuery mq) {
+    return mq.getRowCount(this);
+  }
 }

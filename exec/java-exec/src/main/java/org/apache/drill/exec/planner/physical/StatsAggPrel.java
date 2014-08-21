@@ -18,6 +18,11 @@
 package org.apache.drill.exec.planner.physical;
 
 import org.apache.drill.shaded.guava.com.google.common.collect.ImmutableList;
+
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.List;
+
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
@@ -27,10 +32,6 @@ import org.apache.drill.exec.physical.config.StatisticsAggregate;
 import org.apache.drill.exec.planner.common.DrillRelNode;
 import org.apache.drill.exec.planner.physical.visitor.PrelVisitor;
 import org.apache.drill.exec.record.BatchSchema.SelectionVectorMode;
-
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.List;
 
 public class StatsAggPrel extends SingleRel implements DrillRelNode, Prel {
 
@@ -50,11 +51,8 @@ public class StatsAggPrel extends SingleRel implements DrillRelNode, Prel {
   public PhysicalOperator getPhysicalOperator(PhysicalPlanCreator creator)
       throws IOException {
     Prel child = (Prel) this.getInput();
-
     PhysicalOperator childPOP = child.getPhysicalOperator(creator);
-
     StatisticsAggregate g = new StatisticsAggregate(childPOP, functions);
-
     return creator.addMetadata(this, g);
   }
 

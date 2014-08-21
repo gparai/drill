@@ -24,6 +24,7 @@ import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.drill.common.expression.PathSegment;
 import org.apache.drill.common.expression.SchemaPath;
+import org.apache.drill.exec.ExecConstants;
 import org.apache.drill.exec.expr.fn.impl.DateUtility;
 import org.apache.drill.exec.ops.FragmentContext;
 import org.apache.drill.exec.planner.logical.DrillTable;
@@ -31,6 +32,7 @@ import org.apache.drill.exec.planner.logical.DrillTranslatableTable;
 import org.apache.drill.exec.proto.BitControl.QueryContextInformation;
 import org.apache.drill.exec.proto.ExecProtos;
 import org.apache.drill.exec.proto.helper.QueryIdHelper;
+import org.apache.drill.exec.server.options.OptionManager;
 
 import java.util.Collection;
 
@@ -60,9 +62,12 @@ public class Utilities {
    * QueryContextInformation is derived from the current state of the process.
    *
    * @param defaultSchemaName
+   * @param sessionId
+   * @param manager
    * @return A {@link org.apache.drill.exec.proto.BitControl.QueryContextInformation} with given <i>defaultSchemaName</i>.
    */
-  public static QueryContextInformation createQueryContextInfo(final String defaultSchemaName, final String sessionId) {
+  public static QueryContextInformation createQueryContextInfo(final String defaultSchemaName,
+      final String sessionId, final OptionManager manager) {
     final long queryStartTime = System.currentTimeMillis();
     final int timeZone = DateUtility.getIndex(System.getProperty("user.timezone"));
     return QueryContextInformation.newBuilder()
@@ -70,6 +75,7 @@ public class Utilities {
         .setQueryStartTime(queryStartTime)
         .setTimeZone(timeZone)
         .setSessionId(sessionId)
+        .setHllMemoryLimit((int)manager.getOption(ExecConstants.NDV_MEMORY_LIMIT))
         .build();
   }
 
