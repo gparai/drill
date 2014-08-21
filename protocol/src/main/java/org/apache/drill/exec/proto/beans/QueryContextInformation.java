@@ -51,6 +51,7 @@ public final class QueryContextInformation implements Externalizable, Message<Qu
     private int timeZone;
     private String defaultSchemaName;
     private String sessionId;
+    private int hllAccuracy;
 
     public QueryContextInformation()
     {
@@ -108,6 +109,19 @@ public final class QueryContextInformation implements Externalizable, Message<Qu
     public QueryContextInformation setSessionId(String sessionId)
     {
         this.sessionId = sessionId;
+        return this;
+    }
+
+    // hllAccuracy
+
+    public int getHllAccuracy()
+    {
+        return hllAccuracy;
+    }
+
+    public QueryContextInformation setHllAccuracy(int hllAccuracy)
+    {
+        this.hllAccuracy = hllAccuracy;
         return this;
     }
 
@@ -177,6 +191,9 @@ public final class QueryContextInformation implements Externalizable, Message<Qu
                 case 4:
                     message.sessionId = input.readString();
                     break;
+                case 5:
+                    message.hllAccuracy = input.readInt32();
+                    break;
                 default:
                     input.handleUnknownField(number, this);
             }   
@@ -197,6 +214,9 @@ public final class QueryContextInformation implements Externalizable, Message<Qu
 
         if(message.sessionId != null)
             output.writeString(4, message.sessionId, false);
+
+        if(message.hllAccuracy != 0)
+            output.writeInt32(5, message.hllAccuracy, false);
     }
 
     public String getFieldName(int number)
@@ -207,6 +227,7 @@ public final class QueryContextInformation implements Externalizable, Message<Qu
             case 2: return "timeZone";
             case 3: return "defaultSchemaName";
             case 4: return "sessionId";
+            case 5: return "hllAccuracy";
             default: return null;
         }
     }
@@ -224,6 +245,7 @@ public final class QueryContextInformation implements Externalizable, Message<Qu
         __fieldMap.put("timeZone", 2);
         __fieldMap.put("defaultSchemaName", 3);
         __fieldMap.put("sessionId", 4);
+        __fieldMap.put("hllAccuracy", 5);
     }
     
 }

@@ -43,7 +43,8 @@
     "ESTIMATE",
     "STATISTICS",
     "COLUMNS",
-    "SAMPLE"
+    "SAMPLE",
+    "PERCENT"
   ]
 
   # List of keywords from "keywords" section that are not reserved by SQL:2003 standard.
@@ -61,7 +62,8 @@
     "ESTIMATE",
     "STATISTICS",
     "COLUMNS",
-    "SAMPLE"
+    "SAMPLE",
+    "PERCENT"
   ]
 
   # List of methods for parsing custom SQL statements.

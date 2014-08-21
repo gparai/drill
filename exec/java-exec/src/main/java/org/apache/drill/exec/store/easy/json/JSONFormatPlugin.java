@@ -27,6 +27,7 @@ import org.apache.drill.common.logical.FormatPluginConfig;
 import org.apache.drill.common.logical.StoragePluginConfig;
 import org.apache.drill.exec.ExecConstants;
 import org.apache.drill.exec.ops.FragmentContext;
+import org.apache.drill.exec.ops.QueryContext;
 import org.apache.drill.exec.proto.ExecProtos.FragmentHandle;
 import org.apache.drill.exec.proto.UserBitShared.CoreOperatorType;
 import org.apache.drill.exec.server.DrillbitContext;
@@ -42,6 +43,7 @@ import org.apache.hadoop.conf.Configuration;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import org.apache.drill.shaded.guava.com.google.common.collect.ImmutableList;
+import org.apache.drill.shaded.guava.com.google.common.collect.Maps;
 
 public class JSONFormatPlugin extends EasyFormatPlugin<JSONFormatConfig> {
 
@@ -67,7 +69,8 @@ public class JSONFormatPlugin extends EasyFormatPlugin<JSONFormatConfig> {
 
   @Override
   public RecordWriter getRecordWriter(FragmentContext context, EasyWriter writer) throws IOException {
-    Map<String, String> options = new HashMap<>();
+    Map<String, String> options = Maps.newHashMap();
+    RecordWriter recordWriter = null;
 
     options.put("location", writer.getLocation());
     options.put("append", Boolean.toString(writer.getAppend()));
@@ -83,6 +86,13 @@ public class JSONFormatPlugin extends EasyFormatPlugin<JSONFormatConfig> {
     options.put("enableNanInf", Boolean.toString(context.getOptions().getOption(ExecConstants.JSON_WRITER_NAN_INF_NUMBERS_VALIDATOR)));
 
     RecordWriter recordWriter = new JsonRecordWriter(writer.getStorageStrategy(), getFsConf());
+
+    //ANALYZE statement requires the special statistics writer
+    if (context.getStatementType() == QueryContext.StatementType.ANALYZE) {
+      options.put("statsversion", Long.toString(context.getOptions().getOption(ExecConstants.STATISTICS_VERSION)));
+      options.put("queryid", context.getQueryId());
+      recordWriter = new JsonStatisticsRecordWriter();
+    }
     recordWriter.init(options);
 
     return recordWriter;

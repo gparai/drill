@@ -89,10 +89,8 @@ public class SqlAnalyzeTable extends DrillSqlCall {
     tblName.unparse(writer, leftPrec, rightPrec);
     writer.keyword(estimate.booleanValue() ? "ESTIMATE" : "COMPUTE");
     writer.keyword("STATISTICS");
-    writer.keyword("FOR");
 
     if (fieldList != null && fieldList.size() > 0) {
-      writer.keyword("COLUMNS");
       writer.keyword("(");
       fieldList.get(0).unparse(writer, leftPrec, rightPrec);
       for (int i = 1; i < fieldList.size(); i++) {
@@ -100,9 +98,6 @@ public class SqlAnalyzeTable extends DrillSqlCall {
         fieldList.get(i).unparse(writer, leftPrec, rightPrec);
       }
       writer.keyword(")");
-    } else {
-      writer.keyword("ALL");
-      writer.keyword("COLUMNS");
     }
     writer.keyword("SAMPLE");
     percent.unparse(writer, leftPrec, rightPrec);

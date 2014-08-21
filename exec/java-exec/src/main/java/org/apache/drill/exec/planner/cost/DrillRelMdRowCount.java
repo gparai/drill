@@ -25,6 +25,7 @@ import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.core.Sort;
 import org.apache.calcite.rel.core.Union;
+import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.metadata.ReflectiveRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMdRowCount;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
@@ -32,8 +33,8 @@ import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.util.BuiltInMethod;
 import org.apache.calcite.util.ImmutableBitSet;
 import org.apache.drill.exec.planner.common.DrillLimitRelBase;
-import org.apache.drill.exec.planner.common.DrillStatsTable;
 import org.apache.drill.exec.planner.logical.DrillScanRel;
+import org.apache.drill.exec.planner.logical.DrillTable;
 
 public class DrillRelMdRowCount extends RelMdRowCount {
   private static final DrillRelMdRowCount INSTANCE = new DrillRelMdRowCount();
@@ -49,11 +50,6 @@ public class DrillRelMdRowCount extends RelMdRowCount {
     } else {
       return super.getRowCount(rel, mq);
     }
-  }
-
-  @Override
-  public Double getRowCount(Filter rel, RelMetadataQuery mq) {
-    return rel.estimateRowCount(mq);
   }
 
   public double getRowCount(DrillLimitRelBase rel, RelMetadataQuery mq) {
@@ -87,17 +83,38 @@ public class DrillRelMdRowCount extends RelMdRowCount {
 
   public Double getRowCount(RelNode rel, RelMetadataQuery mq) {
     if (rel instanceof DrillScanRel) {
-      return getRowCount((DrillScanRel)rel, mq);
+      return getRowCountInternal((DrillScanRel)rel, mq);
+    } else if (rel instanceof TableScan) {
+      return getRowCountInternal((TableScan) rel, mq);
+    } else if (rel instanceof Filter) {
+      return getRowCount(rel, mq);
     }
     return super.getRowCount(rel, mq);
   }
 
-  private Double getRowCount(DrillScanRel scanRel, RelMetadataQuery mq) {
-    final DrillStatsTable md = scanRel.getDrillTable().getStatsTable();
-    if (md != null) {
-      return md.getRowCount();
-    }
+  @Override
+  public Double getRowCount(Filter rel, RelMetadataQuery mq) {
+    // Need capped selectivity estimates. See getRows()
+    return Double.valueOf(rel.getRows());
+  }
 
+  private Double getRowCountInternal(DrillScanRel scanRel, RelMetadataQuery mq) {
+    final DrillTable table = scanRel.getDrillTable();
+    // Return rowcount from statistics, if available. Otherwise, delegate to parent.
+    if (table != null
+        && table.getStatsTable() != null) {
+      return table.getStatsTable().getRowCount();
+    }
+    return super.getRowCount(scanRel, mq);
+  }
+
+  private Double getRowCountInternal(TableScan scanRel, RelMetadataQuery mq) {
+    final DrillTable table = scanRel.getTable().unwrap(DrillTable.class);
+    // Return rowcount from statistics, if available. Otherwise, delegate to parent.
+    if (table != null
+       && table.getStatsTable() != null) {
+      return table.getStatsTable().getRowCount();
+    }
     return super.getRowCount(scanRel, mq);
   }
 }

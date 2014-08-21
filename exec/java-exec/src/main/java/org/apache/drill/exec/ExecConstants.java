@@ -29,6 +29,7 @@ import org.apache.drill.exec.server.options.TypeValidators.DoubleValidator;
 import org.apache.drill.exec.server.options.TypeValidators.EnumeratedStringValidator;
 import org.apache.drill.exec.server.options.TypeValidators.LongValidator;
 import org.apache.drill.exec.server.options.TypeValidators.MaxWidthValidator;
+import org.apache.drill.exec.server.options.TypeValidators.NonNegativeLongValidator;
 import org.apache.drill.exec.server.options.TypeValidators.PositiveLongValidator;
 import org.apache.drill.exec.server.options.TypeValidators.PowerOfTwoLongValidator;
 import org.apache.drill.exec.server.options.TypeValidators.RangeDoubleValidator;
@@ -911,4 +912,19 @@ public final class ExecConstants {
       new OptionDescription("Controls whether to return result set for CREATE TABLE / VIEW / FUNCTION, DROP TABLE / VIEW / FUNCTION, " +
           "SET, USE, REFRESH METADATA TABLE queries. If set to false affected rows count will be returned instead and result set will be null. " +
           "Affects JDBC connections only. Default is true. (Drill 1.15+)"));
+
+  /**
+   * Option whose value is a long value representing the number of bits required for computing ndv (using HLL)
+   */
+  public static final String NDV_MEMORY_LIMIT = "exec.statistics.ndv_memory_limit";
+  public static final LongValidator NDV_MEMORY_LIMIT_VALIDATOR = new PositiveLongValidator(NDV_MEMORY_LIMIT, 30,
+      new OptionDescription("Controls trade-off between NDV statistic storage cost and accuracy"));
+
+  /**
+   * Option whose value represents the current version of the statistics. Decreasing the value will generate
+   * the older version of statistics
+   */
+  public static final String STATISTICS_VERSION = "exec.statistics.capability_version";
+  public static final LongValidator STATISTICS_VERSION_VALIDATOR = new NonNegativeLongValidator(STATISTICS_VERSION, 1,
+      new OptionDescription("Controls which version of statistics capability is written to persistent storage"));
 }

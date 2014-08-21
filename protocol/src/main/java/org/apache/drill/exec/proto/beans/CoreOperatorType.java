@@ -81,7 +81,8 @@ public enum CoreOperatorType implements com.dyuproject.protostuff.EnumLite<CoreO
     RUNTIME_FILTER(56),
     ROWKEY_JOIN(57),
     STATISTICS_AGGREGATE(58),
-    UNPIVOT_MAPS(59);
+    UNPIVOT_MAPS(59),
+    STATISTICS_MERGE(60);
     
     public final int number;
     
@@ -159,6 +160,7 @@ public enum CoreOperatorType implements com.dyuproject.protostuff.EnumLite<CoreO
             case 57: return ROWKEY_JOIN;
             case 58: return STATISTICS_AGGREGATE;
             case 59: return UNPIVOT_MAPS;
+            case 60: return STATISTICS_MERGE;
             default: return null;
         }
     }
