@@ -282,6 +282,7 @@ public class DrillStatsTable {
     @JsonProperty ("statcount") private long count = -1;
     @JsonProperty ("nonnullstatcount") private long nonNullCount = -1;
     @JsonProperty ("ndv") private long ndv = -1;
+    @JsonProperty ("hll") private byte[] hll = null;
     @JsonProperty ("avgwidth") private double width = -1;
 
     public ColumnStatistics_v1() {}
@@ -327,6 +328,12 @@ public class DrillStatsTable {
     }
     @JsonSetter ("avgwidth")
     public void setAvgWidth(double width) { this.width = width; }
+    @JsonGetter ("hll")
+    public byte[] getHLL() {
+      return this.hll;
+    }
+    @JsonSetter ("hll")
+    public void setHLL(byte[] hll) { this.hll = hll; }
   }
 
   private TableStatistics readStatistics(Path path) throws IOException {
