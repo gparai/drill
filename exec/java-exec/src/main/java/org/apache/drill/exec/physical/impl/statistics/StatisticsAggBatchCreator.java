@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.drill.exec.physical.impl.aggregate;
+package org.apache.drill.exec.physical.impl.statistics;
 
 import org.apache.drill.shaded.guava.com.google.common.base.Preconditions;
 import java.util.List;
