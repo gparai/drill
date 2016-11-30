@@ -524,7 +524,7 @@ public final class UserBitShared {
     /**
      * <code>UNPIVOT_MAPS = 39;</code>
      */
-    UNPIVOT_MAPS(39, 39),
+    UNPIVOT_MAPS(39, 39)
     ;
 
     /**
