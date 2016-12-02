@@ -35,6 +35,10 @@ import org.apache.calcite.util.ImmutableBitSet;
 import org.apache.drill.exec.planner.common.DrillLimitRelBase;
 import org.apache.drill.exec.planner.logical.DrillScanRel;
 import org.apache.drill.exec.planner.logical.DrillTable;
+import org.apache.drill.exec.planner.logical.DrillTranslatableTable;
+import org.apache.drill.exec.store.parquet.ParquetGroupScan;
+
+import java.io.IOException;
 
 public class DrillRelMdRowCount extends RelMdRowCount {
   private static final DrillRelMdRowCount INSTANCE = new DrillRelMdRowCount();
@@ -109,11 +113,23 @@ public class DrillRelMdRowCount extends RelMdRowCount {
   }
 
   private Double getRowCountInternal(TableScan scanRel, RelMetadataQuery mq) {
-    final DrillTable table = scanRel.getTable().unwrap(DrillTable.class);
+    DrillTable table = scanRel.getTable().unwrap(DrillTable.class);
+    if (table == null) {
+      table = scanRel.getTable().unwrap(DrillTranslatableTable.class).getDrillTable();
+    }
     // Return rowcount from statistics, if available. Otherwise, delegate to parent.
-    if (table != null
-       && table.getStatsTable() != null) {
-      return table.getStatsTable().getRowCount();
+    try {
+      if (table != null
+          && table.getStatsTable() != null
+          /* For ParquetGroupScan rely on accurate count from the scan instead of statistics since
+           * partition pruning/filter pushdown might have occurred. The other way would be to iterate
+           * over the rowgroups present in the ParquetGroupScan to obtain the rowcount.
+           */
+          && !(table.getGroupScan() instanceof ParquetGroupScan)) {
+        return table.getStatsTable().getRowCount();
+      }
+    } catch (IOException ex) {
+      return super.getRowCount(scanRel, mq);
     }
     return super.getRowCount(scanRel, mq);
   }
