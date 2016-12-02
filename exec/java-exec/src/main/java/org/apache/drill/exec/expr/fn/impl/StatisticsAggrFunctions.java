@@ -68,17 +68,12 @@ import org.apache.drill.exec.expr.holders.NullableTimeStampHolder;
 import org.apache.drill.exec.expr.holders.NullableVarCharHolder;
 import org.apache.drill.exec.expr.holders.NullableVar16CharHolder;
 import org.apache.drill.exec.expr.holders.NullableVarBinaryHolder;
-import org.apache.drill.exec.expr.holders.MapHolder;
 import org.apache.drill.exec.expr.holders.ObjectHolder;
 import org.apache.drill.exec.expr.holders.VarCharHolder;
 import org.apache.drill.exec.expr.holders.Var16CharHolder;
 import org.apache.drill.exec.expr.holders.VarBinaryHolder;
 import org.apache.drill.exec.ops.ContextInformation;
 import org.apache.drill.exec.vector.complex.reader.FieldReader;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
 
 import javax.inject.Inject;
 
@@ -1709,6 +1704,12 @@ public class StatisticsAggrFunctions {
     }
   }
 
+  /**
+   * The log2m parameter defines the accuracy of the counter.  The larger the log2m the better the accuracy where:
+   * accuracy = 1.04/sqrt(2^log2m)
+   * log2m - the number of bits to use as the basis for the HLL instance
+   * The parameter accepts integers in the range [0, 30]
+   */
   @FunctionTemplate(name = "hll_decode", scope = FunctionScope.SIMPLE, nulls = NullHandling.NULL_IF_NULL)
   public static class HllDecode implements DrillSimpleFunc {
 
@@ -1736,6 +1737,12 @@ public class StatisticsAggrFunctions {
     }
   }
 
+  /**
+   * The log2m parameter defines the accuracy of the counter.  The larger the log2m the better the accuracy where:
+   * accuracy = 1.04/sqrt(2^log2m)
+   * log2m - the number of bits to use as the basis for the HLL instance
+   * The parameter accepts integers in the range [0, 30]
+   */
   @FunctionTemplate(name = "hll_merge", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
   public static class HllMerge implements DrillAggFunc {
     @Param NullableVarBinaryHolder in;
@@ -1746,13 +1753,6 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void setup() {
-      /**
-       * The log2m parameter defines the accuracy of the counter.  The larger the
-       * log2m the better the accuracy.
-       * accuracy = 1.04/sqrt(2^log2m)
-       * where
-       * log2m - the number of bits to use as the basis for the HLL instance
-       */
       work = new ObjectHolder();
       work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
@@ -1816,7 +1816,13 @@ public class StatisticsAggrFunctions {
     }
   }
 
-  /*@FunctionTemplate(name = "hll", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  /**
+   * The log2m parameter defines the accuracy of the counter.  The larger the log2m the better the accuracy where:
+   * accuracy = 1.04/sqrt(2^log2m)
+   * log2m - the number of bits to use as the basis for the HLL instance
+   * The parameter accepts integers in the range [0, 30]
+   */
+  @FunctionTemplate(name = "hll", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
   public static class BitHLLFunction implements DrillAggFunc {
     @Param
     BitHolder in;
@@ -3618,7 +3624,7 @@ public class StatisticsAggrFunctions {
     public void reset() {
       work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
     }
-  }*/
+  }
   /*@FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
   public static class NdvVarBinary implements DrillAggFunc {
     @Param
