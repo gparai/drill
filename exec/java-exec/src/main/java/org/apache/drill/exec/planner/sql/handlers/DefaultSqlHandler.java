@@ -564,11 +564,9 @@ public class DefaultSqlHandler extends AbstractSqlHandler {
     /*
      * 4.)
      * If two fragments are both estimated to be parallelization one, remove the exchange
-     * separating them. Don't remove exchanges for ANALYZE
+     * separating them.
      */
-    if (context.getStatementType() != QueryContext.StatementType.ANALYZE) {
-      phyRelNode = ExcessiveExchangeIdentifier.removeExcessiveEchanges(phyRelNode, targetSliceSize);
-    }
+    phyRelNode = ExcessiveExchangeIdentifier.removeExcessiveEchanges(phyRelNode, targetSliceSize);
 
     /* Insert the IMPLICIT_COLUMN in the lateral unnest pipeline */
     phyRelNode = LateralUnnestRowIDVisitor.insertRowID(phyRelNode);

@@ -124,8 +124,8 @@ public abstract class DrillJoinRelBase extends Join implements DrillJoin {
     }
 
     return joinRowFactor * Math.max(
-        mq.getRowCount(left),
-        mq.getRowCount(right));
+        mq.getRowCount(this.getLeft()),
+        mq.getRowCount(this.getRight()));
   }
 
   /**
