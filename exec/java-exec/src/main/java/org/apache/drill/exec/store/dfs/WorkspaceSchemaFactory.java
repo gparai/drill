@@ -587,10 +587,15 @@ public class WorkspaceSchemaFactory {
           if (statsTable != null) {
             table.setStatsTable(new DrillStatsTable(getFullSchemaName(), getStatsTableName(tableName),
                 getStatsTablePath(tableName), fs));
+          } else {
+            throw new DrillRuntimeException(
+                String.format("Failed to find the stats for table [%s] in schema [%s]",
+                    tableName, getFullSchemaName()));
           }
         }
       } catch (final Exception e) {
-        logger.warn("Failed to find the stats table for table [{}] in schema [{}]", tableName, getFullSchemaName());
+        logger.warn("Failed to find the stats table for table [{}] in schema [{}]",
+            tableName, getFullSchemaName());
       }
     }
 
@@ -605,7 +610,7 @@ public class WorkspaceSchemaFactory {
         }
       } catch (final Exception e) {
         throw new DrillRuntimeException(
-            String.format("Failed to find the location of the stats for table [%s] in schema [%s]",
+            String.format("Failed to find the stats for table [%s] in schema [%s]",
                 tableName, getFullSchemaName()));
       }
     }
@@ -621,7 +626,7 @@ public class WorkspaceSchemaFactory {
         }
       } catch (final Exception e) {
         throw new DrillRuntimeException(
-            String.format("Failed to find the location of the stats for table [%s] in schema [%s]",
+            String.format("Failed to find the the stats for table [%s] in schema [%s]",
                 tableName, getFullSchemaName()));
       }
     }
