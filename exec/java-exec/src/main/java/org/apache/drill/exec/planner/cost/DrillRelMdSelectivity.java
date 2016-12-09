@@ -18,10 +18,10 @@
 package org.apache.drill.exec.planner.cost;
 
 import java.util.ArrayList;
+import java.util.List;
+import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.RelNode;
-
-import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.SingleRel;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rel.metadata.ReflectiveRelMetadataProvider;
@@ -42,16 +42,16 @@ import org.apache.calcite.util.BuiltInMethod;
 import org.apache.calcite.util.Util;
 import org.apache.drill.exec.physical.base.DbGroupScan;
 import org.apache.drill.exec.physical.base.GroupScan;
+import org.apache.drill.exec.planner.common.DrillJoinRelBase;
+import org.apache.drill.exec.planner.common.DrillRelOptUtil;
+import org.apache.drill.exec.planner.common.DrillScanRelBase;
 import org.apache.drill.exec.planner.logical.DrillJoinRel;
 import org.apache.drill.exec.planner.logical.DrillScanRel;
 import org.apache.drill.exec.planner.logical.DrillTable;
 import org.apache.drill.exec.planner.logical.DrillTranslatableTable;
-import org.apache.drill.exec.planner.physical.DrillScanPrel;
 import org.apache.drill.exec.planner.physical.PlannerSettings;
 import org.apache.drill.exec.planner.physical.PrelUtil;
 import org.apache.drill.exec.planner.physical.ScanPrel;
-
-import java.util.List;
 
 public class DrillRelMdSelectivity extends RelMdSelectivity {
   private static final DrillRelMdSelectivity INSTANCE = new DrillRelMdSelectivity();
@@ -60,15 +60,13 @@ public class DrillRelMdSelectivity extends RelMdSelectivity {
 
   @Override
   public Double getSelectivity(RelNode rel, RelMetadataQuery mq, RexNode predicate) {
-    if (rel instanceof RelSubset) {
+    if (rel instanceof RelSubset && !DrillRelOptUtil.guessRows(rel)) {
       return getSubsetSelectivity((RelSubset) rel, mq, predicate);
-    } else if (rel instanceof DrillScanRel) {
+    } else if (rel instanceof DrillScanRelBase) {
       return getScanSelectivity(rel, mq, predicate);
-    } else if (rel instanceof ScanPrel) {
-      return getScanSelectivity(rel, mq, predicate);
-    } else if (rel instanceof DrillJoinRel) {
+    } else if (rel instanceof DrillJoinRelBase) {
       return getJoinSelectivity(((DrillJoinRel)rel), mq, predicate);
-    } else if (rel instanceof SingleRel) {
+    } else if (rel instanceof SingleRel && !DrillRelOptUtil.guessRows(rel)) {
       return getSelectivity(((SingleRel)rel).getInput(), mq, predicate);
     } else {
       return super.getSelectivity(rel, mq, predicate);
@@ -109,13 +107,10 @@ public class DrillRelMdSelectivity extends RelMdSelectivity {
       }
     }
     // Do not mess with statistics used for DBGroupScans.
-    if (rel instanceof DrillScanRel) {
-      if (((DrillScanRel)rel).getDrillTable() != null &&
-              ((DrillScanRel)rel).getDrillTable().getStatsTable() != null) {
-        return getScanSelectivityInternal(((DrillScanRel)rel).getDrillTable(),
-            predicate, rel.getRowType());
+    if (rel instanceof DrillScanRelBase) {
+      if (DrillRelOptUtil.guessRows(rel)) {
+        return super.getSelectivity(rel, mq, predicate);
       }
-    } else if (rel instanceof DrillScanPrel) {
       DrillTable table = rel.getTable().unwrap(DrillTable.class);
       if (table == null) {
         table = rel.getTable().unwrap(DrillTranslatableTable.class).getDrillTable();
@@ -124,7 +119,7 @@ public class DrillRelMdSelectivity extends RelMdSelectivity {
         return getScanSelectivityInternal(table, predicate, rel.getRowType());
       }
     }
-    return super.getSelectivity(rel, RelMetadataQuery.instance(), predicate);
+    return super.getSelectivity(rel, mq, predicate);
   }
 
   private double getScanSelectivityInternal(DrillTable table, RexNode predicate, RelDataType type) {
@@ -168,13 +163,17 @@ public class DrillRelMdSelectivity extends RelMdSelectivity {
     return sel;
   }
 
-  private Double getJoinSelectivity(DrillJoinRel rel, RelMetadataQuery mq, RexNode predicate) {
+  private Double getJoinSelectivity(DrillJoinRelBase rel, RelMetadataQuery mq, RexNode predicate) {
     double sel = 1.0;
     // determine which filters apply to the left vs right
     RexNode leftPred, rightPred;
     JoinRelType joinType = rel.getJoinType();
     final RexBuilder rexBuilder = rel.getCluster().getRexBuilder();
     int[] adjustments = new int[rel.getRowType().getFieldCount()];
+
+    if (DrillRelOptUtil.guessRows(rel)) {
+      return super.getSelectivity(rel, mq, predicate);
+    }
 
     if (predicate != null) {
       RexNode pred;
@@ -184,19 +183,19 @@ public class DrillRelMdSelectivity extends RelMdSelectivity {
       List<RexNode> predList = RelOptUtil.conjunctions(predicate);
 
       RelOptUtil.classifyFilters(
-              rel,
-              predList,
-              joinType,
-              joinType == JoinRelType.INNER,
-              !joinType.generatesNullsOnLeft(),
-              !joinType.generatesNullsOnRight(),
-              joinFilters,
-              leftFilters,
-              rightFilters);
+          rel,
+          predList,
+          joinType,
+          joinType == JoinRelType.INNER,
+          !joinType.generatesNullsOnLeft(),
+          !joinType.generatesNullsOnRight(),
+          joinFilters,
+          leftFilters,
+          rightFilters);
       leftPred =
-              RexUtil.composeConjunction(rexBuilder, leftFilters, true);
+          RexUtil.composeConjunction(rexBuilder, leftFilters, true);
       rightPred =
-              RexUtil.composeConjunction(rexBuilder, rightFilters, true);
+          RexUtil.composeConjunction(rexBuilder, rightFilters, true);
       for (RelNode child : rel.getInputs()) {
         RexNode modifiedPred = null;
 
@@ -208,21 +207,20 @@ public class DrillRelMdSelectivity extends RelMdSelectivity {
         if (pred != null) {
           // convert the predicate to reference the types of the children
           modifiedPred =
-                  pred.accept(new RelOptUtil.RexInputConverter(
-                          rexBuilder,
-                          null,
-                          child.getRowType().getFieldList(),
-                          adjustments));
+              pred.accept(new RelOptUtil.RexInputConverter(
+              rexBuilder,
+              null,
+              child.getRowType().getFieldList(),
+              adjustments));
         }
         sel *= mq.getSelectivity(child, modifiedPred);
       }
-      sel *= RelMdUtil.guessSelectivity(
-              RexUtil.composeConjunction(rexBuilder, joinFilters, true));
+      sel *= RelMdUtil.guessSelectivity(RexUtil.composeConjunction(rexBuilder, joinFilters, true));
     }
     return sel;
   }
 
-  private RexInputRef findRexInputRef(final RexNode node) {
+  public static RexInputRef findRexInputRef(final RexNode node) {
     try {
       RexVisitor<Void> visitor =
           new RexVisitorImpl<Void>(true) {
