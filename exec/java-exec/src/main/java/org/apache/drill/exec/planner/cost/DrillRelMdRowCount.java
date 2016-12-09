@@ -17,15 +17,15 @@
  */
 package org.apache.drill.exec.planner.cost;
 
+import java.io.IOException;
+
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.SingleRel;
 import org.apache.calcite.rel.core.Aggregate;
-import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.core.Sort;
 import org.apache.calcite.rel.core.Union;
-import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.metadata.ReflectiveRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMdRowCount;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
@@ -33,14 +33,15 @@ import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.util.BuiltInMethod;
 import org.apache.calcite.util.ImmutableBitSet;
 import org.apache.drill.exec.planner.common.DrillLimitRelBase;
-import org.apache.drill.exec.planner.logical.DrillScanRel;
+import org.apache.drill.exec.planner.common.DrillFilterRelBase;
+import org.apache.drill.exec.planner.common.DrillRelOptUtil;
+import org.apache.drill.exec.planner.common.DrillScanRelBase;
 import org.apache.drill.exec.planner.logical.DrillTable;
 import org.apache.drill.exec.planner.logical.DrillTranslatableTable;
 import org.apache.drill.exec.store.parquet.ParquetGroupScan;
 
-import java.io.IOException;
 
-public class DrillRelMdRowCount extends RelMdRowCount {
+public class DrillRelMdRowCount extends RelMdRowCount{
   private static final DrillRelMdRowCount INSTANCE = new DrillRelMdRowCount();
 
   public static final RelMetadataProvider SOURCE = ReflectiveRelMetadataProvider.reflectiveSource(BuiltInMethod.ROW_COUNT.method, INSTANCE);
@@ -86,51 +87,46 @@ public class DrillRelMdRowCount extends RelMdRowCount {
   }
 
   public Double getRowCount(RelNode rel, RelMetadataQuery mq) {
-    if (rel instanceof DrillScanRel) {
-      return getRowCountInternal((DrillScanRel)rel, mq);
-    } else if (rel instanceof TableScan) {
-      return getRowCountInternal((TableScan) rel, mq);
-    } else if (rel instanceof Filter) {
-      return getRowCount(rel, mq);
+    if (rel instanceof DrillScanRelBase) {
+      return getRowCountInternal((DrillScanRelBase)rel, mq);
+    } else if (rel instanceof DrillFilterRelBase) {
+      return getRowCountInternal((DrillFilterRelBase)rel, mq);
     }
     return super.getRowCount(rel, mq);
   }
 
-  @Override
-  public Double getRowCount(Filter rel, RelMetadataQuery mq) {
-    // Need capped selectivity estimates. See getRows()
-    return Double.valueOf(rel.getRows());
-  }
-
-  private Double getRowCountInternal(DrillScanRel scanRel, RelMetadataQuery mq) {
-    final DrillTable table = scanRel.getDrillTable();
-    // Return rowcount from statistics, if available. Otherwise, delegate to parent.
-    if (table != null
-        && table.getStatsTable() != null) {
-      return table.getStatsTable().getRowCount();
+  private Double getRowCountInternal(DrillFilterRelBase rel, RelMetadataQuery mq) {
+    if (DrillRelOptUtil.guessRows(rel)) {
+      return super.getRowCount(rel, mq);
     }
-    return super.getRowCount(scanRel, mq);
+    // Need capped selectivity estimates. See the Filter getRows() method
+    return rel.getRows();
   }
 
-  private Double getRowCountInternal(TableScan scanRel, RelMetadataQuery mq) {
-    DrillTable table = scanRel.getTable().unwrap(DrillTable.class);
+  private Double getRowCountInternal(DrillScanRelBase rel, RelMetadataQuery mq) {
+    DrillTable table;
+    if (DrillRelOptUtil.guessRows(rel)) {
+      return super.getRowCount(rel, mq);
+    }
+    table = rel.getTable().unwrap(DrillTable.class);
     if (table == null) {
-      table = scanRel.getTable().unwrap(DrillTranslatableTable.class).getDrillTable();
+      table = rel.getTable().unwrap(DrillTranslatableTable.class).getDrillTable();
     }
     // Return rowcount from statistics, if available. Otherwise, delegate to parent.
     try {
       if (table != null
           && table.getStatsTable() != null
-          /* For ParquetGroupScan rely on accurate count from the scan instead of statistics since
-           * partition pruning/filter pushdown might have occurred. The other way would be to iterate
-           * over the rowgroups present in the ParquetGroupScan to obtain the rowcount.
+          /* For ParquetGroupScan rely on accurate count from the scan instead of
+           * statistics since partition pruning/filter pushdown might have occurred.
+           * The other way would be to iterate over the rowgroups present in the
+           * ParquetGroupScan to obtain the rowcount.
            */
           && !(table.getGroupScan() instanceof ParquetGroupScan)) {
         return table.getStatsTable().getRowCount();
       }
     } catch (IOException ex) {
-      return super.getRowCount(scanRel, mq);
+      return super.getRowCount(rel, mq);
     }
-    return super.getRowCount(scanRel, mq);
+    return super.getRowCount(rel, mq);
   }
 }
