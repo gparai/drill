@@ -228,6 +228,7 @@ public class PlannerSettings implements Context{
       new OptionDescription("Forces the cost-based query planner to generate a two phase aggregation for an aggregate operator."));
 
   public static final BooleanValidator PARALLEL_ANALYZE = new BooleanValidator("planner.statistics.parallel_analyze", null);
+  public static final BooleanValidator STATISTICS_USE = new BooleanValidator("planner.statistics.use", null);
 
   public OptionManager options = null;
   public FunctionImplementationRegistry functionImplementationRegistry = null;
@@ -467,9 +468,14 @@ public class PlannerSettings implements Context{
 
   public double getIndexStatsRowCountScalingFactor() {
     return options.getOption(INDEX_STATS_ROWCOUNT_SCALING_FACTOR);
+  }
 
   public boolean getIsParallelAnalyze() {
     return options.getOption(PARALLEL_ANALYZE);
+  }
+
+  public boolean useStatistics() {
+    return options.getOption(STATISTICS_USE);
   }
 
   @Override
