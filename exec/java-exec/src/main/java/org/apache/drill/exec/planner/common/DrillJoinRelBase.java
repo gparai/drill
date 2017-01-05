@@ -23,7 +23,6 @@ import java.util.List;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
-import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.CorrelationId;
@@ -110,7 +109,7 @@ public abstract class DrillJoinRelBase extends Join implements DrillJoin {
 
     if (!DrillRelOptUtil.guessRows(this)         //Statistics present for left and right side of the join
         && jr.getJoinType() == JoinRelType.INNER
-        && RelOptUtil.analyzeSimpleEquiJoin(jr, joinFields)) {
+        && DrillRelOptUtil.analyzeSimpleEquiJoin(jr, joinFields)) {
       ImmutableBitSet leq = ImmutableBitSet.of(joinFields[0]);
       ImmutableBitSet req = ImmutableBitSet.of(joinFields[1]);
 
