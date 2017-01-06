@@ -36,6 +36,7 @@ import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.core.TableScan;
+import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.logical.LogicalJoin;
 import org.apache.calcite.rel.rules.ProjectRemoveRule;
 import org.apache.calcite.rel.type.RelDataType;
@@ -587,10 +588,7 @@ public abstract class DrillRelOptUtil {
       } else {
         return true;
       }
-    } /*else if (rel instanceof Filter
-          && findLikeOrRangePredicate(((Filter) rel).getCondition())) {
-      return true;
-    } */else {
+    } else {
       for (RelNode child : rel.getInputs()) {
         if (guessRows(child)) { // at least one child is a guess
           return true;
@@ -615,7 +613,7 @@ public abstract class DrillRelOptUtil {
     return false;
   }
 
-  public static boolean analyzeSimpleEquiJoin(LogicalJoin join, int[] joinFieldOrdinals) {
+  public static boolean analyzeSimpleEquiJoin(Join join, int[] joinFieldOrdinals) {
     RexNode joinExp = join.getCondition();
     if(joinExp.getKind() != SqlKind.EQUALS) {
       return false;
