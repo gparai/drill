@@ -17,25 +17,34 @@
  */
 package org.apache.drill.exec.planner.cost;
 
+import org.apache.calcite.plan.RelOptUtil;
+import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Join;
-import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.SingleRel;
+import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.metadata.ReflectiveRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMdDistinctRowCount;
+import org.apache.calcite.rel.metadata.RelMdUtil;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.util.BuiltInMethod;
 import org.apache.calcite.util.ImmutableBitSet;
+import org.apache.drill.exec.planner.common.DrillJoinRelBase;
 import org.apache.drill.exec.planner.common.DrillRelOptUtil;
 import org.apache.drill.exec.planner.common.DrillStatsTable;
 import org.apache.drill.exec.planner.logical.DrillTable;
 import org.apache.drill.exec.planner.logical.DrillTranslatableTable;
 
-public class DrillRelMdDistinctRowCount extends RelMdDistinctRowCount {
+import java.util.ArrayList;
+import java.util.List;
+
+public class DrillRelMdDistinctRowCount extends RelMdDistinctRowCount{
   private static final DrillRelMdDistinctRowCount INSTANCE =
       new DrillRelMdDistinctRowCount();
 
@@ -70,6 +79,12 @@ public class DrillRelMdDistinctRowCount extends RelMdDistinctRowCount {
     } else if (rel instanceof SingleRel && !DrillRelOptUtil.guessRows(rel)) {
         return mq.getDistinctRowCount(((SingleRel) rel).getInput(), groupKey,
             predicate);
+    } else if (rel instanceof DrillJoinRelBase) {
+      if (DrillRelOptUtil.guessRows(rel)) {
+        return super.getDistinctRowCount(rel, mq, groupKey, predicate);
+      }
+      //Assume ndv is unaffected by the join
+      return getDistinctRowCount(((DrillJoinRelBase) rel), mq, groupKey, predicate);
     } else if (rel instanceof RelSubset && !DrillRelOptUtil.guessRows(rel)) {
       if (((RelSubset) rel).getBest() != null) {
         return mq.getDistinctRowCount(((RelSubset)rel).getBest(), groupKey, predicate);
@@ -143,5 +158,61 @@ public class DrillRelMdDistinctRowCount extends RelMdDistinctRowCount {
     } else {
       return (1 - s) * selectivity * rowCount;
     }
+  }
+
+  public Double getDistinctRowCount(DrillJoinRelBase joinRel, RelMetadataQuery mq, ImmutableBitSet groupKey,
+       RexNode predicate) {
+    if (DrillRelOptUtil.guessRows(joinRel)) {
+      return super.getDistinctRowCount(joinRel, mq, groupKey, predicate);
+    }
+    // Assume NDV is unaffected by the join when groupKey comes from one side of the join
+    // Alleviates NDV over-estimates
+    ImmutableBitSet.Builder leftMask = ImmutableBitSet.builder();
+    ImmutableBitSet.Builder rightMask = ImmutableBitSet.builder();
+    JoinRelType joinType = joinRel.getJoinType();
+    RelNode left = joinRel.getInputs().get(0);
+    RelNode right = joinRel.getInputs().get(1);
+    RelMdUtil.setLeftRightBitmaps(groupKey, leftMask, rightMask,
+        left.getRowType().getFieldCount());
+    RexNode leftPred = null;
+    RexNode rightPred = null;
+
+    // Identify predicates which can be pushed onto the left and right sides of the join
+    if (predicate != null) {
+      ArrayList leftFilters = new ArrayList();
+      ArrayList rightFilters = new ArrayList();
+      ArrayList joinFilters = new ArrayList();
+      List predList = RelOptUtil.conjunctions(predicate);
+      RelOptUtil.classifyFilters(joinRel, predList, joinType, joinType == JoinRelType.INNER,
+          !joinType.generatesNullsOnLeft(), !joinType.generatesNullsOnRight(), joinFilters,
+              leftFilters, rightFilters);
+      RexBuilder rexBuilder = joinRel.getCluster().getRexBuilder();
+      leftPred = RexUtil.composeConjunction(rexBuilder, leftFilters, true);
+      rightPred = RexUtil.composeConjunction(rexBuilder, rightFilters, true);
+    }
+
+    Double leftDistRowCount = null;
+    Double rightDistRowCount = null;
+    double distRowCount = 1;
+    ImmutableBitSet lmb = leftMask.build();
+    ImmutableBitSet rmb = rightMask.build();
+    // Get NDV estimates for the left and right side predicates, if applicable
+    if (lmb.length() > 0) {
+      leftDistRowCount = mq.getDistinctRowCount(left, lmb, leftPred);
+      if (leftDistRowCount != null) {
+        distRowCount = leftDistRowCount.doubleValue();
+      }
+    }
+    if (rmb.length() > 0) {
+      rightDistRowCount = mq.getDistinctRowCount(right, rmb, rightPred);
+      if (rightDistRowCount != null) {
+        distRowCount = rightDistRowCount.doubleValue();
+      }
+    }
+    // Use max of NDVs from both sides of the join, if applicable
+    if (leftDistRowCount != null && rightDistRowCount != null) {
+      distRowCount = Math.max(leftDistRowCount, rightDistRowCount);
+    }
+    return RelMdUtil.numDistinctVals(distRowCount, mq.getRowCount(joinRel));
   }
 }
