@@ -110,7 +110,7 @@ public class AnalyzeTableHandler extends DefaultSqlHandler {
         return notSupported(tableName);
       }
       // Do not support non-parquet tables
-      FormatSelection formatSelection = (FormatSelection) selection;
+      /*FormatSelection formatSelection = (FormatSelection) selection;
       FormatPluginConfig formatConfig = formatSelection.getFormat();
       if (!((formatConfig instanceof ParquetFormatConfig)
             || ((formatConfig instanceof NamedFormatPluginConfig)
@@ -132,7 +132,7 @@ public class AnalyzeTableHandler extends DefaultSqlHandler {
       if (fs.exists(statsFilePath)
           && !isStatsStale(fs, statsFilePath)) {
        return notRequired(tableName);
-      }
+      }*/
     }
     // Convert the query to Drill Logical plan and insert a writer operator on top.
     DrillRel drel = convertToDrel(relScan, drillSchema, tableName);
