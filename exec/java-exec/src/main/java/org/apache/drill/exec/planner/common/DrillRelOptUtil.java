@@ -23,14 +23,17 @@ import java.util.List;
 import com.google.common.collect.Lists;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.logical.LogicalCalc;
 import org.apache.calcite.rel.rules.ProjectRemoveRule;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.validate.SqlValidatorUtil;
 import org.apache.calcite.util.Pair;
@@ -168,5 +171,60 @@ public abstract class DrillRelOptUtil {
       }
     }
     return true;
+  }
+
+  /**
+   * Returns whether the given join is based on a simple equality predicate
+   * involving columns from two tables (no self-joins).
+   *
+   * @param join                  join
+   * @param joinFieldOrdinals     join condition field ordinals w.r.t join inputs
+   *
+   * @return TRUE if simple equality join; FALSE otherwise
+   */
+  public static boolean analyzeSimpleEquiJoin(Join join, int[] joinFieldOrdinals) {
+    RexNode joinExp = join.getCondition();
+    // Must be equality condition
+    if(joinExp.getKind() != SqlKind.EQUALS) {
+      return false;
+    } else {
+      RexCall binaryExpression = (RexCall)joinExp;
+      RexNode leftComparand = (RexNode)binaryExpression.operands.get(0);
+      RexNode rightComparand = (RexNode)binaryExpression.operands.get(1);
+      // Both left and right operands are RexInputRefs
+      if(!(leftComparand instanceof RexInputRef)) {
+        return false;
+      } else if(!(rightComparand instanceof RexInputRef)) {
+        return false;
+      } else {
+        // Check the RexInputRefs in the join condition reference both the left
+        // and right inputs to the join (no self-joins)
+        int leftFieldCount = join.getLeft().getRowType().getFieldCount();
+        int rightFieldCount = join.getRight().getRowType().getFieldCount();
+        RexInputRef leftFieldAccess = (RexInputRef)leftComparand;
+        RexInputRef rightFieldAccess = (RexInputRef)rightComparand;
+        if(leftFieldAccess.getIndex() >= leftFieldCount+rightFieldCount ||
+                rightFieldAccess.getIndex() >= leftFieldCount+rightFieldCount) {
+          return false;
+        }
+        // Both columns reference same table (self-joins)
+        if((leftFieldAccess.getIndex() >= leftFieldCount &&
+                rightFieldAccess.getIndex() >= leftFieldCount) ||
+                (leftFieldAccess.getIndex() < leftFieldCount &&
+                        rightFieldAccess.getIndex() < leftFieldCount)) {
+          return false;
+        } else {
+          // Populate the join fields ordinals as they appear in the inputs
+          if (leftFieldAccess.getIndex() < leftFieldCount) {
+            joinFieldOrdinals[0] = leftFieldAccess.getIndex();
+            joinFieldOrdinals[1] = rightFieldAccess.getIndex() - leftFieldCount;
+          } else {
+            joinFieldOrdinals[0] = rightFieldAccess.getIndex();
+            joinFieldOrdinals[1] = leftFieldAccess.getIndex() - leftFieldCount;
+          }
+          return true;
+        }
+      }
+    }
   }
 }

@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 
 import org.apache.drill.exec.physical.impl.join.JoinUtils;
 import org.apache.drill.exec.physical.impl.join.JoinUtils.JoinCategory;
+import org.apache.drill.exec.planner.common.DrillRelOptUtil;
 import org.apache.drill.exec.planner.logical.DrillJoinRel;
 import org.apache.drill.exec.planner.logical.RelOptHelper;
 import org.apache.calcite.rel.InvalidRelException;
@@ -85,7 +86,16 @@ public class NestedLoopJoinPrule extends JoinPruleBase {
       return;
     }
 
-    final DrillJoinRel join = (DrillJoinRel) call.rel(0);
+    int[] joinFields = new int[2];
+    DrillJoinRel join = (DrillJoinRel) call.rel(0);
+    // Drill ONLY supports left outer NLJ as of now. If right outer join on equality condition
+    // convert it to left outer join.
+    if (join.getJoinType() == JoinRelType.RIGHT
+            && (join.getCondition().isAlwaysTrue()
+            || DrillRelOptUtil.analyzeSimpleEquiJoin(join, joinFields))) {
+      join = join.copy(join.getTraitSet(), join.getCondition(), join.getRight(), join.getLeft(),
+          JoinRelType.LEFT, false);
+    }
     final RelNode left = join.getLeft();
     final RelNode right = join.getRight();
 
