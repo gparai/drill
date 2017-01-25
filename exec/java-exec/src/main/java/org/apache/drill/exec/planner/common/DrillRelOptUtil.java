@@ -561,6 +561,9 @@ public abstract class DrillRelOptUtil {
 
   /**
    * Returns whether statistics-based estimates or guesses are used by the optimizer
+   * for the {@link RelNode} rel.
+   * @param rel : input
+   * @return TRUE if the estimate is a guess, FALSE otherwise
    * */
   public static boolean guessRows(RelNode rel) {
     final PlannerSettings settings =
@@ -568,6 +571,9 @@ public abstract class DrillRelOptUtil {
     if (!settings.useStatistics()) {
       return true;
     }
+    /* We encounter RelSubset/HepRelVertex which are CALCITE constructs, hence we
+     * cannot add guessRows() to the DrillRelNode interface.
+     */
     if (rel instanceof RelSubset) {
       if (((RelSubset) rel).getBest() != null) {
         return guessRows(((RelSubset) rel).getBest());
@@ -598,21 +604,13 @@ public abstract class DrillRelOptUtil {
     return false;
   }
 
-  private static boolean findLikeOrRangePredicate(RexNode predicate) {
-    if ((predicate == null) || predicate.isAlwaysTrue()) {
-      return false;
-    }
-    for (RexNode pred : RelOptUtil.conjunctions(predicate)) {
-      for (RexNode orPred : RelOptUtil.disjunctions(pred)) {
-        if (!orPred.isA(SqlKind.EQUALS) ||
-             orPred.isA(SqlKind.LIKE)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
+  /**
+   * Returns whether the join condition is a simple equi-join or not. A simple equi-join is
+   * defined as an two-table equality join (no self-join)
+   * @param join : input join
+   * @param joinFieldOrdinals: join field ordinal w.r.t. the underlying inputs to the join
+   * @return TRUE if the join is a simple equi-join (not a self-join), FALSE otherwise
+   * */
   public static boolean analyzeSimpleEquiJoin(Join join, int[] joinFieldOrdinals) {
     RexNode joinExp = join.getCondition();
     if(joinExp.getKind() != SqlKind.EQUALS) {
