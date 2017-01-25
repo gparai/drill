@@ -73,7 +73,6 @@ public class JSONFormatPlugin extends EasyFormatPlugin<JSONFormatConfig> {
     RecordWriter recordWriter = null;
 
     options.put("location", writer.getLocation());
-    options.put("append", Boolean.toString(writer.getAppend()));
 
     FragmentHandle handle = context.getHandle();
     String fragmentId = String.format("%d_%d", handle.getMajorFragmentId(), handle.getMinorFragmentId());
