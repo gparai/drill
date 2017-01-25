@@ -72,7 +72,6 @@ public class JsonRecordWriter extends JSONOutputRecordWriter implements RecordWr
   @Override
   public void init(Map<String, String> writerOptions) throws IOException {
     this.location = writerOptions.get("location");
-    this.append = writerOptions.get("append").equalsIgnoreCase("true") ? true : false;
     this.prefix = writerOptions.get("prefix");
     this.fieldDelimiter = writerOptions.get("separator");
     this.extension = writerOptions.get("extension");
@@ -84,11 +83,7 @@ public class JsonRecordWriter extends JSONOutputRecordWriter implements RecordWr
     conf.set(FileSystem.FS_DEFAULT_NAME_KEY, writerOptions.get(FileSystem.FS_DEFAULT_NAME_KEY));
     this.fs = FileSystem.get(conf);
 
-    Path fileName;
-    do {
-      fileName = new Path(location, prefix + "_" + (index++) + "." + extension);
-    } while (append && fs.exists(fileName));
-
+    Path fileName = new Path(location, prefix + "_" + index + "." + extension);
     try {
       // json writer does not support partitions, so only one file can be created
       // and thus only one location should be deleted in case of abort
