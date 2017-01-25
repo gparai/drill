@@ -294,10 +294,6 @@ public class QueryContext implements AutoCloseable, OptimizerRulesContext, Schem
     return new PartitionExplorerImpl(getRootSchema());
   }
 
-  public DrillbitContext getDrillbitContext() {
-    return drillbitContext;
-  }
-
   @Override
   public ValueHolder getConstantValueHolder(String value, MinorType type, Function<DrillBuf, ValueHolder> holderInitializer) {
     if (!constantValueHolderCache.containsKey(value)) {
@@ -332,10 +328,16 @@ public class QueryContext implements AutoCloseable, OptimizerRulesContext, Schem
     }
   }
 
+  /**
+  * @param stmtType : The type {@link StatementType} e.g. CTAS, ANALYZE of the statement
+  */
   public void setStatementType(StatementType stmtType) {
     this.stmtType = stmtType;
   }
 
+  /**
+   * @return The type {@link StatementType} e.g. CTAS, ANALYZE of the statement
+   */
   public StatementType getStatementType() {
     return this.stmtType;
   }

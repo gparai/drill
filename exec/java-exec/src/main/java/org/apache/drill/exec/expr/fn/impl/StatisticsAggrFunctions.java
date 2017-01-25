@@ -81,6 +81,10 @@ import javax.inject.Inject;
 public class StatisticsAggrFunctions {
   static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(StatisticsAggrFunctions.class);
 
+  /* IMPORTANT NOTE: Please make sure to create a new function for each datatype. See the examples below.
+  * This will result in more performant generated code. Use switch-case/if-else statements judiciously
+  * as it MAY cause the generated code to slow down considerably.
+  * */
   @FunctionTemplate(name = "statcount", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
   public static class StatCount implements DrillAggFunc {
     @Param FieldReader in;

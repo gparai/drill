@@ -64,7 +64,7 @@ public class StreamsFormatPlugin extends TableFormatPlugin {
 
   @Override
   public AbstractWriter getWriter(PhysicalOperator child, String location,
-      boolean append, List<String> partitionColumns) throws IOException {
+      List<String> partitionColumns) throws IOException {
     throw new UnsupportedOperationException();
   }
 

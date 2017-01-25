@@ -93,7 +93,7 @@ public interface FragmentContext extends UdfUtilities, AutoCloseable {
       throws ClassTransformationException, IOException;
 
   /**
-   * Tells the statement type (e.g. SELECT, CTAS, ANALYZE) from the query context.
+   * Returns the statement type (e.g. SELECT, CTAS, ANALYZE) from the query context.
    * @return query statement type {@link QueryContext.StatementType}, if known.
    */
   public QueryContext.StatementType getStatementType();
@@ -140,6 +140,9 @@ public interface FragmentContext extends UdfUtilities, AutoCloseable {
 
   BufferAllocator getAllocator();
 
+  /**
+   * @return ID {@link java.util.UUID} of the current query
+   */
   public String getQueryId();
 
   OperatorContext newOperatorContext(PhysicalOperator popConfig);
