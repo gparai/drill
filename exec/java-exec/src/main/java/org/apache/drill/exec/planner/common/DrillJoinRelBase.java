@@ -133,7 +133,8 @@ public abstract class DrillJoinRelBase extends Join implements DrillRelNode {
       Double rrc = RelMetadataQuery.getRowCount(this.getRight());
 
       if (ldrc != null && rdrc != null && lrc != null && rrc != null) {
-        return (lrc * rrc) / Math.max(ldrc, rdrc);
+        // Join cardinality = (lrc * rrc) / Math.max(ldrc, rdrc). Avoid overflow by dividing earlier
+        return (lrc / Math.max(ldrc, rdrc)) * rrc;
       }
     }
     return joinRowFactor * Math.max(

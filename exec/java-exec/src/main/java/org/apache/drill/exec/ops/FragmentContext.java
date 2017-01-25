@@ -245,7 +245,7 @@ public class FragmentContext implements AutoCloseable, UdfUtilities {
   }
 
   /**
-   * Tells the statement type (e.g. SELECT, CTAS, ANALYZE) from the query context.
+   * Returns the statement type (e.g. SELECT, CTAS, ANALYZE) from the query context.
    * @return query statement type {@link QueryContext.StatementType}, if known.
    */
   public QueryContext.StatementType getStatementType() {
@@ -402,6 +402,9 @@ public class FragmentContext implements AutoCloseable, UdfUtilities {
     return fragment.getCredentials().getUserName();
   }
 
+  /**
+   * @return ID {@link java.util.UUID} of the current query
+   */
   public String getQueryId() { return QueryIdHelper.getQueryId(fragment.getHandle().getQueryId());}
 
   public boolean isImpersonationEnabled() {

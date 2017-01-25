@@ -19,18 +19,22 @@ package org.apache.drill.exec.planner.cost;
 
 import java.io.IOException;
 
+import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.metadata.ReflectiveRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMdRowCount;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
+import org.apache.calcite.tools.Planner;
 import org.apache.calcite.util.BuiltInMethod;
 import org.apache.calcite.util.ImmutableBitSet;
 import org.apache.drill.exec.planner.common.DrillFilterRelBase;
 import org.apache.drill.exec.planner.common.DrillRelOptUtil;
 import org.apache.drill.exec.planner.logical.DrillTable;
 import org.apache.drill.exec.planner.logical.DrillTranslatableTable;
+import org.apache.drill.exec.planner.physical.PlannerSettings;
+import org.apache.drill.exec.planner.physical.PrelUtil;
 import org.apache.drill.exec.store.parquet.ParquetGroupScan;
 
 public class DrillRelMdRowCount extends RelMdRowCount{
@@ -59,6 +63,8 @@ public class DrillRelMdRowCount extends RelMdRowCount{
 
   private Double getRowCount(TableScan rel) {
     DrillTable table;
+    PlannerSettings settings = PrelUtil.getSettings(rel.getCluster());
+
     if (DrillRelOptUtil.guessRows(rel)) {
       return super.getRowCount(rel);
     }
@@ -70,12 +76,12 @@ public class DrillRelMdRowCount extends RelMdRowCount{
     try {
       if (table != null
           && table.getStatsTable() != null
-          /* For ParquetGroupScan rely on accurate count from the scan instead of
+          /* For GroupScan rely on accurate count from the scan, if available, instead of
            * statistics since partition pruning/filter pushdown might have occurred.
-           * The other way would be to iterate over the rowgroups present in the
-           * ParquetGroupScan to obtain the rowcount.
+           * e.g. ParquetGroupScan returns accurate rowcount. The other way would be to
+           * iterate over the rowgroups present in the GroupScan to compute the rowcount.
            */
-          && !(table.getGroupScan() instanceof ParquetGroupScan)) {
+          && !(table.getGroupScan().getScanStats(settings).getGroupScanProperty().hasExactRowCount())) {
         return table.getStatsTable().getRowCount();
       }
     } catch (IOException ex) {
