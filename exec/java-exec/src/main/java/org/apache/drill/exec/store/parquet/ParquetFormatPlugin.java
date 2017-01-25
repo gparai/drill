@@ -126,15 +126,14 @@ public class ParquetFormatPlugin implements FormatPlugin {
   }
 
   @Override
-  public AbstractWriter getWriter(PhysicalOperator child, String location, boolean append, List<String> partitionColumns) throws IOException {
-    return new ParquetWriter(child, location, append, partitionColumns, this);
+  public AbstractWriter getWriter(PhysicalOperator child, String location, List<String> partitionColumns) throws IOException {
+    return new ParquetWriter(child, location, partitionColumns, this);
   }
 
   public RecordWriter getRecordWriter(FragmentContext context, ParquetWriter writer) throws IOException, OutOfMemoryException {
     Map<String, String> options = new HashMap<>();
 
     options.put("location", writer.getLocation());
-    options.put("append", Boolean.toString(writer.getAppend()));
 
     FragmentHandle handle = context.getHandle();
     String fragmentId = String.format("%d_%d", handle.getMajorFragmentId(), handle.getMinorFragmentId());
@@ -262,9 +261,9 @@ public class ParquetFormatPlugin implements FormatPlugin {
               new FormatSelection(plugin.getConfig(), selection));
         }
       }
-      if (!super.supportDirectoryReads() && selection.containsDirectories(fs)) {
+      /*if (!super.supportDirectoryReads() && selection.containsDirectories(fs)) {
         return null;
-      }
+      }*/
       return super.isReadable(fs, selection, fsPlugin, storageEngineName, schemaConfig);
     }
 
