@@ -467,25 +467,27 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
           if (vw.getField().getLastName().equalsIgnoreCase("column")) {
             VarCharVector vv = (VarCharVector) map.getVectorById(index);
             vv.allocateNewSafe();
-            //Set column name in ValueVector
+            // Set column name in ValueVector
             vv.getMutator().setSafe(0, colName.getBytes(), 0, colName.length());
             ++containerElts;
           } else if (vw.getField().getLastName().equalsIgnoreCase("statcount") ||
                   vw.getField().getLastName().equalsIgnoreCase("nonnullstatcount")) {
+            // Set (nonnull)rowcount in ValueVector
             BigIntHolder holder = (BigIntHolder) statMap.get(colName);
             NullableBigIntVector vv = (NullableBigIntVector) map.getVectorById(index);
             vv.allocateNewSafe();
             vv.getMutator().setSafe(0, holder);
             ++containerElts;
           } else if (vw.getField().getLastName().equalsIgnoreCase("avg_width")) {
-            Map<String, ValueHolder> nonNullRowsMap = aggregationMap.get("nonnullstatcount");
+            Map<String, ValueHolder> rowsMap = aggregationMap.get("statcount");
             NullableFloat8Holder sumWidthHolder = (NullableFloat8Holder) statMap.get(colName);
-            BigIntHolder sumNNRowsHolder = (BigIntHolder) nonNullRowsMap.get(colName);
+            BigIntHolder sumRowsHolder = (BigIntHolder) rowsMap.get(colName);
             NullableFloat8Vector vv = (NullableFloat8Vector) map.getVectorById(index);
             vv.allocateNewSafe();
-            //Set stat count(rowcount/nonnullrc/width) in ValueVector
-            if (sumWidthHolder.isSet == 1 && sumNNRowsHolder.value > 0) {
-              vv.getMutator().setSafe(0, (double) (sumWidthHolder.value / sumNNRowsHolder.value));
+            // Set avg_width = sum_width/rowcount in ValueVector
+            // TODO: For nullable variable columns we should divide by nonnull-rc
+            if (sumWidthHolder.isSet == 1 && sumRowsHolder.value > 0) {
+              vv.getMutator().setSafe(0, (double) (sumWidthHolder.value / sumRowsHolder.value));
               ++containerElts;
             }
           } else if (vw.getField().getLastName().equalsIgnoreCase("hll_merge")) {
