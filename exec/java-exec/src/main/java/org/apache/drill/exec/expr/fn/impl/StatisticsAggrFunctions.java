@@ -245,7 +245,11 @@ public class StatisticsAggrFunctions {
       if (work.obj != null) {
         com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
                 (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        hll.offer(in.value);
+        if (in.isSet == 1) {
+          hll.offer(in.value);
+        } else {
+          hll.offer(null);
+        }
       }
     }
 
@@ -3667,40 +3671,30 @@ public class StatisticsAggrFunctions {
     @Param NullableBitHolder in;
     @Workspace BigIntHolder totWidth;
     @Workspace BigIntHolder count;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
       count = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += 1;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += 8;
       count.value++;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value/((double)count.value * 8.0);
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value/((double)count.value * 8.0);
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
       count.value = 0;
-      nonNullCount.value = 0;
     }
   }
   @FunctionTemplate(name = "avg_width", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
@@ -3740,40 +3734,30 @@ public class StatisticsAggrFunctions {
     @Param NullableIntHolder in;
     @Workspace BigIntHolder totWidth;
     @Workspace BigIntHolder count;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
       count = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += Integer.SIZE;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += Integer.SIZE;
       count.value++;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value/((double)count.value * 8.0);
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value/((double)count.value * 8.0);
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
       count.value = 0;
-      nonNullCount.value = 0;
     }
   }
   @FunctionTemplate(name = "avg_width", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
@@ -3813,40 +3797,30 @@ public class StatisticsAggrFunctions {
     @Param NullableBigIntHolder in;
     @Workspace BigIntHolder totWidth;
     @Workspace BigIntHolder count;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
       count = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += Long.SIZE;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += Long.SIZE;
       count.value++;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value/((double)count.value * 8.0);
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value/((double)count.value * 8.0);
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
       count.value = 0;
-      nonNullCount.value = 0;
     }
   }
 
@@ -3887,40 +3861,30 @@ public class StatisticsAggrFunctions {
     @Param NullableDecimal9Holder in;
     @Workspace BigIntHolder totWidth;
     @Workspace BigIntHolder count;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
       count = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += Integer.SIZE;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += Integer.SIZE;
       count.value++;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value/((double)count.value * 8.0);
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value/((double)count.value * 8.0);
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
       count.value = 0;
-      nonNullCount.value = 0;
     }
   }
   @FunctionTemplate(name = "avg_width", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
@@ -3960,40 +3924,30 @@ public class StatisticsAggrFunctions {
     @Param NullableDecimal18Holder in;
     @Workspace BigIntHolder totWidth;
     @Workspace BigIntHolder count;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
       count = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += Long.SIZE;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += Long.SIZE;
       count.value++;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value/((double)count.value * 8.0);
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value/((double)count.value * 8.0);
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
       count.value = 0;
-      nonNullCount.value = 0;
     }
   }
 
@@ -4034,40 +3988,30 @@ public class StatisticsAggrFunctions {
     @Param NullableDecimal28DenseHolder in;
     @Workspace BigIntHolder totWidth;
     @Workspace BigIntHolder count;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
       count = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += 12;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += 12;
       count.value++;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value/((double)count.value);
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value/((double)count.value);
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
       count.value = 0;
-      nonNullCount.value = 0;
     }
   }
 
@@ -4108,40 +4052,30 @@ public class StatisticsAggrFunctions {
     @Param NullableDecimal28SparseHolder in;
     @Workspace BigIntHolder totWidth;
     @Workspace BigIntHolder count;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
       count = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += 12;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += 12;
       count.value++;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value/((double)count.value);
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value/((double)count.value);
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
       count.value = 0;
-      nonNullCount.value = 0;
     }
   }
 
@@ -4182,40 +4116,30 @@ public class StatisticsAggrFunctions {
     @Param NullableDecimal38DenseHolder in;
     @Workspace BigIntHolder totWidth;
     @Workspace BigIntHolder count;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
       count = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += 16;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += 16;
       count.value++;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value/((double)count.value);
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value/((double)count.value);
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
       count.value = 0;
-      nonNullCount.value = 0;
     }
   }
 
@@ -4256,40 +4180,30 @@ public class StatisticsAggrFunctions {
     @Param NullableDecimal38SparseHolder in;
     @Workspace BigIntHolder totWidth;
     @Workspace BigIntHolder count;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
       count = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += 16;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += 16;
       count.value++;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value/((double)count.value);
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value/((double)count.value);
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
       count.value = 0;
-      nonNullCount.value = 0;
     }
   }
 
@@ -4330,40 +4244,30 @@ public class StatisticsAggrFunctions {
     @Param NullableFloat4Holder in;
     @Workspace BigIntHolder totWidth;
     @Workspace BigIntHolder count;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
       count = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += Float.SIZE;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += Float.SIZE;
       count.value++;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value/((double)count.value * 8.0);
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value/((double)count.value * 8.0);
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
       count.value = 0;
-      nonNullCount.value = 0;
     }
   }
 
@@ -4404,40 +4308,30 @@ public class StatisticsAggrFunctions {
     @Param NullableFloat8Holder in;
     @Workspace BigIntHolder totWidth;
     @Workspace BigIntHolder count;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
       count = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += Double.SIZE;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += Double.SIZE;
       count.value++;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value/((double)count.value * 8.0);
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value/((double)count.value * 8.0);
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
       count.value = 0;
-      nonNullCount.value = 0;
     }
   }
 
@@ -4478,40 +4372,30 @@ public class StatisticsAggrFunctions {
     @Param NullableDateHolder in;
     @Workspace BigIntHolder totWidth;
     @Workspace BigIntHolder count;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
       count = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += Integer.SIZE;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += Integer.SIZE;
       count.value++;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value/((double)count.value * 8.0);
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value/((double)count.value * 8.0);
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
       count.value = 0;
-      nonNullCount.value = 0;
     }
   }
   @FunctionTemplate(name = "avg_width", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
@@ -4551,40 +4435,30 @@ public class StatisticsAggrFunctions {
     @Param NullableTimeHolder in;
     @Workspace BigIntHolder totWidth;
     @Workspace BigIntHolder count;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
       count = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += Integer.SIZE;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += Integer.SIZE;
       count.value++;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value/((double)count.value * 8.0);
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value/((double)count.value * 8.0);
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
       count.value = 0;
-      nonNullCount.value = 0;
     }
   }
   @FunctionTemplate(name = "avg_width", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
@@ -4624,40 +4498,30 @@ public class StatisticsAggrFunctions {
     @Param NullableTimeStampHolder in;
     @Workspace BigIntHolder totWidth;
     @Workspace BigIntHolder count;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
       count = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += Long.SIZE;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += Long.SIZE;
       count.value++;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value/((double)count.value * 8.0);
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value/((double)count.value * 8.0);
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
       count.value = 0;
-      nonNullCount.value = 0;
     }
   }
   @FunctionTemplate(name = "avg_width", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
@@ -4697,40 +4561,30 @@ public class StatisticsAggrFunctions {
     @Param NullableIntervalHolder in;
     @Workspace BigIntHolder totWidth;
     @Workspace BigIntHolder count;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
       count = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += 12;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += 12;
       count.value++;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value/((double)count.value);
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value/((double)count.value);
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
       count.value = 0;
-      nonNullCount.value = 0;
     }
   }
   @FunctionTemplate(name = "avg_width", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
@@ -4770,40 +4624,30 @@ public class StatisticsAggrFunctions {
     @Param NullableIntervalDayHolder in;
     @Workspace BigIntHolder totWidth;
     @Workspace BigIntHolder count;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
       count = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += 12;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += 12;
       count.value++;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value/((double)count.value);
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value/((double)count.value);
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
       count.value = 0;
-      nonNullCount.value = 0;
     }
   }
   @FunctionTemplate(name = "avg_width", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
@@ -4843,40 +4687,30 @@ public class StatisticsAggrFunctions {
     @Param NullableIntervalYearHolder in;
     @Workspace BigIntHolder totWidth;
     @Workspace BigIntHolder count;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
       count = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += 12;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += 12;
       count.value++;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value/((double)count.value);
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value/((double)count.value);
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
       count.value = 0;
-      nonNullCount.value = 0;
     }
   }
   @FunctionTemplate(name = "avg_width", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
@@ -4941,10 +4775,10 @@ public class StatisticsAggrFunctions {
     public void output() {
       if (nonNullCount.value > 0) {
         out.value = totWidth.value/((double)count.value);
-        out.isSet = 1;
       } else {
-        out.isSet = 0;
+        out.value = 0;
       }
+      out.isSet = 1;
     }
 
     @Override
@@ -5016,10 +4850,10 @@ public class StatisticsAggrFunctions {
     public void output() {
       if (nonNullCount.value > 0) {
         out.value = totWidth.value/((double)count.value);
-        out.isSet = 1;
       } else {
-        out.isSet = 0;
+        out.value = 0;
       }
+      out.isSet = 1;
     }
 
     @Override
@@ -5091,10 +4925,10 @@ public class StatisticsAggrFunctions {
     public void output() {
       if (nonNullCount.value > 0) {
         out.value = totWidth.value/((double)count.value);
-        out.isSet = 1;
       } else {
-        out.isSet = 0;
+        out.value = 0;
       }
+      out.isSet = 1;
     }
 
     @Override
@@ -5118,7 +4952,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void add() {
-      totWidth.value += 1;
+      totWidth.value += 8;
     }
 
     @Override
@@ -5137,36 +4971,27 @@ public class StatisticsAggrFunctions {
   public static class NullableBitSumWidthFunction implements DrillAggFunc {
     @Param NullableBitHolder in;
     @Workspace BigIntHolder totWidth;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += 1;
-      }
+      totWidth.value += 8;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value/(8.0);
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value/(8.0);
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
-      nonNullCount.value = 0;
     }
   }
   @FunctionTemplate(name = "sum_width", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
@@ -5201,37 +5026,27 @@ public class StatisticsAggrFunctions {
   public static class NullableIntSumWidthFunction implements DrillAggFunc {
     @Param NullableIntHolder in;
     @Workspace BigIntHolder totWidth;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += Integer.SIZE;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += Integer.SIZE;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value/(8.0);
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value/(8.0);
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
-      nonNullCount.value = 0;
     }
   }
   @FunctionTemplate(name = "sum_width", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
@@ -5266,37 +5081,27 @@ public class StatisticsAggrFunctions {
   public static class NullableBigIntSumWidthFunction implements DrillAggFunc {
     @Param NullableBigIntHolder in;
     @Workspace BigIntHolder totWidth;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += Long.SIZE;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += Long.SIZE;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value/(8.0);
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value/(8.0);
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
-      nonNullCount.value = 0;
     }
   }
 
@@ -5332,37 +5137,27 @@ public class StatisticsAggrFunctions {
   public static class NullableDecimal9SumWidthFunction implements DrillAggFunc {
     @Param NullableDecimal9Holder in;
     @Workspace BigIntHolder totWidth;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += Integer.SIZE;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += Integer.SIZE;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value/(8.0);
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value/(8.0);
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
-      nonNullCount.value = 0;
     }
   }
   @FunctionTemplate(name = "sum_width", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
@@ -5397,37 +5192,27 @@ public class StatisticsAggrFunctions {
   public static class NullableDecimal18SumWidthFunction implements DrillAggFunc {
     @Param NullableDecimal18Holder in;
     @Workspace BigIntHolder totWidth;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += Long.SIZE;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += Long.SIZE;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value/(8.0);
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value/(8.0);
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
-      nonNullCount.value = 0;
     }
   }
 
@@ -5463,37 +5248,27 @@ public class StatisticsAggrFunctions {
   public static class NullableDecimal28DenseSumWidthFunction implements DrillAggFunc {
     @Param NullableDecimal28DenseHolder in;
     @Workspace BigIntHolder totWidth;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += 12;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += 12;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value;
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value;
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
-      nonNullCount.value = 0;
     }
   }
 
@@ -5529,37 +5304,27 @@ public class StatisticsAggrFunctions {
   public static class NullableDecimal28SparseSumWidthFunction implements DrillAggFunc {
     @Param NullableDecimal28SparseHolder in;
     @Workspace BigIntHolder totWidth;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += 12;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += 12;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value;
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value;
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
-      nonNullCount.value = 0;
     }
   }
 
@@ -5595,37 +5360,27 @@ public class StatisticsAggrFunctions {
   public static class NullableDecimal38DenseSumWidthFunction implements DrillAggFunc {
     @Param NullableDecimal38DenseHolder in;
     @Workspace BigIntHolder totWidth;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += 16;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += 16;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value;
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value;
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
-      nonNullCount.value = 0;
     }
   }
 
@@ -5661,37 +5416,27 @@ public class StatisticsAggrFunctions {
   public static class NullableDecimal38SparseSumWidthFunction implements DrillAggFunc {
     @Param NullableDecimal38SparseHolder in;
     @Workspace BigIntHolder totWidth;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += 16;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += 16;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value;
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value;
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
-      nonNullCount.value = 0;
     }
   }
 
@@ -5727,37 +5472,27 @@ public class StatisticsAggrFunctions {
   public static class NullableFloat4SumWidthFunction implements DrillAggFunc {
     @Param NullableFloat4Holder in;
     @Workspace BigIntHolder totWidth;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += Float.SIZE;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += Float.SIZE;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value/(8.0);
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value/(8.0);
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
-      nonNullCount.value = 0;
     }
   }
 
@@ -5793,37 +5528,27 @@ public class StatisticsAggrFunctions {
   public static class NullableFloat8SumWidthFunction implements DrillAggFunc {
     @Param NullableFloat8Holder in;
     @Workspace BigIntHolder totWidth;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += Double.SIZE;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += Double.SIZE;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value/(8.0);
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value/(8.0);
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
-      nonNullCount.value = 0;
     }
   }
 
@@ -5859,37 +5584,27 @@ public class StatisticsAggrFunctions {
   public static class NullableDateSumWidthFunction implements DrillAggFunc {
     @Param NullableDateHolder in;
     @Workspace BigIntHolder totWidth;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += Integer.SIZE;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += Integer.SIZE;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value/(8.0);
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value/(8.0);
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
-      nonNullCount.value = 0;
     }
   }
   @FunctionTemplate(name = "sum_width", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
@@ -5924,37 +5639,27 @@ public class StatisticsAggrFunctions {
   public static class NullableTimeSumWidthFunction implements DrillAggFunc {
     @Param NullableTimeHolder in;
     @Workspace BigIntHolder totWidth;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += Integer.SIZE;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += Integer.SIZE;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value/(8.0);
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value/(8.0);
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
-      nonNullCount.value = 0;
     }
   }
   @FunctionTemplate(name = "sum_width", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
@@ -5989,37 +5694,27 @@ public class StatisticsAggrFunctions {
   public static class NullableTimeStampSumWidthFunction implements DrillAggFunc {
     @Param NullableTimeStampHolder in;
     @Workspace BigIntHolder totWidth;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += Long.SIZE;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += Long.SIZE;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value/(8.0);
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value/(8.0);
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
-      nonNullCount.value = 0;
     }
   }
   @FunctionTemplate(name = "sum_width", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
@@ -6054,37 +5749,27 @@ public class StatisticsAggrFunctions {
   public static class NullableIntervalSumWidthFunction implements DrillAggFunc {
     @Param NullableIntervalHolder in;
     @Workspace BigIntHolder totWidth;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += 12;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += 12;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value;
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value;
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
-      nonNullCount.value = 0;
     }
   }
   @FunctionTemplate(name = "sum_width", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
@@ -6119,37 +5804,27 @@ public class StatisticsAggrFunctions {
   public static class NullableIntervalDaySumWidthFunction implements DrillAggFunc {
     @Param NullableIntervalDayHolder in;
     @Workspace BigIntHolder totWidth;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += 12;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += 12;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
         out.value = totWidth.value;
         out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
-      nonNullCount.value = 0;
     }
   }
   @FunctionTemplate(name = "sum_width", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
@@ -6184,37 +5859,27 @@ public class StatisticsAggrFunctions {
   public static class NullableIntervalYearSumWidthFunction implements DrillAggFunc {
     @Param NullableIntervalYearHolder in;
     @Workspace BigIntHolder totWidth;
-    @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 
     @Override
     public void setup() {
       totWidth = new BigIntHolder();
-      nonNullCount = new BigIntHolder();
     }
 
     @Override
     public void add() {
-      if (in.isSet == 1) {
-        totWidth.value += 12;
-        nonNullCount.value += 1;
-      }
+      totWidth.value += 12;
     }
 
     @Override
     public void output() {
-      if (nonNullCount.value > 0) {
-        out.value = totWidth.value;
-        out.isSet = 1;
-      } else {
-        out.isSet = 0;
-      }
+      out.value = totWidth.value;
+      out.isSet = 1;
     }
 
     @Override
     public void reset() {
       totWidth.value = 0;
-      nonNullCount.value = 0;
     }
   }
   @FunctionTemplate(name = "sum_width", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
@@ -6263,7 +5928,7 @@ public class StatisticsAggrFunctions {
     public void add() {
       if (in.isSet == 1) {
         totWidth.value += org.apache.drill.exec.expr.fn.impl.StringFunctionHelpers.toStringFromUTF8(
-                in.start, in.end, in.buffer).getBytes().length;
+            in.start, in.end, in.buffer).getBytes().length;
         nonNullCount.value += 1;
       }
     }
@@ -6272,10 +5937,10 @@ public class StatisticsAggrFunctions {
     public void output() {
       if (nonNullCount.value > 0) {
         out.value = totWidth.value;
-        out.isSet = 1;
       } else {
-        out.isSet = 0;
+        out.value = 0;
       }
+      out.isSet = 1;
     }
 
     @Override
@@ -6339,10 +6004,10 @@ public class StatisticsAggrFunctions {
     public void output() {
       if (nonNullCount.value > 0) {
         out.value = totWidth.value;
-        out.isSet = 1;
       } else {
-        out.isSet = 0;
+        out.value = 0;
       }
+      out.isSet = 1;
     }
 
     @Override
@@ -6408,10 +6073,10 @@ public class StatisticsAggrFunctions {
     public void output() {
       if (nonNullCount.value > 0) {
         out.value = totWidth.value;
-        out.isSet = 1;
       } else {
-        out.isSet = 0;
+        out.value = 0;
       }
+      out.isSet = 1;
     }
 
     @Override
