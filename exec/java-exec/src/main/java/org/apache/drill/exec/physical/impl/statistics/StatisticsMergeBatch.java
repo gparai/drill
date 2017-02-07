@@ -356,7 +356,7 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
             hllHolder = (ObjectHolder) statMap.get(colName);
           } else {
             hllHolder = new ObjectHolder();
-            hllHolder.obj = new HyperLogLog(context.getContextInformation().getHllMemoryLimit());
+            hllHolder.obj = new HyperLogLog(context.getContextInformation().getHllAccuracy());
             statMap.put(colName, hllHolder);
           }
           NullableVarBinaryVector hllVector = (NullableVarBinaryVector) mapElt;
