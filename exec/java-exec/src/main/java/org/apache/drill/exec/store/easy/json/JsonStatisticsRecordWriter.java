@@ -365,9 +365,8 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
     public void startField() throws IOException {
       if (statisticsVersion == 1) {
         if (!skipNullFields || this.reader.isSet()) {
-          if (fieldName.equalsIgnoreCase("HLL")) {
-            nextField = fieldName;
-          } else if (fieldName.equalsIgnoreCase("HLL_MERGE")) {
+          if (fieldName.equalsIgnoreCase("HLL")
+              || fieldName.equalsIgnoreCase("HLL_MERGE")) {
             nextField = fieldName;
           }
         }
@@ -382,11 +381,10 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
             errStatus = true;
             throw new IOException("Statistics writer encountered unexpected field");
           }
-          if (nextField.equalsIgnoreCase("HLL")) {
-            //TODO: Write Hll output
-            //((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setHLL(reader.readByteArray());
-          } else if (nextField.equalsIgnoreCase("HLL_MERGE")) {
-            ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setHLL(reader.readByteArray());
+          if (nextField.equalsIgnoreCase("HLL")
+              || nextField.equalsIgnoreCase("HLL_MERGE")) {
+            // Do NOT write out the HLL output, since it is not used yet for computing statistics for a
+            // subset of partitions in the query OR for computing NDV with incremental statistics.
           }
         }
       }
@@ -461,12 +459,7 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
   }
 
   @Override
-  public void abort() throws IOException {
-  }
-
-  @Override
-  public void cleanup() throws IOException {
-
+  public void postProcessing() throws IOException {
     Path permFileName = new Path(location, prefix + "." + extension);
     try {
       if (errStatus) {
@@ -476,6 +469,7 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
         throw new IOException("Statistics writer did not have data");
       }
 
+      // Did not encounter any errors while performing the writes
       if (generateDirectoryStructure()) {
         ObjectMapper mapper = new ObjectMapper();
         mapper.writeValue(generator, statistics);
@@ -497,22 +491,32 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
     } catch(IOException ex) {
       logger.error("Unable to create file: " + permFileName, ex);
       throw ex;
-    } finally {
-      try {
-        // Remove the .tmp file
-        if (fs.exists(fileName)) {
-          fs.delete(fileName, false);
-          logger.debug("Deleted file: {}", fileName);
-        }
-        // Also delete the .stats.drill directory if no permanent file exists.
-        if (!fs.exists(permFileName)) {
-          fs.delete(new Path(location), false);
-          logger.debug("Deleted directory: {}", location);
-        }
-      } catch (IOException ex) {
-        logger.error("Unable to delete tmp file: " + fileName, ex);
-        throw ex;
+    }
+  }
+
+  @Override
+  public void abort() throws IOException {
+    // Invoke cleanup to clear any .tmp files and/or empty statistics directory
+    cleanup();
+  }
+
+  @Override
+  public void cleanup() throws IOException {
+    Path permFileName = new Path(location, prefix + "." + extension);
+    try {
+      // Remove the .tmp file, if any
+      if (fs.exists(fileName)) {
+        fs.delete(fileName, false);
+        logger.debug("Deleted file: {}", fileName);
       }
+      // Also delete the .stats.drill directory if no permanent file exists.
+      if (!fs.exists(permFileName)) {
+        fs.delete(new Path(location), false);
+        logger.debug("Deleted directory: {}", location);
+      }
+    } catch (IOException ex) {
+      logger.error("Unable to delete tmp file: " + fileName, ex);
+      throw ex;
     }
   }
 }
