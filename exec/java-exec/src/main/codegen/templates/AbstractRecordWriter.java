@@ -82,4 +82,9 @@ public abstract class AbstractRecordWriter implements RecordWriter {
     </#list>
   </#list>
 </#list>
+
+  @Override
+  public void postProcessing() throws IOException {
+    // no op
+  }
 }
