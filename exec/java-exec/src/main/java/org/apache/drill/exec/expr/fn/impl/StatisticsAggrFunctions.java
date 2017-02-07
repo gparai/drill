@@ -43,9 +43,7 @@ import org.apache.drill.exec.expr.holders.Decimal9Holder;
 import org.apache.drill.exec.expr.holders.Float4Holder;
 import org.apache.drill.exec.expr.holders.Float8Holder;
 import org.apache.drill.exec.expr.holders.IntHolder;
-import org.apache.drill.exec.expr.holders.IntervalDayHolder;
 import org.apache.drill.exec.expr.holders.IntervalHolder;
-import org.apache.drill.exec.expr.holders.IntervalYearHolder;
 import org.apache.drill.exec.expr.holders.TimeHolder;
 import org.apache.drill.exec.expr.holders.TimeStampHolder;
 import org.apache.drill.exec.expr.holders.NullableBigIntHolder;
@@ -59,9 +57,7 @@ import org.apache.drill.exec.expr.holders.NullableDecimal38SparseHolder;
 import org.apache.drill.exec.expr.holders.NullableDecimal9Holder;
 import org.apache.drill.exec.expr.holders.NullableFloat4Holder;
 import org.apache.drill.exec.expr.holders.NullableFloat8Holder;
-import org.apache.drill.exec.expr.holders.NullableIntervalDayHolder;
 import org.apache.drill.exec.expr.holders.NullableIntervalHolder;
-import org.apache.drill.exec.expr.holders.NullableIntervalYearHolder;
 import org.apache.drill.exec.expr.holders.NullableIntHolder;
 import org.apache.drill.exec.expr.holders.NullableTimeHolder;
 import org.apache.drill.exec.expr.holders.NullableTimeStampHolder;
@@ -1125,113 +1121,6 @@ public class StatisticsAggrFunctions {
   }
 
   @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class IntervalDayNDVFunction implements DrillAggFunc {
-    @Param
-    IntervalDayHolder in;
-    @Workspace
-    ObjectHolder work;
-    @Workspace
-    ObjectHolder interval;
-    @Output
-    NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      interval = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
-      interval.obj = new int[2];
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null
-              && interval.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        ((int[])interval.obj)[0] = in.days;
-        ((int[])interval.obj)[1] = in.milliseconds;
-        hll.offer(interval.obj);
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
-      interval.obj = new int[2];
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class NullableIntervalDayNDVFunction implements DrillAggFunc {
-    @Param
-    NullableIntervalDayHolder in;
-    @Workspace
-    ObjectHolder work;
-    @Workspace
-    ObjectHolder interval;
-    @Output
-    NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      interval = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
-      interval.obj = new int[2];
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        if (in.isSet == 1) {
-          if (interval.obj != null) {
-            ((int[]) interval.obj)[0] = in.days;
-            ((int[]) interval.obj)[1] = in.milliseconds;
-            hll.offer(interval.obj);
-          }
-        } else {
-          hll.offer(null);
-        }
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
-      interval.obj = new int[2];
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
   public static class IntervalNDVFunction implements DrillAggFunc {
     @Param
     IntervalHolder in;
@@ -1337,96 +1226,6 @@ public class StatisticsAggrFunctions {
     public void reset() {
       work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
       interval.obj = new int[3];
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class IntervalYearNDVFunction implements DrillAggFunc {
-    @Param
-    IntervalYearHolder in;
-    @Workspace
-    ObjectHolder work;
-    @Output
-    NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        hll.offer(in.value);
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class NullableIntervalYearNDVFunction implements DrillAggFunc {
-    @Param
-    NullableIntervalYearHolder in;
-    @Workspace
-    ObjectHolder work;
-    @Output
-    NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        if (in.isSet == 1) {
-          hll.offer(in.value);
-        } else {
-          hll.offer(null);
-        }
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
   }
 
@@ -1844,7 +1643,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
 
     @Override
@@ -1879,7 +1678,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
   }
 
@@ -1897,7 +1696,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
 
     @Override
@@ -1932,7 +1731,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
   }
 
@@ -1950,7 +1749,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
 
     @Override
@@ -1985,7 +1784,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
   }
 
@@ -2003,7 +1802,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
 
     @Override
@@ -2042,7 +1841,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
   }
 
@@ -2060,7 +1859,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
 
     @Override
@@ -2095,7 +1894,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
   }
 
@@ -2113,7 +1912,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
 
     @Override
@@ -2152,7 +1951,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
   }
 
@@ -2170,7 +1969,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
 
     @Override
@@ -2205,7 +2004,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
   }
 
@@ -2223,7 +2022,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
 
     @Override
@@ -2262,7 +2061,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
   }
 
@@ -2280,7 +2079,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
 
     @Override
@@ -2315,7 +2114,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
   }
 
@@ -2333,7 +2132,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
 
     @Override
@@ -2372,7 +2171,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
   }
 
@@ -2390,7 +2189,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
 
     @Override
@@ -2425,7 +2224,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
   }
 
@@ -2443,7 +2242,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
 
     @Override
@@ -2482,7 +2281,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
   }
 
@@ -2500,7 +2299,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
 
     @Override
@@ -2535,7 +2334,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
   }
 
@@ -2553,7 +2352,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
 
     @Override
@@ -2592,7 +2391,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
   }
 
@@ -2610,7 +2409,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
 
     @Override
@@ -2645,7 +2444,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
   }
 
@@ -2663,7 +2462,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
 
     @Override
@@ -2702,7 +2501,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
   }
 
@@ -2720,7 +2519,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
 
     @Override
@@ -2755,7 +2554,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
   }
 
@@ -2773,7 +2572,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
 
     @Override
@@ -2812,7 +2611,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
   }
 
@@ -2830,7 +2629,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
 
     @Override
@@ -2865,7 +2664,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
   }
 
@@ -2883,7 +2682,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
 
     @Override
@@ -2922,134 +2721,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
-    }
-  }
-
-  @FunctionTemplate(name = "hll", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class IntervalDayHLLFunction implements DrillAggFunc {
-    @Param
-    IntervalDayHolder in;
-    @Workspace
-    ObjectHolder work;
-    @Workspace
-    ObjectHolder interval;
-    @Output
-    NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
-    @Inject DrillBuf buffer;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      interval = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
-      interval.obj = new int[2];
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null
-              && interval.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        ((int[])interval.obj)[0] = in.days;
-        ((int[])interval.obj)[1] = in.milliseconds;
-        hll.offer(interval.obj);
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-
-        try {
-          byte[] ba = hll.getBytes();
-          out.buffer = buffer.reallocIfNeeded(ba.length);
-          out.start = 0;
-          out.end = ba.length;
-          out.buffer.setBytes(0, ba);
-          out.isSet = 1;
-        } catch (java.io.IOException e) {
-          throw new org.apache.drill.common.exceptions.DrillRuntimeException("Failed to get HyperLogLog output", e);
-        }
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
-      interval.obj = new int[2];
-    }
-  }
-
-  @FunctionTemplate(name = "hll", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class NullableIntervalDayHLLFunction implements DrillAggFunc {
-    @Param
-    NullableIntervalDayHolder in;
-    @Workspace
-    ObjectHolder work;
-    @Workspace
-    ObjectHolder interval;
-    @Output
-    NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
-    @Inject DrillBuf buffer;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      interval = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
-      interval.obj = new int[2];
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        if (in.isSet == 1) {
-          if (interval.obj != null) {
-            ((int[]) interval.obj)[0] = in.days;
-            ((int[]) interval.obj)[1] = in.milliseconds;
-            hll.offer(interval.obj);
-          }
-        } else {
-          hll.offer(null);
-        }
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-
-        try {
-          byte[] ba = hll.getBytes();
-          out.buffer = buffer.reallocIfNeeded(ba.length);
-          out.start = 0;
-          out.end = ba.length;
-          out.buffer.setBytes(0, ba);
-          out.isSet = 1;
-        } catch (java.io.IOException e) {
-          throw new org.apache.drill.common.exceptions.DrillRuntimeException("Failed to get HyperLogLog output", e);
-        }
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
-      interval.obj = new int[2];
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
   }
 
@@ -3070,8 +2742,8 @@ public class StatisticsAggrFunctions {
     public void setup() {
       work = new ObjectHolder();
       interval = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
-      interval.obj = new int[3];
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      interval.obj = new java.util.ArrayList<Integer>(3);
     }
 
     @Override
@@ -3079,10 +2751,12 @@ public class StatisticsAggrFunctions {
       if (work.obj != null
           && interval.obj != null) {
         com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        ((int[])interval.obj)[0] = in.days;
-        ((int[])interval.obj)[1] = in.months;
-        ((int[])interval.obj)[2] = in.milliseconds;
+            (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
+        java.util.ArrayList<Integer> intervalList = (java.util.ArrayList<Integer>)interval.obj;
+        intervalList.clear();
+        intervalList.add(in.days);
+        intervalList.add(in.months);
+        intervalList.add(in.milliseconds);
         hll.offer(interval.obj);
       }
     }
@@ -3092,7 +2766,6 @@ public class StatisticsAggrFunctions {
       if (work.obj != null) {
         com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
                 (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-
         try {
           byte[] ba = hll.getBytes();
           out.buffer = buffer.reallocIfNeeded(ba.length);
@@ -3110,8 +2783,8 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
-      interval.obj = new int[3];
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      interval.obj = new java.util.ArrayList<Integer>(3);
     }
   }
 
@@ -3132,8 +2805,8 @@ public class StatisticsAggrFunctions {
     public void setup() {
       work = new ObjectHolder();
       interval = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
-      interval.obj = new int[3];
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      interval.obj = new java.util.ArrayList<Integer>(3);
     }
 
     @Override
@@ -3143,9 +2816,11 @@ public class StatisticsAggrFunctions {
                 (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
         if (in.isSet == 1) {
           if (interval.obj != null) {
-            ((int[]) interval.obj)[0] = in.days;
-            ((int[]) interval.obj)[1] = in.months;
-            ((int[]) interval.obj)[2] = in.milliseconds;
+            java.util.ArrayList<Integer> intervalList = (java.util.ArrayList<Integer>)interval.obj;
+            intervalList.clear();
+            intervalList.add(in.days);
+            intervalList.add(in.months);
+            intervalList.add(in.milliseconds);
             hll.offer(interval.obj);
           }
         } else {
@@ -3177,118 +2852,8 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
-      interval.obj = new int[3];
-    }
-  }
-
-  @FunctionTemplate(name = "hll", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class IntervalYearHLLFunction implements DrillAggFunc {
-    @Param
-    IntervalYearHolder in;
-    @Workspace
-    ObjectHolder work;
-    @Output
-    NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
-    @Inject DrillBuf buffer;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        hll.offer(in.value);
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-
-        try {
-          byte[] ba = hll.getBytes();
-          out.buffer = buffer.reallocIfNeeded(ba.length);
-          out.start = 0;
-          out.end = ba.length;
-          out.buffer.setBytes(0, ba);
-          out.isSet = 1;
-        } catch (java.io.IOException e) {
-          throw new org.apache.drill.common.exceptions.DrillRuntimeException("Failed to get HyperLogLog output", e);
-        }
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
-    }
-  }
-
-  @FunctionTemplate(name = "hll", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class NullableIntervalYearHLLFunction implements DrillAggFunc {
-    @Param
-    NullableIntervalYearHolder in;
-    @Workspace
-    ObjectHolder work;
-    @Output
-    NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
-    @Inject DrillBuf buffer;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        if (in.isSet == 1) {
-          hll.offer(in.value);
-        } else {
-          hll.offer(null);
-        }
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-
-        try {
-          byte[] ba = hll.getBytes();
-          out.buffer = buffer.reallocIfNeeded(ba.length);
-          out.start = 0;
-          out.end = ba.length;
-          out.buffer.setBytes(0, ba);
-          out.isSet = 1;
-        } catch (java.io.IOException e) {
-          throw new org.apache.drill.common.exceptions.DrillRuntimeException("Failed to get HyperLogLog output", e);
-        }
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      interval.obj = new java.util.ArrayList<Integer>(3);
     }
   }
 
@@ -3306,7 +2871,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
 
     @Override
@@ -3343,7 +2908,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
   }
 
@@ -3361,7 +2926,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
 
     @Override
@@ -3402,7 +2967,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
   }
 
@@ -3420,7 +2985,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
 
     @Override
@@ -3457,7 +3022,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
   }
 
@@ -3475,7 +3040,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
 
     @Override
@@ -3516,7 +3081,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
   }
 
@@ -3534,7 +3099,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
 
     @Override
@@ -3571,7 +3136,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
   }
 
@@ -3589,7 +3154,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
 
     @Override
@@ -3630,7 +3195,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllMemoryLimit());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
     }
   }
 
@@ -4587,132 +4152,7 @@ public class StatisticsAggrFunctions {
       count.value = 0;
     }
   }
-  @FunctionTemplate(name = "avg_width", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class IntervalDayAvgWidthFunction implements DrillAggFunc {
-    @Param IntervalDayHolder in;
-    @Workspace BigIntHolder totWidth;
-    @Workspace BigIntHolder count;
-    @Output NullableFloat8Holder out;
 
-    @Override
-    public void setup() {
-      totWidth = new BigIntHolder();
-      count = new BigIntHolder();
-    }
-
-    @Override
-    public void add() {
-      totWidth.value += 12;
-      count.value++;
-    }
-
-    @Override
-    public void output() {
-      out.value = totWidth.value/((double)count.value);
-      out.isSet = 1;
-    }
-
-    @Override
-    public void reset() {
-      totWidth.value = 0;
-      count.value = 0;
-    }
-  }
-
-  @FunctionTemplate(name = "avg_width", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class NullableIntervalDayAvgWidthFunction implements DrillAggFunc {
-    @Param NullableIntervalDayHolder in;
-    @Workspace BigIntHolder totWidth;
-    @Workspace BigIntHolder count;
-    @Output NullableFloat8Holder out;
-
-    @Override
-    public void setup() {
-      totWidth = new BigIntHolder();
-      count = new BigIntHolder();
-    }
-
-    @Override
-    public void add() {
-      totWidth.value += 12;
-      count.value++;
-    }
-
-    @Override
-    public void output() {
-      out.value = totWidth.value/((double)count.value);
-      out.isSet = 1;
-    }
-
-    @Override
-    public void reset() {
-      totWidth.value = 0;
-      count.value = 0;
-    }
-  }
-  @FunctionTemplate(name = "avg_width", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class IntervalYearAvgWidthFunction implements DrillAggFunc {
-    @Param IntervalYearHolder in;
-    @Workspace BigIntHolder totWidth;
-    @Workspace BigIntHolder count;
-    @Output NullableFloat8Holder out;
-
-    @Override
-    public void setup() {
-      totWidth = new BigIntHolder();
-      count = new BigIntHolder();
-    }
-
-    @Override
-    public void add() {
-      totWidth.value += 12;
-      count.value++;
-    }
-
-    @Override
-    public void output() {
-      out.value = totWidth.value/((double)count.value);
-      out.isSet = 1;
-    }
-
-    @Override
-    public void reset() {
-      totWidth.value = 0;
-      count.value = 0;
-    }
-  }
-
-  @FunctionTemplate(name = "avg_width", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class NullableIntervalYearAvgWidthFunction implements DrillAggFunc {
-    @Param NullableIntervalYearHolder in;
-    @Workspace BigIntHolder totWidth;
-    @Workspace BigIntHolder count;
-    @Output NullableFloat8Holder out;
-
-    @Override
-    public void setup() {
-      totWidth = new BigIntHolder();
-      count = new BigIntHolder();
-    }
-
-    @Override
-    public void add() {
-      totWidth.value += 12;
-      count.value++;
-    }
-
-    @Override
-    public void output() {
-      out.value = totWidth.value/((double)count.value);
-      out.isSet = 1;
-    }
-
-    @Override
-    public void reset() {
-      totWidth.value = 0;
-      count.value = 0;
-    }
-  }
   @FunctionTemplate(name = "avg_width", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
   public static class VarCharAvgWidthFunction implements DrillAggFunc {
     @Param VarCharHolder in;
@@ -5772,116 +5212,7 @@ public class StatisticsAggrFunctions {
       totWidth.value = 0;
     }
   }
-  @FunctionTemplate(name = "sum_width", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class IntervalDaySumWidthFunction implements DrillAggFunc {
-    @Param IntervalDayHolder in;
-    @Workspace BigIntHolder totWidth;
-    @Output NullableFloat8Holder out;
 
-    @Override
-    public void setup() {
-      totWidth = new BigIntHolder();
-    }
-
-    @Override
-    public void add() {
-      totWidth.value += 12;
-    }
-
-    @Override
-    public void output() {
-      out.value = totWidth.value;
-      out.isSet = 1;
-    }
-
-    @Override
-    public void reset() {
-      totWidth.value = 0;
-    }
-  }
-
-  @FunctionTemplate(name = "sum_width", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class NullableIntervalDaySumWidthFunction implements DrillAggFunc {
-    @Param NullableIntervalDayHolder in;
-    @Workspace BigIntHolder totWidth;
-    @Output NullableFloat8Holder out;
-
-    @Override
-    public void setup() {
-      totWidth = new BigIntHolder();
-    }
-
-    @Override
-    public void add() {
-      totWidth.value += 12;
-    }
-
-    @Override
-    public void output() {
-        out.value = totWidth.value;
-        out.isSet = 1;
-    }
-
-    @Override
-    public void reset() {
-      totWidth.value = 0;
-    }
-  }
-  @FunctionTemplate(name = "sum_width", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class IntervalYearSumWidthFunction implements DrillAggFunc {
-    @Param IntervalYearHolder in;
-    @Workspace BigIntHolder totWidth;
-    @Output NullableFloat8Holder out;
-
-    @Override
-    public void setup() {
-      totWidth = new BigIntHolder();
-    }
-
-    @Override
-    public void add() {
-      totWidth.value += 12;
-    }
-
-    @Override
-    public void output() {
-      out.value = totWidth.value;
-      out.isSet = 1;
-    }
-
-    @Override
-    public void reset() {
-      totWidth.value = 0;
-    }
-  }
-
-  @FunctionTemplate(name = "sum_width", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class NullableIntervalYearSumWidthFunction implements DrillAggFunc {
-    @Param NullableIntervalYearHolder in;
-    @Workspace BigIntHolder totWidth;
-    @Output NullableFloat8Holder out;
-
-    @Override
-    public void setup() {
-      totWidth = new BigIntHolder();
-    }
-
-    @Override
-    public void add() {
-      totWidth.value += 12;
-    }
-
-    @Override
-    public void output() {
-      out.value = totWidth.value;
-      out.isSet = 1;
-    }
-
-    @Override
-    public void reset() {
-      totWidth.value = 0;
-    }
-  }
   @FunctionTemplate(name = "sum_width", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
   public static class VarCharSumWidthFunction implements DrillAggFunc {
     @Param VarCharHolder in;
