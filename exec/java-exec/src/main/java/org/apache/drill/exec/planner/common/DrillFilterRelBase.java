@@ -17,6 +17,7 @@
  */
 package org.apache.drill.exec.planner.common;
 
+import org.apache.calcite.util.NumberUtil;
 import org.apache.drill.common.expression.LogicalExpression;
 import org.apache.drill.exec.planner.cost.DrillCostBase;
 import org.apache.drill.exec.planner.cost.DrillCostBase.DrillCostFactory;
@@ -113,6 +114,6 @@ public abstract class DrillFilterRelBase extends Filter implements DrillRelNode 
         selectivity = filterMaxSelectivityEstimateFactor;
       }
     }
-    return selectivity*RelMetadataQuery.getRowCount(getInput());
+    return NumberUtil.multiply(selectivity, RelMetadataQuery.getRowCount(getInput()));
   }
 }

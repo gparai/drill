@@ -241,11 +241,7 @@ public class StatisticsAggrFunctions {
       if (work.obj != null) {
         com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
                 (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        if (in.isSet == 1) {
-          hll.offer(in.value);
-        } else {
-          hll.offer(null);
-        }
+        hll.offer(in.value);
       }
     }
 
@@ -288,7 +284,11 @@ public class StatisticsAggrFunctions {
       if (work.obj != null) {
         com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
                 (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        hll.offer(in.value);
+        if (in.isSet == 1) {
+          hll.offer(in.value);
+        } else {
+          hll.offer(null);
+        }
       }
     }
 
