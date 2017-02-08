@@ -381,7 +381,7 @@ public class TestImpersonationMetadata extends BaseTestImpersonation {
 
   @Test
   public void testAnalyzeTable() throws Exception {
-    final String tableName = "nation1";
+    final String tableName = "nation1_stats";
     final String tableWS = "drillTestGrp1_700";
 
     updateClient(user1);
@@ -401,6 +401,7 @@ public class TestImpersonationMetadata extends BaseTestImpersonation {
     fs.mkdirs(new Path(statsFilePath, "tmp5"));
 
     test("SELECT * from " + tableName + ";");
+    test("DROP TABLE " + tableName);
   }
 
   @AfterClass

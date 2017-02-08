@@ -71,10 +71,10 @@ public class TestAnalyze extends PlanTestBase {
               + " FROM dfs_test.tmp.flatstats1 tbl")
           .unOrdered()
           .baselineColumns("column", "statcount", "nonnullstatcount", "ndv", "avgwidth")
-          .baselineValues("region_id", 110.0, 110.0, 107L, 8.0)
-          .baselineValues("sales_city", 110.0, 110.0, 111L, 8.663636363636364)
+          .baselineValues("region_id", 110.0, 110.0, 110L, 8.0)
+          .baselineValues("sales_city", 110.0, 110.0, 109L, 8.663636363636364)
           .baselineValues("sales_state_province", 110.0, 110.0, 13L, 2.4272727272727272)
-          .baselineValues("sales_district", 110.0, 110.0, 22L, 9.318181818181818)
+          .baselineValues("sales_district", 110.0, 110.0, 23L, 9.318181818181818)
           .baselineValues("sales_region", 110.0, 110.0, 8L, 10.8)
           .baselineValues("sales_country", 110.0, 110.0, 4L, 3.909090909090909)
           .baselineValues("sales_district_id", 110.0, 110.0, 23L, 8.0)
@@ -103,8 +103,8 @@ public class TestAnalyze extends PlanTestBase {
               + " FROM dfs_test.tmp.flatstats2 tbl")
           .unOrdered()
           .baselineColumns("column", "statcount", "nonnullstatcount", "ndv", "avgwidth")
-          .baselineValues("employee_id", 1155.0, 1155.0, 1144L, 8.0)
-          .baselineValues("birth_date", 1155.0, 1155.0, 53L, 10.0)
+          .baselineValues("employee_id", 1155.0, 1155.0, 1155L, 8.0)
+          .baselineValues("birth_date", 1155.0, 1155.0, 52L, 10.0)
           .go();
     } finally {
       test("ALTER SESSION SET `planner.slice_target` = " + ExecConstants.SLICE_TARGET_DEFAULT);
@@ -171,15 +171,15 @@ public class TestAnalyze extends PlanTestBase {
               + " FROM dfs_test.tmp.flatstats3 tbl")
           .unOrdered()
           .baselineColumns("column", "statcount", "nonnullstatcount", "ndv", "avgwidth")
-          .baselineValues("o_orderkey", 120.0, 120.0, 120L, 4.0)
-          .baselineValues("o_custkey", 120.0, 120.0, 110L, 4.0)
+          .baselineValues("o_orderkey", 120.0, 120.0, 119L, 4.0)
+          .baselineValues("o_custkey", 120.0, 120.0, 113L, 4.0)
           .baselineValues("o_orderstatus", 120.0, 120.0, 3L, 1.0)
-          .baselineValues("o_totalprice", 120.0, 120.0, 121L, 8.0)
+          .baselineValues("o_totalprice", 120.0, 120.0, 120L, 8.0)
           .baselineValues("o_orderdate", 120.0, 120.0, 111L, 4.0)
           .baselineValues("o_orderpriority", 120.0, 120.0, 5L, 8.458333333333334)
           .baselineValues("o_clerk", 120.0, 120.0, 114L, 15.0)
           .baselineValues("o_shippriority", 120.0, 120.0, 1L, 4.0)
-          .baselineValues("o_comment", 120.0, 120.0, 115L, 46.333333333333336)
+          .baselineValues("o_comment", 120.0, 120.0, 120L, 46.333333333333336)
           .baselineValues("dir0", 120.0, 120.0, 3L, 4.0)
           .baselineValues("dir1", 120.0, 120.0, 4L, 2.0)
           .go();
@@ -292,8 +292,8 @@ public class TestAnalyze extends PlanTestBase {
     query = " select emp.employee_id from dfs_test.tmp.employeeUseStat emp join dfs_test.tmp.departmentUseStat dept"
             + " on emp.department_id = dept.department_id"
             + " where dept.department_id = 5 and emp.employee_id = 10";
-    String[] expectedPlan6 = {"MergeJoin\\(condition.*\\).*rowcount = 1.0096153846153846,.*",
-            "Filter\\(condition=\\[=\\(\\$1, 10\\)\\]\\).*rowcount = 1.0096153846153846,.*",
+    String[] expectedPlan6 = {"MergeJoin\\(condition.*\\).*rowcount = 1.0,.*",
+            "Filter\\(condition=\\[=\\(\\$1, 10\\)\\]\\).*rowcount = 1.0,.*",
             "Scan.*columns=\\[`department_id`, `employee_id`\\].*rowcount = 1155.0.*",
             "Filter\\(condition=\\[=\\(\\$0, 5\\)\\]\\).*rowcount = 1.0,.*",
             "Scan.*columns=\\[`department_id`\\].*rowcount = 12.0.*"};
@@ -302,14 +302,14 @@ public class TestAnalyze extends PlanTestBase {
     query = " select emp.employee_id, count(*)"
             + " from dfs_test.tmp.employeeUseStat emp"
             + " group by emp.employee_id";
-    String[] expectedPlan7 = {"HashAgg\\(group=\\[\\{0\\}\\], EXPR\\$1=\\[COUNT\\(\\)\\]\\).*rowcount = 1144.0,.*",
+    String[] expectedPlan7 = {"HashAgg\\(group=\\[\\{0\\}\\], EXPR\\$1=\\[COUNT\\(\\)\\]\\).*rowcount = 1155.0,.*",
             "Scan.*columns=\\[`employee_id`\\].*rowcount = 1155.0.*"};
     PlanTestBase.testPlanWithAttributesMatchingPatterns(query, expectedPlan7, new String[]{});
 
     query = " select emp.employee_id from dfs_test.tmp.employeeUseStat emp join dfs_test.tmp.departmentUseStat dept"
             + " on emp.department_id = dept.department_id "
             + " group by emp.employee_id";
-    String[] expectedPlan8 = {"HashAgg\\(group=\\[\\{0\\}\\]\\).*rowcount = 1107.7467109294196",
+    String[] expectedPlan8 = {"HashAgg\\(group=\\[\\{0\\}\\]\\).*rowcount = 730.0992454469839,.*",
             "HashJoin\\(condition.*\\).*rowcount = 1154.9999999999995,.*",
             "Scan.*columns=\\[`employee_id`, `department_id`\\].*rowcount = 1155.0.*",
             "Scan.*columns=\\[`department_id`\\].*rowcount = 12.0.*"};
@@ -320,7 +320,7 @@ public class TestAnalyze extends PlanTestBase {
             + " on emp.department_id = dept.department_id "
             + " group by emp.employee_id, emp.store_id, dept.department_description "
             + " having dept.department_description = 'FINANCE'";
-    String[] expectedPlan9 = {"HashAgg\\(group=\\[\\{0, 1, 2\\}\\]\\).*rowcount = 92.31302263593369.*",
+    String[] expectedPlan9 = {"HashAgg\\(group=\\[\\{0, 1, 2\\}\\]\\).*rowcount = 92.3487011031316.*",
             "HashJoin\\(condition.*\\).*rowcount = 96.24999999999997,.*",
             "Scan.*columns=\\[`employee_id`, `store_id`, `department_id`\\].*rowcount = 1155.0.*",
             "Filter\\(condition=\\[=\\(\\$0, 'FINANCE'\\)\\]\\).*rowcount = 1.0,.*",
@@ -331,8 +331,8 @@ public class TestAnalyze extends PlanTestBase {
             + " on emp.department_id = dept.department_id "
             + " group by emp.employee_id, emp.store_id "
             + " having emp.store_id = 7";
-    String[] expectedPlan10 = {"HashAgg\\(group=\\[\\{0, 1\\}\\]\\).*rowcount = 11.744643162739475.*",
-            "HashJoin\\(condition.*\\).*rowcount = 46.20000000000001,.*",
+    String[] expectedPlan10 = {"HashAgg\\(group=\\[\\{0, 1\\}\\]\\).*rowcount = 29.203969817879365.*",
+            "HashJoin\\(condition.*\\).*rowcount = 46.2,.*",
             "Filter\\(condition=\\[=\\(\\$1, 7\\)\\]\\).*rowcount = 46.2,.*",
             "Scan.*columns=\\[`employee_id`, `store_id`, `department_id`\\].*rowcount = 1155.0.*",
             "Scan.*columns=\\[`department_id`\\].*rowcount = 12.0.*"};
@@ -342,9 +342,9 @@ public class TestAnalyze extends PlanTestBase {
             + " on emp.department_id = dept.department_id "
             + " group by emp.employee_id "
             + " having emp.employee_id = 7";
-    String[] expectedPlan11 = {"StreamAgg\\(group=\\[\\{0\\}\\]\\).*rowcount = 7.585446705942692",
-            "HashJoin\\(condition.*\\).*rowcount = 12.0,.*",
-            "Filter\\(condition=\\[=\\(\\$0, 7\\)\\]\\).*rowcount = 1.0096153846153846,.*",
+    String[] expectedPlan11 = {"StreamAgg\\(group=\\[\\{0\\}\\]\\).*rowcount = 1.0.*",
+            "HashJoin\\(condition.*\\).*rowcount = 1.0,.*",
+            "Filter\\(condition=\\[=\\(\\$0, 7\\)\\]\\).*rowcount = 1.0.*",
             "Scan.*columns=\\[`employee_id`, `department_id`\\].*rowcount = 1155.0.*",
             "Scan.*columns=\\[`department_id`\\].*rowcount = 12.0.*"};
     PlanTestBase.testPlanWithAttributesMatchingPatterns(query, expectedPlan11, new String[]{});
@@ -356,7 +356,7 @@ public class TestAnalyze extends PlanTestBase {
     test("ALTER SESSION SET `planner.slice_target` = 1");
     test("ALTER SESSION SET `store.format` = 'json'");
     String tmpLocation = getDfsTestTmpSchemaLocation();
-    String query = String.format("select count(o_orderkey) from dfs_test.`%s/%s`", tmpLocation, "parquetStale");
+    String query = String.format("select count(distinct o_orderkey) from dfs_test.`%s/%s`", tmpLocation, "parquetStale");
     File dataDir1 = new File(tmpLocation + Path.SEPARATOR + "parquetStale");
     dataDir1.mkdir();
     FileUtils.copyDirectory(new File(String.format(String.format("%s/multilevel/parquet", TEST_RES_PATH))),
@@ -374,20 +374,22 @@ public class TestAnalyze extends PlanTestBase {
         + "1996" + Path.SEPARATOR + "Q5");
     Thread.sleep(1000);
     FileUtils.copyDirectory(Q4, Q5);
-    //test (String.format("REFRESH TABLE METADATA dfs_test.`%s/%s`", tmpLocation, "parquetStale"));
     // query should use STALE statistics
-    String[] expectedStalePlan = {"Scan.*rowcount = 120.0.*"};
+    String[] expectedStalePlan = {"StreamAgg\\(group=\\[\\{0\\}\\]\\).*rowcount = 119.0.*",
+        "Scan.*rowcount = 130.0.*"};
     PlanTestBase.testPlanWithAttributesMatchingPatterns(query, expectedStalePlan, new String[]{});
-    // query should use Parquet Metadata, since statistics not available
+    // Query should use Parquet Metadata, since statistics not available. In this case, NDV is computed as
+    // 1/10*rowcount (Calcite default). Hence, NDV is 13.0 instead of the correct 119.0
     FileUtils.deleteDirectory(new File(tmpLocation + Path.SEPARATOR + "parquetStale"
         + Path.SEPARATOR + ".stats.drill"));
-    // Issue with Metadata Cache?
-    String[] expectedPlan1 = {"Scan.*rowcount = 20.0.*"};
+    String[] expectedPlan1 = {"HashAgg\\(group=\\[\\{0\\}\\]\\).*rowcount = 13.0.*",
+        "Scan.*rowcount = 130.0.*"};
     PlanTestBase.testPlanWithAttributesMatchingPatterns(query, expectedPlan1, new String[]{});
-    // query should use the new statistics
+    // query should use the new statistics. NDV remains unaffected since we copy the Q4 into Q5
     verifyAnalyzeOutput(String.format("ANALYZE TABLE dfs_test.`%s/%s` COMPUTE STATISTICS",
             getDfsTestTmpSchemaLocation(), "parquetStale"), "11");
-    String[] expectedPlan2 = {"Scan.*rowcount = 130.0.*"};
+    String[] expectedPlan2 = {"StreamAgg\\(group=\\[\\{0\\}\\]\\).*rowcount = 119.0.*",
+        "Scan.*rowcount = 130.0.*"};
     PlanTestBase.testPlanWithAttributesMatchingPatterns(query, expectedPlan2, new String[]{});
     FileUtils.deleteDirectory(Q5);
   }
