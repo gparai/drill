@@ -67,6 +67,7 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
   private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(StatisticsMergeBatch.class);
   private Map<String, String> functions;
   private boolean first = true;
+  private boolean finished = false;
   private int schema = 0;
   private int recordCount = 0;
   private List<String> keyList = null;
@@ -392,6 +393,9 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
   public IterOutcome innerNext() {
     IterOutcome outcome;
     boolean didSomeWork = false;
+    if (finished) {
+      return IterOutcome.NONE;
+    }
     try {
       outer: while (true) {
         outcome = next(incoming);
@@ -434,6 +438,7 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
     // exhausting all upstream, then return OK. Otherwise, return NONE.
     if (didSomeWork) {
       IterOutcome out = buildOutgoingRecordBatch();
+      finished = true;
       return out;
     } else {
       return outcome;
