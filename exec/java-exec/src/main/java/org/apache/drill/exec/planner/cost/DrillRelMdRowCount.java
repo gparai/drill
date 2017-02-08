@@ -26,6 +26,7 @@ import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.core.Sort;
 import org.apache.calcite.rel.core.Union;
+import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.metadata.ReflectiveRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMdRowCount;
@@ -34,7 +35,6 @@ import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.util.BuiltInMethod;
 import org.apache.calcite.util.ImmutableBitSet;
 import org.apache.drill.exec.planner.common.DrillLimitRelBase;
-import org.apache.drill.exec.planner.common.DrillFilterRelBase;
 import org.apache.drill.exec.planner.common.DrillRelOptUtil;
 import org.apache.drill.exec.planner.logical.DrillTable;
 import org.apache.drill.exec.planner.logical.DrillTranslatableTable;
@@ -90,16 +90,12 @@ public class DrillRelMdRowCount extends RelMdRowCount{
   public Double getRowCount(RelNode rel, RelMetadataQuery mq) {
     if (rel instanceof TableScan) {
       return getRowCountInternal((TableScan)rel, mq);
-    } else if (rel instanceof DrillFilterRelBase) {
-      return getRowCountInternal((DrillFilterRelBase)rel, mq);
     }
     return super.getRowCount(rel, mq);
   }
 
-  private Double getRowCountInternal(DrillFilterRelBase rel, RelMetadataQuery mq) {
-    if (DrillRelOptUtil.guessRows(rel)) {
-      return super.getRowCount(rel, mq);
-    }
+  @Override
+  public Double getRowCount(Filter rel, RelMetadataQuery mq) {
     // Need capped selectivity estimates. See the Filter getRows() method
     return rel.getRows();
   }
