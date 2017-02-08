@@ -22,6 +22,7 @@ import java.io.IOException;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate;
+import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.metadata.ReflectiveRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMdRowCount;
@@ -46,17 +47,13 @@ public class DrillRelMdRowCount extends RelMdRowCount{
   public Double getRowCount(RelNode rel) {
     if (rel instanceof TableScan) {
       return getRowCount((TableScan) rel);
-    } else if (rel instanceof DrillFilterRelBase) {
-      return getRowCount((DrillFilterRelBase) rel);
     } else {
       return super.getRowCount(rel);
     }
   }
 
-  private Double getRowCount(DrillFilterRelBase rel) {
-    if (DrillRelOptUtil.guessRows(rel)) {
-      return super.getRowCount(rel);
-    }
+  @Override
+  public Double getRowCount(Filter rel) {
     // Need capped selectivity estimates. See the Filter getRows() method
     return rel.getRows();
   }
