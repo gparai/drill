@@ -5351,7 +5351,6 @@ public class StatisticsAggrFunctions {
   public static class VarBinarySumWidthFunction implements DrillAggFunc {
     @Param VarBinaryHolder in;
     @Workspace BigIntHolder totWidth;
-
     @Output NullableFloat8Holder out;
 
     @Override
@@ -5381,7 +5380,6 @@ public class StatisticsAggrFunctions {
   public static class NullableVarBinarySumWidthFunction implements DrillAggFunc {
     @Param NullableVarBinaryHolder in;
     @Workspace BigIntHolder totWidth;
-
     @Workspace BigIntHolder nonNullCount;
     @Output NullableFloat8Holder out;
 

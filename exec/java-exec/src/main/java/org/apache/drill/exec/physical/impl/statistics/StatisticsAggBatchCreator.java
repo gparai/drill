@@ -26,7 +26,6 @@ import org.apache.drill.exec.physical.impl.BatchCreator;
 import org.apache.drill.exec.record.CloseableRecordBatch;
 import org.apache.drill.exec.record.RecordBatch;
 
-@SuppressWarnings("unused")
 public class StatisticsAggBatchCreator implements BatchCreator<StatisticsAggregate>{
 
   @Override

@@ -30,13 +30,16 @@ import org.apache.drill.exec.expr.ClassGenerator;
 import org.apache.drill.exec.expr.CodeGenerator;
 import org.apache.drill.exec.expr.fn.FunctionLookupContext;
 import org.apache.drill.exec.memory.BufferAllocator;
+import org.apache.drill.exec.ops.QueryContext.SqlStatementType;
 import org.apache.drill.exec.physical.base.PhysicalOperator;
 import org.apache.drill.exec.proto.ExecProtos;
+import org.apache.drill.exec.proto.UserBitShared.QueryId;
+import org.apache.drill.exec.proto.helper.QueryIdHelper;
 import org.apache.drill.exec.server.options.OptionManager;
 import org.apache.drill.exec.testing.ExecutionControls;
+import org.apache.drill.exec.work.filter.RuntimeFilterWritable;
 
 import io.netty.buffer.DrillBuf;
-import org.apache.drill.exec.work.filter.RuntimeFilterWritable;
 
 /**
  * Provides the resources required by a non-exchange operator to execute.
@@ -94,9 +97,9 @@ public interface FragmentContext extends UdfUtilities, AutoCloseable {
 
   /**
    * Returns the statement type (e.g. SELECT, CTAS, ANALYZE) from the query context.
-   * @return query statement type {@link QueryContext.StatementType}, if known.
+   * @return query statement type {@link SqlStatementType}, if known.
    */
-  public QueryContext.StatementType getStatementType();
+  public SqlStatementType getStatementType();
 
   /**
    * Get this node's identity.
@@ -143,7 +146,12 @@ public interface FragmentContext extends UdfUtilities, AutoCloseable {
   /**
    * @return ID {@link java.util.UUID} of the current query
    */
-  public String getQueryId();
+  public QueryId getQueryId();
+
+  /**
+   * @return The string representation of the ID {@link java.util.UUID} of the current query
+   */
+  public String getQueryIdString();
 
   OperatorContext newOperatorContext(PhysicalOperator popConfig);
 
