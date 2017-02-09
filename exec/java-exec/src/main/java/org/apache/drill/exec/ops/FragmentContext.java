@@ -38,12 +38,14 @@ import org.apache.drill.exec.expr.CodeGenerator;
 import org.apache.drill.exec.expr.fn.FunctionImplementationRegistry;
 import org.apache.drill.exec.expr.holders.ValueHolder;
 import org.apache.drill.exec.memory.BufferAllocator;
+import org.apache.drill.exec.ops.QueryContext.SqlStatementType;
 import org.apache.drill.exec.physical.base.PhysicalOperator;
 import org.apache.drill.exec.planner.physical.PlannerSettings;
 import org.apache.drill.exec.proto.BitControl.PlanFragment;
 import org.apache.drill.exec.proto.CoordinationProtos.DrillbitEndpoint;
 import org.apache.drill.exec.proto.ExecProtos.FragmentHandle;
 import org.apache.drill.exec.proto.GeneralRPCProtos.Ack;
+import org.apache.drill.exec.proto.UserBitShared.QueryId;
 import org.apache.drill.exec.proto.helper.QueryIdHelper;
 import org.apache.drill.exec.rpc.RpcException;
 import org.apache.drill.exec.rpc.RpcOutcomeListener;
@@ -246,13 +248,15 @@ public class FragmentContext implements AutoCloseable, UdfUtilities {
 
   /**
    * Returns the statement type (e.g. SELECT, CTAS, ANALYZE) from the query context.
-   * @return query statement type {@link QueryContext.StatementType}, if known.
+   * @return query statement type {@link SqlStatementType}, if known.
    */
-  public QueryContext.StatementType getStatementType() {
-    if (queryContext != null) {
-      return queryContext.getStatementType();
+  public SqlStatementType getSQLStatementType() {
+    if (queryContext == null) {
+      fail(new UnsupportedOperationException("Statement type is only valid for root fragment. " +
+              "This is a non-root fragment."));
+      return null;
     }
-    return QueryContext.StatementType.UNKNOWN;
+    return queryContext.getSQLStatementType();
   }
   /**
    * Get this node's identity.
@@ -405,7 +409,12 @@ public class FragmentContext implements AutoCloseable, UdfUtilities {
   /**
    * @return ID {@link java.util.UUID} of the current query
    */
-  public String getQueryId() { return QueryIdHelper.getQueryId(fragment.getHandle().getQueryId());}
+  public QueryId getQueryId() { return fragment.getHandle().getQueryId(); }
+
+  /**
+   * @return The string representation of the ID {@link java.util.UUID} of the current query
+   */
+  public String getQueryIdString() { return QueryIdHelper.getQueryId(getQueryId()); }
 
   public boolean isImpersonationEnabled() {
     // TODO(DRILL-2097): Until SimpleRootExec tests are removed, we need to consider impersonation disabled if there is

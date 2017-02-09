@@ -61,7 +61,7 @@ import com.google.common.collect.Lists;
 // in fragment contexts
 public class QueryContext implements AutoCloseable, OptimizerRulesContext, SchemaConfigInfoProvider {
   private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(QueryContext.class);
-  public enum StatementType {UNKNOWN, ANALYZE, CTAS, EXPLAIN, REFRESH, SELECT, SETOPTION};
+  public enum SqlStatementType {OTHER, ANALYZE, CTAS, EXPLAIN, REFRESH, SELECT, SETOPTION};
 
   private final DrillbitContext drillbitContext;
   private final UserSession session;
@@ -78,7 +78,7 @@ public class QueryContext implements AutoCloseable, OptimizerRulesContext, Schem
   private final SchemaTreeProvider schemaTreeProvider;
   /** Stores constants and their holders by type */
   private final Map<String, Map<MinorType, ValueHolder>> constantValueHolderCache;
-  private StatementType stmtType = StatementType.UNKNOWN;
+  private SqlStatementType stmtType;
 
   /*
    * Flag to indicate if close has been called, after calling close the first
@@ -108,6 +108,7 @@ public class QueryContext implements AutoCloseable, OptimizerRulesContext, Schem
     viewExpansionContext = new ViewExpansionContext(this);
     schemaTreeProvider = new SchemaTreeProvider(drillbitContext);
     constantValueHolderCache = Maps.newHashMap();
+    stmtType = null;
   }
 
   @Override
@@ -289,16 +290,20 @@ public class QueryContext implements AutoCloseable, OptimizerRulesContext, Schem
   }
 
   /**
-  * @param stmtType : The type {@link StatementType} e.g. CTAS, ANALYZE of the statement
+  * @param stmtType : Sets the type {@link SqlStatementType} of the statement e.g. CTAS, ANALYZE
   */
-  public void setStatementType(StatementType stmtType) {
-    this.stmtType = stmtType;
+  public void setSQLStatementType(SqlStatementType stmtType) {
+    if (this.stmtType == null) {
+      this.stmtType = stmtType;
+    } else {
+      throw new UnsupportedOperationException("SQL Statement type is already set");
+    }
   }
 
   /**
-   * @return The type {@link StatementType} e.g. CTAS, ANALYZE of the statement
+   * @return Get the type {@link SqlStatementType} of the statement e.g. CTAS, ANALYZE
    */
-  public StatementType getStatementType() {
+  public SqlStatementType getSQLStatementType() {
     return this.stmtType;
   }
 }

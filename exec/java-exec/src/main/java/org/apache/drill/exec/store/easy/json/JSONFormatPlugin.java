@@ -28,6 +28,7 @@ import org.apache.drill.common.logical.StoragePluginConfig;
 import org.apache.drill.exec.ExecConstants;
 import org.apache.drill.exec.ops.FragmentContext;
 import org.apache.drill.exec.ops.QueryContext;
+import org.apache.drill.exec.ops.QueryContext.SqlStatementType;
 import org.apache.drill.exec.proto.ExecProtos.FragmentHandle;
 import org.apache.drill.exec.proto.UserBitShared.CoreOperatorType;
 import org.apache.drill.exec.server.DrillbitContext;
@@ -87,9 +88,9 @@ public class JSONFormatPlugin extends EasyFormatPlugin<JSONFormatConfig> {
     recordWriter = new JsonRecordWriter(writer.getStorageStrategy());
 
     //ANALYZE statement requires the special statistics writer
-    if (context.getStatementType() == QueryContext.StatementType.ANALYZE) {
+    if (context.getSQLStatementType() == SqlStatementType.ANALYZE) {
       options.put("statsversion", Long.toString(context.getOptions().getOption(ExecConstants.STATISTICS_VERSION)));
-      options.put("queryid", context.getQueryId());
+      options.put("queryid", context.getQueryIdString());
       recordWriter = new JsonStatisticsRecordWriter();
     }
     recordWriter.init(options);
