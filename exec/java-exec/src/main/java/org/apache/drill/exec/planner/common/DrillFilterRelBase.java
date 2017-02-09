@@ -114,6 +114,7 @@ public abstract class DrillFilterRelBase extends Filter implements DrillRelNode 
         selectivity = filterMaxSelectivityEstimateFactor;
       }
     }
+    // The utility function also considers nulls.
     return NumberUtil.multiply(selectivity, RelMetadataQuery.getRowCount(getInput()));
   }
 }

@@ -52,23 +52,11 @@ public class DrillStatsTable {
   private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(DrillStatsTable.class);
   private final FileSystem fs;
   private final Path tablePath;
-
-  /**
-   * List of columns in stats table.
-   */
-  public static final String COL_COLUMN = "column";
-  public static final String COL_COMPUTED = "computed";
-  public static final String COL_STATCOUNT = "statcount";
-  public static final String COL_NDV = "ndv";
-
   private final String schemaName;
   private final String tableName;
-
   private final Map<String, Long> ndv = Maps.newHashMap();
   private double rowCount = -1;
-
   private boolean materialized = false;
-
   private TableStatistics statistics = null;
 
   public DrillStatsTable(String schemaName, String tableName, Path tablePath, FileSystem fs) {

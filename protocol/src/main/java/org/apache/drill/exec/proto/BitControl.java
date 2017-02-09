@@ -7104,7 +7104,7 @@ public final class BitControl {
      * <code>optional int32 hll_accuracy = 5;</code>
      *
      * <pre>
-     * hll accuracy
+     * HLL accuracy - HLL algorithm used for approximate NDV estimate
      * </pre>
      */
     boolean hasHllAccuracy();
@@ -7112,7 +7112,7 @@ public final class BitControl {
      * <code>optional int32 hll_accuracy = 5;</code>
      *
      * <pre>
-     * hll accuracy
+     * HLL accuracy - HLL algorithm used for approximate NDV estimate
      * </pre>
      */
     int getHllAccuracy();
@@ -7398,7 +7398,7 @@ public final class BitControl {
      * <code>optional int32 hll_accuracy = 5;</code>
      *
      * <pre>
-     * hll accuracy
+     * HLL accuracy - HLL algorithm used for approximate NDV estimate
      * </pre>
      */
     public boolean hasHllAccuracy() {
@@ -7408,7 +7408,7 @@ public final class BitControl {
      * <code>optional int32 hll_accuracy = 5;</code>
      *
      * <pre>
-     * hll accuracy
+     * HLL accuracy - HLL algorithm used for approximate NDV estimate
      * </pre>
      */
     public int getHllAccuracy() {
@@ -8014,7 +8014,7 @@ public final class BitControl {
        * <code>optional int32 hll_accuracy = 5;</code>
        *
        * <pre>
-       * hll accuracy
+       * HLL accuracy - HLL algorithm used for approximate NDV estimate
        * </pre>
        */
       public boolean hasHllAccuracy() {
@@ -8024,7 +8024,7 @@ public final class BitControl {
        * <code>optional int32 hll_accuracy = 5;</code>
        *
        * <pre>
-       * hll accuracy
+       * HLL accuracy - HLL algorithm used for approximate NDV estimate
        * </pre>
        */
       public int getHllAccuracy() {
@@ -8034,7 +8034,7 @@ public final class BitControl {
        * <code>optional int32 hll_accuracy = 5;</code>
        *
        * <pre>
-       * hll accuracy
+       * HLL accuracy - HLL algorithm used for approximate NDV estimate
        * </pre>
        */
       public Builder setHllAccuracy(int value) {
@@ -8047,7 +8047,7 @@ public final class BitControl {
        * <code>optional int32 hll_accuracy = 5;</code>
        *
        * <pre>
-       * hll accuracy
+       * HLL accuracy - HLL algorithm used for approximate NDV estimate
        * </pre>
        */
       public Builder clearHllAccuracy() {

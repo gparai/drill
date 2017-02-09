@@ -27,7 +27,7 @@ import org.apache.drill.common.exceptions.UserException;
 import org.apache.drill.exec.exception.FunctionNotFoundException;
 import org.apache.drill.exec.expr.fn.FunctionImplementationRegistry;
 import org.apache.drill.exec.ops.QueryContext;
-import org.apache.drill.exec.ops.UdfUtilities;
+import org.apache.drill.exec.ops.QueryContext.SqlStatementType;
 import org.apache.drill.exec.physical.PhysicalPlan;
 import org.apache.drill.exec.planner.sql.handlers.AbstractSqlHandler;
 import org.apache.drill.exec.planner.sql.handlers.AnalyzeTableHandler;
@@ -70,32 +70,32 @@ public class DrillSqlWorker {
     switch(sqlNode.getKind()){
     case EXPLAIN:
       handler = new ExplainHandler(config, textPlan);
-      context.setStatementType(QueryContext.StatementType.EXPLAIN);
+      context.setSQLStatementType(SqlStatementType.EXPLAIN);
       break;
     case SET_OPTION:
       handler = new SetOptionHandler(context);
-      context.setStatementType(QueryContext.StatementType.SETOPTION);
+      context.setSQLStatementType(SqlStatementType.SETOPTION);
       break;
     case OTHER:
       if(sqlNode instanceof SqlCreateTable) {
         handler = ((DrillSqlCall)sqlNode).getSqlHandler(config, textPlan);
-        context.setStatementType(QueryContext.StatementType.CTAS);
+        context.setSQLStatementType(SqlStatementType.CTAS);
         break;
       }
 
       if (sqlNode instanceof DrillSqlCall) {
         handler = ((DrillSqlCall)sqlNode).getSqlHandler(config);
         if (handler instanceof AnalyzeTableHandler) {
-          context.setStatementType(QueryContext.StatementType.ANALYZE);
+          context.setSQLStatementType(SqlStatementType.ANALYZE);
         } else if (handler instanceof RefreshMetadataHandler) {
-          context.setStatementType(QueryContext.StatementType.REFRESH);
+          context.setSQLStatementType(SqlStatementType.REFRESH);
         }
         break;
       }
       // fallthrough
     default:
       handler = new DefaultSqlHandler(config, textPlan);
-      context.setStatementType(QueryContext.StatementType.SELECT);
+      context.setSQLStatementType(SqlStatementType.OTHER);
     }
 
     try {
