@@ -218,6 +218,47 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
   }
 
   @Override
+  public FieldConverter getNewIntConverter(int fieldId, String fieldName, FieldReader reader) {
+    return new IntJsonConverter(fieldId, fieldName, reader);
+  }
+
+  public class IntJsonConverter extends FieldConverter {
+
+    public IntJsonConverter(int fieldId, String fieldName, FieldReader reader) {
+      super(fieldId, fieldName, reader);
+    }
+
+    @Override
+    public void startField() throws IOException {
+      if (statisticsVersion == 1) {
+        if (fieldName.equalsIgnoreCase("TYPE")) {
+          nextField = fieldName;
+        }
+      }
+    }
+
+    @Override
+    public void writeField() throws IOException {
+      if (statisticsVersion == 1) {
+        if (nextField == null) {
+          errStatus = true;
+          throw new IOException("Statistics writer encountered unexpected field");
+        }
+        if (nextField.equalsIgnoreCase("TYPE")) {
+          // Do not write out the type
+        }
+      }
+    }
+
+    @Override
+    public void endField() throws IOException {
+      if (statisticsVersion == 1) {
+        nextField = null;
+      }
+    }
+  }
+
+  @Override
   public FieldConverter getNewDateConverter(int fieldId, String fieldName, FieldReader reader) {
     return new DateJsonConverter(fieldId, fieldName, reader);
   }
