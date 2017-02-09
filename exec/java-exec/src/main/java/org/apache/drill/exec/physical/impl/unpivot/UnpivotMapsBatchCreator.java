@@ -17,8 +17,9 @@
  */
 package org.apache.drill.exec.physical.impl.unpivot;
 
-import org.apache.drill.shaded.guava.com.google.common.base.Preconditions;
 import java.util.List;
+
+import org.apache.drill.shaded.guava.com.google.common.base.Preconditions;
 import org.apache.drill.common.exceptions.ExecutionSetupException;
 import org.apache.drill.exec.ops.ExecutorFragmentContext;
 import org.apache.drill.exec.physical.config.UnpivotMaps;
@@ -26,7 +27,6 @@ import org.apache.drill.exec.physical.impl.BatchCreator;
 import org.apache.drill.exec.record.CloseableRecordBatch;
 import org.apache.drill.exec.record.RecordBatch;
 
-@SuppressWarnings("unused")
 public class UnpivotMapsBatchCreator implements BatchCreator<UnpivotMaps>{
 
   @Override

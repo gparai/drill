@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -21,35 +21,29 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import org.apache.drill.exec.physical.base.AbstractSingle;
 import org.apache.drill.exec.physical.base.PhysicalOperator;
 import org.apache.drill.exec.physical.base.PhysicalVisitor;
-import org.apache.drill.exec.planner.physical.StatsMergePrel.OperatorPhase;
 import org.apache.drill.exec.proto.UserBitShared.CoreOperatorType;
 
 import java.util.List;
+import java.util.Map;
 
 @JsonTypeName("statistics-merge")
 public class StatisticsMerge extends AbstractSingle {
-  // private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(StatisticsAggregate.class);
-  protected OperatorPhase phase = OperatorPhase.PHASE_1of2;  // default phase
-  private final List<String> functions;
+
+  private final Map<String, String> functions;
 
   @JsonCreator
   public StatisticsMerge(
       @JsonProperty("child") PhysicalOperator child,
-      @JsonProperty("phase") OperatorPhase phase,
-      @JsonProperty("functions") List<String> functions) {
+      @JsonProperty("functions") Map<String, String> functions) {
     super(child);
-    this.phase = phase;
-    this.functions = ImmutableList.copyOf(functions);
+    this.functions = ImmutableMap.copyOf(functions);
   }
 
-  public OperatorPhase getPhase() {
-    return phase;
-  }
-
-  public List<String> getFunctions() {
+  public Map<String, String> getFunctions() {
     return functions;
   }
 
@@ -61,7 +55,7 @@ public class StatisticsMerge extends AbstractSingle {
 
   @Override
   protected PhysicalOperator getNewWithChild(PhysicalOperator child) {
-    return new StatisticsMerge(child, phase, functions);
+    return new StatisticsMerge(child, functions);
   }
 
   @Override
