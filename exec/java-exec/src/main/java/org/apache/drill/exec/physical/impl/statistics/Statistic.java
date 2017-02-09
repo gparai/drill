@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,23 +17,22 @@
  */
 package org.apache.drill.exec.physical.impl.statistics;
 
-import java.util.List;
-
-import org.apache.drill.common.exceptions.ExecutionSetupException;
-import org.apache.drill.exec.ops.FragmentContext;
-import org.apache.drill.exec.physical.config.StatisticsAggregate;
-import org.apache.drill.exec.physical.impl.BatchCreator;
-import org.apache.drill.exec.record.CloseableRecordBatch;
-import org.apache.drill.exec.record.RecordBatch;
-
-import com.google.common.base.Preconditions;
-
-public class StatisticsAggBatchCreator implements BatchCreator<StatisticsAggregate>{
-
-  @Override
-  public CloseableRecordBatch getBatch(FragmentContext context, StatisticsAggregate config,
-                                       List<RecordBatch> children) throws ExecutionSetupException {
-    Preconditions.checkArgument(children.size() == 1);
-    return new StatisticsAggBatch(config, children.iterator().next(), context);
-  }
+/*
+ * Base Statistics class - all statistics classes should extend this class
+ */
+public abstract class Statistic {
+  /*
+   * List of statistics used in Drill.
+   */
+  public static final String COLNAME = "column";
+  public static final String COLTYPE = "type";
+  public static final String SCHEMA = "schema";
+  public static final String COMPUTED = "computed";
+  public static final String STATCOUNT = "statcount";
+  public static final String NNSTATCOUNT = "nonnullstatcount";
+  public static final String NDV = "ndv";
+  public static final String HLL_MERGE = "hll_merge";
+  public static final String HLL = "hll";
+  public static final String AVG_WIDTH = "avg_width";
+  public static final String SUM_WIDTH = "sum_width";
 }

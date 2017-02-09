@@ -19,26 +19,24 @@ package org.apache.drill.exec.physical.impl.statistics;
 
 import com.google.common.collect.Lists;
 import com.sun.codemodel.JExpr;
-import org.apache.drill.common.expression.ErrorCollector;
-import org.apache.drill.common.expression.ErrorCollectorImpl;
 import org.apache.drill.common.expression.FunctionCallFactory;
 import org.apache.drill.common.expression.LogicalExpression;
 import org.apache.drill.common.expression.SchemaPath;
 import org.apache.drill.common.expression.ValueExpressions;
+import org.apache.drill.common.types.TypeProtos;
 import org.apache.drill.exec.exception.ClassTransformationException;
 import org.apache.drill.exec.exception.OutOfMemoryException;
 import org.apache.drill.exec.exception.SchemaChangeException;
 import org.apache.drill.exec.expr.ClassGenerator;
 import org.apache.drill.exec.expr.CodeGenerator;
-import org.apache.drill.exec.expr.ExpressionTreeMaterializer;
 import org.apache.drill.exec.expr.TypeHelper;
 import org.apache.drill.exec.expr.ValueVectorWriteExpression;
 import org.apache.drill.exec.ops.FragmentContext;
+import org.apache.drill.exec.physical.base.PhysicalOperatorUtil;
 import org.apache.drill.exec.physical.config.StatisticsAggregate;
 import org.apache.drill.exec.physical.impl.aggregate.StreamingAggBatch;
 import org.apache.drill.exec.physical.impl.aggregate.StreamingAggTemplate;
 import org.apache.drill.exec.physical.impl.aggregate.StreamingAggregator;
-import org.apache.drill.exec.planner.physical.StatsAggPrel.OperatorPhase;
 import org.apache.drill.exec.record.BatchSchema.SelectionVectorMode;
 import org.apache.drill.exec.record.MaterializedField;
 import org.apache.drill.exec.record.RecordBatch;
@@ -49,19 +47,16 @@ import org.apache.drill.exec.vector.complex.FieldIdUtil;
 import org.apache.drill.exec.vector.complex.MapVector;
 
 import java.io.IOException;
-import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.TimeZone;
+import java.util.Map;
 
-/**
+/*
  * TODO: This needs cleanup. Currently the key values are constants and we compare the constants
  * for every record. Seems unnecessary.
  *
  * Example input and output:
  * Schema of incoming batch: region_id (VARCHAR), sales_city (VARCHAR), cnt (BIGINT)
- * Schema of output:
- *    "schema" : BIGINT - Schema number. For each schema change this number is incremented.
- *    "computed" : BIGINT - What time is it computed?
+ * Schema of outgoing batch:
  *    "columns"       : MAP - Column names
  *       "region_id"  : VARCHAR
  *       "sales_city" : VARCHAR
@@ -77,49 +72,36 @@ import java.util.TimeZone;
  *       "cnt"        : BIGINT - nonnullstatcount(cnt)
  *   .... another map for next stats function ....
  */
+
 public class StatisticsAggBatch extends StreamingAggBatch {
+  // List of statistics functions e.g. rowcount, ndv output by StatisticsAggBatch
   private List<String> functions;
-  private int schema = 0;
+  // List of implicit columns for which we do NOT want to compute statistics
+  private Map<String, ImplicitColumnExplorer.ImplicitFileColumns> implicitFileColumnsMap;
 
   public StatisticsAggBatch(StatisticsAggregate popConfig, RecordBatch incoming,
       FragmentContext context) throws OutOfMemoryException {
     super(popConfig, incoming, context);
-    this.functions = popConfig.getFunctions();
+    // Get the list from the physical operator configuration
+    functions = popConfig.getFunctions();
+    implicitFileColumnsMap = ImplicitColumnExplorer.initImplicitFileColumns(context.getOptions());
   }
 
-  private void createKeyColumn(String name, LogicalExpression expr, List<LogicalExpression> keyExprs,
-      List<TypedFieldId> keyOutputIds) throws SchemaChangeException {
-    ErrorCollector collector = new ErrorCollectorImpl();
-
-    LogicalExpression mle = ExpressionTreeMaterializer.materialize(expr, incoming, collector,
-        context.getFunctionRegistry());
-
-    MaterializedField outputField = MaterializedField.create(name, mle.getMajorType());
-    ValueVector vector = TypeHelper.getNewVector(outputField, oContext.getAllocator());
-
-    keyExprs.add(mle);
-    keyOutputIds.add(container.add(vector));
-
-    if (collector.hasErrors()) {
-      throw new SchemaChangeException("Failure while materializing expression. "
-          + collector.toErrorString());
-    }
+  /*
+   * Returns whether the given column is an implicit column
+   */
+  private boolean isImplicitFileColumn(MaterializedField mf) {
+    return implicitFileColumnsMap.get(mf.getName()) != null;
   }
 
-  private void createNestedKeyColumn(MapVector parent, String name, LogicalExpression expr,
-      List<LogicalExpression> keyExprs, List<TypedFieldId> keyOutputIds)
-          throws SchemaChangeException {
-    ErrorCollector collector = new ErrorCollectorImpl();
-
-    LogicalExpression mle = ExpressionTreeMaterializer.materialize(expr, incoming, collector,
-        context.getFunctionRegistry());
-
+  /*
+   * Create the field id for the value vector corresponding to the materialized expression
+   */
+  private TypedFieldId createVVFieldId(LogicalExpression mle, String name, MapVector parent) {
     Class<? extends ValueVector> vvc =
-        TypeHelper.getValueVectorClass(mle.getMajorType().getMinorType(),
-            mle.getMajorType().getMode());
-
+            TypeHelper.getValueVectorClass(mle.getMajorType().getMinorType(),
+                    mle.getMajorType().getMode());
     ValueVector vv = parent.addOrGet(name, mle.getMajorType(), vvc);
-
     TypedFieldId pfid = container.getValueVectorId(SchemaPath.getSimplePath(parent.getField().getPath()));
     assert pfid.getFieldIds().length == 1;
     TypedFieldId.Builder builder = TypedFieldId.newBuilder();
@@ -127,48 +109,44 @@ public class StatisticsAggBatch extends StreamingAggBatch {
     TypedFieldId id =
         FieldIdUtil.getFieldIdIfMatches(parent, builder, true,
             SchemaPath.getSimplePath(vv.getField().getPath()).getRootSegment());
+    return id;
+  }
 
+  /*
+   * Creates the key column within the parent value vector
+   */
+  private void createNestedKeyColumn(MapVector parent, String name, LogicalExpression expr,
+      List<LogicalExpression> keyExprs, List<TypedFieldId> keyOutputIds)
+          throws SchemaChangeException {
+    LogicalExpression mle = PhysicalOperatorUtil.materializeExpression(expr, incoming, context);
+    TypedFieldId id = createVVFieldId(mle, name, parent);
     keyExprs.add(mle);
     keyOutputIds.add(id);
-
-    if (collector.hasErrors()) {
-      throw new SchemaChangeException("Failure while materializing expression. "
-          + collector.toErrorString());
-    }
   }
 
+  /*
+   * Creates the value vector within the parent value vector. The map vector key is
+   * is the column name and value is the statistic expression e.g. "salary" : NDV(emp.salary)
+   */
   private void addMapVector(String name, MapVector parent, LogicalExpression expr,
       List<LogicalExpression> valueExprs) throws SchemaChangeException {
-    ErrorCollector collector = new ErrorCollectorImpl();
-
-    LogicalExpression mle = ExpressionTreeMaterializer.materialize(expr, incoming, collector,
-        context.getFunctionRegistry());
-
-    Class<? extends ValueVector> vvc =
-        TypeHelper.getValueVectorClass(mle.getMajorType().getMinorType(), mle.getMajorType().getMode());
-    ValueVector vv = parent.addOrGet(name, mle.getMajorType(), vvc);
-
-    TypedFieldId pfid = container.getValueVectorId(SchemaPath.getSimplePath(parent.getField().getPath()));
-    assert pfid.getFieldIds().length == 1;
-    TypedFieldId.Builder builder = TypedFieldId.newBuilder();
-    builder.addId(pfid.getFieldIds()[0]);
-    TypedFieldId id = FieldIdUtil.getFieldIdIfMatches(parent, builder, true,
-        SchemaPath.getSimplePath(vv.getField().getPath()).getRootSegment());
-
+    LogicalExpression mle = PhysicalOperatorUtil.materializeExpression(expr, incoming, context);
+    TypedFieldId id = createVVFieldId(mle, name, parent);
     valueExprs.add(new ValueVectorWriteExpression(id, mle, true));
-
-    if (collector.hasErrors()) {
-      throw new SchemaChangeException("Failure while materializing expression. "
-          + collector.toErrorString());
-    }
   }
 
+  /*
+   * Generates the code for the statistics aggregate which is subclassed from StreamingAggregator
+   */
   private StreamingAggregator codegenAggregator(List<LogicalExpression> keyExprs,
       List<LogicalExpression> valueExprs, List<TypedFieldId> keyOutputIds)
           throws SchemaChangeException, ClassTransformationException, IOException {
     ClassGenerator<StreamingAggregator> cg =
         CodeGenerator.getRoot(StreamingAggTemplate.TEMPLATE_DEFINITION, context.getFunctionRegistry(),
             context.getOptions());
+    cg.getCodeGenerator().plainJavaCapable(true);
+    // Uncomment out this line to debug the generated code.
+    // cg.getCodeGenerator().saveCodeForDebugging(true);
 
     LogicalExpression[] keyExprsArray = new LogicalExpression[keyExprs.size()];
     LogicalExpression[] valueExprsArray = new LogicalExpression[valueExprs.size()];
@@ -193,55 +171,51 @@ public class StatisticsAggBatch extends StreamingAggBatch {
     return agg;
   }
 
-  private boolean isImplicitFileColumn(MaterializedField mf) {
-    return ImplicitColumnExplorer.initImplicitFileColumns(context.getOptions()).get(mf.getName()) != null;
-  }
-
+  @Override
   protected StreamingAggregator createAggregatorInternal()
       throws SchemaChangeException, ClassTransformationException, IOException {
-    container.clear();
-
     List<LogicalExpression> keyExprs = Lists.newArrayList();
     List<LogicalExpression> valueExprs = Lists.newArrayList();
     List<TypedFieldId> keyOutputIds = Lists.newArrayList();
-    GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
-    calendar.setTimeInMillis(System.currentTimeMillis());
-
-    if (this.getPopConfig() instanceof StatisticsAggregate
-        && (((StatisticsAggregate) this.getPopConfig()).getPhase() == OperatorPhase.PHASE_1of1
-            || ((StatisticsAggregate) this.getPopConfig()).getPhase() == OperatorPhase.PHASE_2of2)) {
-      createKeyColumn("schema",
-          ValueExpressions.getBigInt(schema++),
-          keyExprs,
-          keyOutputIds
-      );
-      createKeyColumn("computed",
-          ValueExpressions.getDate(calendar),
-          keyExprs,
-          keyOutputIds
-      );
-    }
-
-    MapVector cparent = new MapVector("column", oContext.getAllocator(), null);
-    container.add(cparent);
-    for (MaterializedField mf : incoming.getSchema()) {
-      // Ignore implicit columns
-      if (!isImplicitFileColumn(mf)) {
-        createNestedKeyColumn(
-            cparent,
-            mf.getLastName(),
-            ValueExpressions.getChar(mf.getLastName()),
-            keyExprs,
-            keyOutputIds
-        );
+    String [] colMeta = new String [] {Statistic.COLNAME, Statistic.COLTYPE};
+    container.clear();
+    // Generate the `column` map containing the columns in the incoming schema. Ignore
+    // the implicit columns
+    for (String col : colMeta) {
+      MapVector parent = new MapVector(col, oContext.getAllocator(), null);
+      container.add(parent);
+      for (MaterializedField mf : incoming.getSchema()) {
+        LogicalExpression expr;
+        if (col.equals(colMeta[0])) {
+          expr = ValueExpressions.getChar(mf.getLastName());
+        } else {
+          expr = ValueExpressions.getInt(mf.getType().getMinorType().getNumber());
+        }
+        // Ignore implicit columns
+        if (!isImplicitFileColumn(mf)) {
+          createNestedKeyColumn(
+              parent,
+              mf.getLastName(),
+              expr,
+              keyExprs,
+              keyOutputIds
+          );
+        }
       }
     }
-
+    // Iterate over the list of statistics and generate a MAP whose key is the column
+    // and the value is the statistic for the column e.g.
+    // NDV <<"employee_id" : 500>, <"salary" : 10>> represents a MAP of NDVs (# distinct values)
+    // employee NDV = 500, salary NDV = 10
     for (String func : functions) {
       MapVector parent = new MapVector(func, oContext.getAllocator(), null);
       container.add(parent);
 
       for (MaterializedField mf : incoming.getSchema()) {
+        if (mf.getType().getMinorType() == TypeProtos.MinorType.MAP) {
+          throw new UnsupportedOperationException(
+              String.format("Column %s% has MAP type which is not supported", mf.getLastName()));
+        }
         if (!isImplicitFileColumn(mf)) {
           List<LogicalExpression> args = Lists.newArrayList();
           args.add(SchemaPath.getSimplePath(mf.getPath()));
@@ -250,7 +224,7 @@ public class StatisticsAggBatch extends StreamingAggBatch {
         }
       }
     }
-
+    // Now generate the code for the statistics aggregate
     return codegenAggregator(keyExprs, valueExprs, keyOutputIds);
   }
 }

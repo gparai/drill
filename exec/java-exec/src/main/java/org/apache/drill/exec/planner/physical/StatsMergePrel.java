@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,12 +18,11 @@
 package org.apache.drill.exec.planner.physical;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
+import com.google.common.collect.ImmutableMap;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.SingleRel;
-import org.apache.calcite.rel.core.AggregateCall;
 import org.apache.drill.exec.physical.base.PhysicalOperator;
 import org.apache.drill.exec.physical.config.StatisticsMerge;
 import org.apache.drill.exec.planner.common.DrillRelNode;
@@ -33,23 +32,20 @@ import org.apache.drill.exec.record.BatchSchema.SelectionVectorMode;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 public class StatsMergePrel extends SingleRel implements DrillRelNode, Prel {
 
-  public static enum OperatorPhase {PHASE_1of1, PHASE_1of2, PHASE_2of2};
-  protected OperatorPhase phase = OperatorPhase.PHASE_1of1;  // default phase
-  private List<String> functions;
-  protected List<AggregateCall> phase2functions = Lists.newArrayList();
+  private Map<String, String> functions;
 
-  public StatsMergePrel(RelOptCluster cluster, RelTraitSet traits, RelNode child, List<String> functions, OperatorPhase operPhase) {
+  public StatsMergePrel(RelOptCluster cluster, RelTraitSet traits, RelNode child, Map<String, String> functions) {
     super(cluster, traits, child);
-    this.functions = ImmutableList.copyOf(functions);
-    this.phase = operPhase;
+    this.functions = ImmutableMap.copyOf(functions);
   }
 
   @Override
   public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-    return new StatsMergePrel(getCluster(), traitSet, sole(inputs), ImmutableList.copyOf(functions), phase);
+    return new StatsMergePrel(getCluster(), traitSet, sole(inputs), ImmutableMap.copyOf(functions));
   }
 
   @Override
@@ -57,7 +53,7 @@ public class StatsMergePrel extends SingleRel implements DrillRelNode, Prel {
       throws IOException {
     Prel child = (Prel) this.getInput();
     PhysicalOperator childPOP = child.getPhysicalOperator(creator);
-    StatisticsMerge g = new StatisticsMerge(childPOP, phase, functions);
+    StatisticsMerge g = new StatisticsMerge(childPOP, functions);
     return creator.addMetadata(this, g);
   }
 
@@ -87,7 +83,4 @@ public class StatsMergePrel extends SingleRel implements DrillRelNode, Prel {
     return true;
   }
 
-  public OperatorPhase getOperatorPhase() {
-    return phase;
-  }
 }

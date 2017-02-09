@@ -28,7 +28,6 @@ import org.apache.drill.exec.record.RecordBatch;
 
 import com.google.common.base.Preconditions;
 
-@SuppressWarnings("unused")
 public class UnpivotMapsBatchCreator implements BatchCreator<UnpivotMaps>{
 
   @Override
