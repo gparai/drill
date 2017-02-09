@@ -39,8 +39,6 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-import org.joda.time.DateTime;
-
 public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implements RecordWriter {
 
   private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(JsonStatisticsRecordWriter.class);
@@ -98,6 +96,11 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
     }
     try {
       stream = fs.create(fileName);
+      // Delete the tmp file and .stats.drill on exit. After writing out the permanent file
+      // we cancel the deleteOnExit. This ensures that if prior to writing out the stats
+      // file the process is killed, we perform the cleanup.
+      fs.deleteOnExit(fileName);
+      fs.deleteOnExit(new Path(location));
       generator = factory.createGenerator(stream).useDefaultPrettyPrinter();
       if (uglify) {
         generator = generator.setPrettyPrinter(new MinimalPrettyPrinter(LINE_FEED));
@@ -481,6 +484,9 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
       // If failed to do so then delete the .tmp file
       fs.delete(permFileName, false);
       fs.rename(fileName, permFileName);
+      // Cancel delete once perm file is created
+      fs.cancelDeleteOnExit(fileName);
+      fs.cancelDeleteOnExit(new Path(location));
       logger.debug("Created file: {}", permFileName);
     } catch (com.fasterxml.jackson.core.JsonGenerationException ex) {
       logger.error("Unable to create file (JSON generation error): " + permFileName, ex);
