@@ -425,4 +425,6 @@ public interface ExecConstants {
    * the older version of statistics
    */
   LongValidator STATISTICS_VERSION = new NonNegativeLongValidator("exec.statistics.capability_version", 1, 1);
+
+  LongValidator STATISTICS_TYPE = new PositiveLongValidator("exec.statistics.type", Integer.MAX_VALUE, 15);
 }

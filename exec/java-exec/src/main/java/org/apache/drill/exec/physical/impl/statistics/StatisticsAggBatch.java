@@ -26,6 +26,7 @@ import org.apache.drill.common.expression.LogicalExpression;
 import org.apache.drill.common.expression.SchemaPath;
 import org.apache.drill.common.expression.ValueExpressions;
 import org.apache.drill.common.types.TypeProtos;
+import org.apache.drill.exec.ExecConstants;
 import org.apache.drill.exec.exception.ClassTransformationException;
 import org.apache.drill.exec.exception.OutOfMemoryException;
 import org.apache.drill.exec.exception.SchemaChangeException;
@@ -82,6 +83,7 @@ public class StatisticsAggBatch extends StreamingAggBatch {
   // List of statistics functions e.g. rowcount, ndv output by StatisticsAggBatch
   private List<String> functions;
   private Map<String, ImplicitColumnExplorer.ImplicitFileColumns> implicitFileColumnsMap;
+  private long statsToUse;
   private int schema = 0;
 
   public StatisticsAggBatch(StatisticsAggregate popConfig, RecordBatch incoming,
@@ -89,6 +91,7 @@ public class StatisticsAggBatch extends StreamingAggBatch {
     super(popConfig, incoming, context);
     // Get the list from the physical operator configuration
     functions = popConfig.getFunctions();
+    statsToUse = context.getOptions().getOption(ExecConstants.STATISTICS_TYPE);
     implicitFileColumnsMap = ImplicitColumnExplorer.initImplicitFileColumns(context.getOptions());
   }
 
@@ -208,7 +211,7 @@ public class StatisticsAggBatch extends StreamingAggBatch {
   protected StreamingAggregator createAggregatorInternal()
       throws SchemaChangeException, ClassTransformationException, IOException {
     container.clear();
-
+    double statisticNo = 0.0;
     List<LogicalExpression> keyExprs = Lists.newArrayList();
     List<LogicalExpression> valueExprs = Lists.newArrayList();
     List<TypedFieldId> keyOutputIds = Lists.newArrayList();
@@ -235,20 +238,24 @@ public class StatisticsAggBatch extends StreamingAggBatch {
     // NDV <<"employee_id" : 500>, <"salary" : 10>> represents a MAP of NDVs (# distinct values)
     // employee NDV = 500, salary NDV = 10
     for (String func : functions) {
-      MapVector parent = new MapVector(func, oContext.getAllocator(), null);
-      container.add(parent);
+      long i = ((long) Math.pow(2, statisticNo));
+      if ((statsToUse & i) == i) {
+        MapVector parent = new MapVector(func, oContext.getAllocator(), null);
+        container.add(parent);
 
-      for (MaterializedField mf : incoming.getSchema()) {
-        if (mf.getType().getMinorType() == TypeProtos.MinorType.MAP) {
-          throw new UnsupportedOperationException("Map type is not supported");
-        }
-        if (!isImplicitFileColumn(mf)) {
-          List<LogicalExpression> args = Lists.newArrayList();
-          args.add(SchemaPath.getSimplePath(mf.getPath()));
-          LogicalExpression call = FunctionCallFactory.createExpression(func, args);
-          addMapVector(mf.getLastName(), parent, call, valueExprs);
+        for (MaterializedField mf : incoming.getSchema()) {
+          if (mf.getType().getMinorType() == TypeProtos.MinorType.MAP) {
+            throw new UnsupportedOperationException("Map type is not supported");
+          }
+          if (!isImplicitFileColumn(mf)) {
+            List<LogicalExpression> args = Lists.newArrayList();
+            args.add(SchemaPath.getSimplePath(mf.getPath()));
+            LogicalExpression call = FunctionCallFactory.createExpression(func, args);
+            addMapVector(mf.getLastName(), parent, call, valueExprs);
+          }
         }
       }
+      ++statisticNo;
     }
 
     return codegenAggregator(keyExprs, valueExprs, keyOutputIds);
