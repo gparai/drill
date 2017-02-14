@@ -40,7 +40,6 @@ import org.apache.drill.exec.physical.config.StatisticsMerge;
 import org.apache.drill.exec.record.AbstractSingleRecordBatch;
 import org.apache.drill.exec.record.MaterializedField;
 import org.apache.drill.exec.record.RecordBatch;
-import org.apache.drill.exec.record.TransferPair;
 import org.apache.drill.exec.record.VectorContainer;
 import org.apache.drill.exec.record.VectorWrapper;
 import org.apache.drill.exec.vector.ValueVector;
@@ -60,7 +59,8 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
-
+// Library implementing HLL algorithm to derive approximate #distinct values(NDV) - Please refer the paper
+// HyperLogLog: the analysis of a near-optimal cardinality estimation algorithm. Flajolet et. al.
 import com.clearspring.analytics.stream.cardinality.HyperLogLog;
 
 public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMerge> {
@@ -76,21 +76,11 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
   private Map<MaterializedField, ValueVector> copySrcVecMap = null;
   private Map<String, Map<String, ValueHolder>> aggregationMap = null;
   public StatisticsMergeBatch(StatisticsMerge popConfig, RecordBatch incoming,
-                              FragmentContext context) throws OutOfMemoryException {
+      FragmentContext context) throws OutOfMemoryException {
     super(popConfig, context, incoming);
     this.functions = new HashMap<>();
     this.aggregationMap = new HashMap<>();
 
-    /*for (String key : popConfig.getFunctions()) {
-      aggregationMap.put(key, new HashMap<String, ValueHolder>());
-      if (key.equalsIgnoreCase("statcount") || key.equalsIgnoreCase("nonnullstatcount")) {
-        functions.put(key, "sum");
-      } else if (key.equalsIgnoreCase("hll")) {
-        functions.put(key, "hll_merge");
-      } else if (key.equalsIgnoreCase("sum_width")) {
-        functions.put(key, "avg_width");
-      }
-    }*/
     for (String key : popConfig.getFunctions()) {
       if (key.equalsIgnoreCase("sum_width")) {
         functions.put(key, "avg_width");
@@ -110,14 +100,15 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
     LogicalExpression mle = ExpressionTreeMaterializer.materialize(expr, incoming, collector,
         context.getFunctionRegistry());
 
-    MaterializedField outputField = MaterializedField.create(name, mle.getMajorType());
-    ValueVector vector = TypeHelper.getNewVector(outputField, oContext.getAllocator());
-    container.add(vector);
-
     if (collector.hasErrors()) {
       throw new SchemaChangeException("Failure while materializing expression. "
           + collector.toErrorString());
     }
+
+    MaterializedField outputField = MaterializedField.create(name, mle.getMajorType());
+    ValueVector vector = TypeHelper.getNewVector(outputField, oContext.getAllocator());
+    container.add(vector);
+
     parentMap.put(outputField, vector);
   }
 
@@ -127,14 +118,15 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
     LogicalExpression mle = ExpressionTreeMaterializer.materialize(expr, incoming, collector,
         context.getFunctionRegistry());
 
-    Class<? extends ValueVector> vvc =
-        TypeHelper.getValueVectorClass(mle.getMajorType().getMinorType(), mle.getMajorType().getMode());
-    ValueVector vector = parent.addOrGet(name, mle.getMajorType(), vvc);
-
     if (collector.hasErrors()) {
       throw new SchemaChangeException("Failure while materializing expression. "
           + collector.toErrorString());
     }
+
+    Class<? extends ValueVector> vvc =
+        TypeHelper.getValueVectorClass(mle.getMajorType().getMinorType(), mle.getMajorType().getMode());
+    ValueVector vector = parent.addOrGet(name, mle.getMajorType(), vvc);
+
     return vector;
   }
 
@@ -158,7 +150,10 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
         lastMapKeyList = keyList;
       } else {
         if (keyList.size() != lastMapKeyList.size() || !lastMapKeyList.containsAll(keyList)) {
-          throw new UnsupportedOperationException("Maps have different fields");
+          // Error!! Maps with different size and/or keys. The map for each statistics (e.g. NDV) should
+          // match exactly with the column map i.e. we did not run into any issues while generating statistics
+          // for all the specified columns
+          throw new IllegalStateException("Maps have different fields");
         }
       }
     }
@@ -178,53 +173,15 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
 
     for (VectorWrapper<?> vw : incoming) {
       addVectorToOutgoingContainer(vw.getField().getLastName(), vw, collector);
-      /*MaterializedField ds = vw.getField();
-      String field = vw.getField().getLastName();
-      // Input map vector
-      MapVector mapVector = (MapVector) vw.getValueVector();
-      assert mapVector.getPrimitiveVectors().size() > 0;
-      // Proceed to create output map vector with same name e.g. statcount etc.
-      mt = mapVector.getField().getType();
-      MaterializedField mf = MaterializedField.create(functions.get(field), mt);
-      assert !dataSrcVecMap.containsKey(mf);
-      ValueVector vector = TypeHelper.getNewVector(mf, oContext.getAllocator());
-      container.add(vector);
-      MapVector outputMapVector = (MapVector) vector;
-
-      for (ValueVector vv : mapVector) {
-        String fieldName = vv.getField().getLastName();
-        if (!keyList.contains(fieldName)) {
-          throw new UnsupportedOperationException("Unpivot data vector " +
-              ds + " contains key " + fieldName + " not contained in key source!");
-        }
-        if (vv.getField().getType().getMinorType() == TypeProtos.MinorType.MAP) {
-          throw new UnsupportedOperationException("Unpivot of nested map is not supported!");
-        }
-        if (field.equals("column")) {
-          outputMapVector.addOrGet(fieldName, vv.getField().getType(), vv.getClass());
-        } else {
-          List<LogicalExpression> args = Lists.newArrayList();
-          //TODO: Something else to access value of col such as emp_id?
-          args.add(SchemaPath.getSimplePath(vv.getField().getPath()));
-          //TODO: Put in the mapVector
-          LogicalExpression call = FunctionCallFactory.createExpression(functions.get(field), args);
-          //TODO: Is this sufficient to add to new Map?
-          ValueVector vector1 = addMapVector(fieldName, outputMapVector, call);
-          if (collector.hasErrors()) {
-            throw new SchemaChangeException("Failure while materializing expression. "
-                + collector.toErrorString());
-          }
-        }
-      }
-      dataSrcVecMap.put(ds, outputMapVector);*/
     }
-    //Now create NDV in the outgoing container which was not avaliable in the incoming
+    //Now create NDV in the outgoing container which was not available in the incoming
     for (VectorWrapper<?> vw : incoming) {
       if (vw.getField().getLastName().equalsIgnoreCase("sum_width")) {//NullableFloat8 type
         addVectorToOutgoingContainer("ndv", vw, collector);
         break;
       }
     }
+
     container.setRecordCount(0);
     recordCount = 0;
     container.buildSchema(incoming.getSchema().getSelectionVectorMode());
@@ -375,8 +332,8 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
           }
         }
       }
-      // Add NDV value vector map using HLL map (since the NDV map is directly generated from HLL and not produced by the underlying
-      // Statistics Agg)
+      // Add NDV value vector map using HLL map (since the NDV map is directly
+      // generated from HLL and not produced by the underlying Statistics Agg)
       Map<String, ValueHolder> hllMap = aggregationMap.get("hll");
       if (hllMap != null) {
         aggregationMap.put("ndv", hllMap);
@@ -447,8 +404,8 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
 
   // Prepare the outgoing container
   private IterOutcome buildOutgoingRecordBatch() {
-    ErrorCollector collector = new ErrorCollectorImpl();
     int containerElts = 0;
+
     for (VectorWrapper<?> vw : container) {
       Map<String, ValueHolder> statMap = aggregationMap.get(vw.getField().getLastName());
       if (statMap == null
@@ -476,7 +433,7 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
             vv.getMutator().setSafe(0, colName.getBytes(), 0, colName.length());
             ++containerElts;
           } else if (vw.getField().getLastName().equalsIgnoreCase("statcount") ||
-                  vw.getField().getLastName().equalsIgnoreCase("nonnullstatcount")) {
+              vw.getField().getLastName().equalsIgnoreCase("nonnullstatcount")) {
             // Set (nonnull)rowcount in ValueVector
             BigIntHolder holder = (BigIntHolder) statMap.get(colName);
             NullableBigIntVector vv = (NullableBigIntVector) map.getVectorById(index);
@@ -492,7 +449,7 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
             // Set avg_width = sum_width/rowcount in ValueVector
             // TODO: For nullable variable columns we should divide by nonnull-rc
             if (sumWidthHolder.isSet == 1 && sumRowsHolder.value > 0) {
-              vv.getMutator().setSafe(0, (double) (sumWidthHolder.value / sumRowsHolder.value));
+              vv.getMutator().setSafe(0, (sumWidthHolder.value / sumRowsHolder.value));
               ++containerElts;
             }
           } else if (vw.getField().getLastName().equalsIgnoreCase("hll_merge")) {

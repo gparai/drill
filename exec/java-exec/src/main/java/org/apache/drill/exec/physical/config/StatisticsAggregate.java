@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,7 +19,6 @@ package org.apache.drill.exec.physical.config;
 
 import org.apache.drill.exec.physical.base.PhysicalOperator;
 import org.apache.drill.exec.physical.base.PhysicalVisitor;
-import org.apache.drill.exec.planner.physical.StatsAggPrel.OperatorPhase;
 import org.apache.drill.exec.proto.UserBitShared.CoreOperatorType;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -32,22 +31,14 @@ import java.util.List;
 
 @JsonTypeName("statistics-aggregate")
 public class StatisticsAggregate extends StreamingAggregate {
-  // private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(StatisticsAggregate.class);
-  protected OperatorPhase phase = OperatorPhase.PHASE_1of1;  // default phase
   private final List<String> functions;
 
   @JsonCreator
   public StatisticsAggregate(
       @JsonProperty("child") PhysicalOperator child,
-      @JsonProperty("phase") OperatorPhase phase,
       @JsonProperty("functions") List<String> functions) {
     super(child, null, null, 0.f);
-    this.phase = phase;
     this.functions = ImmutableList.copyOf(functions);
-  }
-
-  public OperatorPhase getPhase() {
-    return phase;
   }
 
   public List<String> getFunctions() {
@@ -62,7 +53,7 @@ public class StatisticsAggregate extends StreamingAggregate {
 
   @Override
   protected PhysicalOperator getNewWithChild(PhysicalOperator child) {
-    return new StatisticsAggregate(child, phase, functions);
+    return new StatisticsAggregate(child, functions);
   }
 
   @Override

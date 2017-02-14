@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -36,20 +36,16 @@ import java.util.List;
 
 public class StatsMergePrel extends SingleRel implements DrillRelNode, Prel {
 
-  public static enum OperatorPhase {PHASE_1of1, PHASE_1of2, PHASE_2of2};
-  protected OperatorPhase phase = OperatorPhase.PHASE_1of1;  // default phase
   private List<String> functions;
-  protected List<AggregateCall> phase2functions = Lists.newArrayList();
 
-  public StatsMergePrel(RelOptCluster cluster, RelTraitSet traits, RelNode child, List<String> functions, OperatorPhase operPhase) {
+  public StatsMergePrel(RelOptCluster cluster, RelTraitSet traits, RelNode child, List<String> functions) {
     super(cluster, traits, child);
     this.functions = ImmutableList.copyOf(functions);
-    this.phase = operPhase;
   }
 
   @Override
   public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-    return new StatsMergePrel(getCluster(), traitSet, sole(inputs), ImmutableList.copyOf(functions), phase);
+    return new StatsMergePrel(getCluster(), traitSet, sole(inputs), ImmutableList.copyOf(functions));
   }
 
   @Override
@@ -57,7 +53,7 @@ public class StatsMergePrel extends SingleRel implements DrillRelNode, Prel {
       throws IOException {
     Prel child = (Prel) this.getInput();
     PhysicalOperator childPOP = child.getPhysicalOperator(creator);
-    StatisticsMerge g = new StatisticsMerge(childPOP, phase, functions);
+    StatisticsMerge g = new StatisticsMerge(childPOP, functions);
     return creator.addMetadata(this, g);
   }
 
@@ -87,7 +83,4 @@ public class StatsMergePrel extends SingleRel implements DrillRelNode, Prel {
     return true;
   }
 
-  public OperatorPhase getOperatorPhase() {
-    return phase;
-  }
 }

@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -47,20 +47,16 @@ import org.apache.drill.exec.record.BatchSchema.SelectionVectorMode;
 
 public class StatsAggPrel extends SingleRel implements DrillRelNode, Prel {
 
-  public static enum OperatorPhase {PHASE_1of1, PHASE_1of2, PHASE_2of2};
-  protected OperatorPhase phase = OperatorPhase.PHASE_1of1;  // default phase
   private List<String> functions;
-  protected List<AggregateCall> phase2functions = Lists.newArrayList();
 
-  public StatsAggPrel(RelOptCluster cluster, RelTraitSet traits, RelNode child, List<String> functions, OperatorPhase operPhase) {
+  public StatsAggPrel(RelOptCluster cluster, RelTraitSet traits, RelNode child, List<String> functions) {
     super(cluster, traits, child);
     this.functions = ImmutableList.copyOf(functions);
-    this.phase = operPhase;
   }
 
   @Override
   public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-    return new StatsAggPrel(getCluster(), traitSet, sole(inputs), ImmutableList.copyOf(functions), phase);
+    return new StatsAggPrel(getCluster(), traitSet, sole(inputs), ImmutableList.copyOf(functions));
   }
 
   @Override
@@ -68,7 +64,7 @@ public class StatsAggPrel extends SingleRel implements DrillRelNode, Prel {
       throws IOException {
     Prel child = (Prel) this.getInput();
     PhysicalOperator childPOP = child.getPhysicalOperator(creator);
-    StatisticsAggregate g = new StatisticsAggregate(childPOP, phase, functions);
+    StatisticsAggregate g = new StatisticsAggregate(childPOP, functions);
     return creator.addMetadata(this, g);
   }
 
@@ -98,90 +94,4 @@ public class StatsAggPrel extends SingleRel implements DrillRelNode, Prel {
     return true;
   }
 
-  public OperatorPhase getOperatorPhase() {
-    return phase;
-  }
-
-  /*protected void createKeysAndExprs() {
-    final List<String> childFields = getInput().getRowType().getFieldNames();
-    final List<String> fields = getRowType().getFieldNames();
-
-    for (Ord<AggregateCall> aggCall : Ord.zip(aggCalls)) {
-      int aggExprOrdinal = aggCall.i;
-
-      if (getOperatorPhase() == OperatorPhase.PHASE_1of2) {
-        if (aggCall.e.getAggregation().getName().equals("STATCOUNT")
-            || aggCall.e.getAggregation().getName().equals("NONNULLSTATCOUNT")   ) {
-          // If we are doing a STATCOUNT/NONNULLSTATCOUNT aggregate in Phase1of2, then in Phase2of2
-          // we should SUM the COUNTs,
-          SqlAggFunction sumAggFun = new SqlSumCountAggFunction(aggCall.e.getType());
-          AggregateCall newAggCall =
-              new AggregateCall(
-                  sumAggFun,
-                  aggCall.e.isDistinct(),
-                  Collections.singletonList(aggExprOrdinal),
-                  aggCall.e.getType(),
-                  aggCall.e.getName());
-          phase2AggCallList.add(newAggCall);
-        } else if (aggCall.e.getAggregation().getName().equals("NDV")) {
-          AggregateCall newAggCall =
-              new AggregateCall(
-                  aggCall.e.getAggregation(),
-                  aggCall.e.isDistinct(),
-                  Collections.singletonList(aggExprOrdinal),
-                  aggCall.e.getType(),
-                  aggCall.e.getName());
-          phase2AggCallList.add(newAggCall);
-        }
-      }
-    }
-  }*/
-  /**
-   * Specialized aggregate function for SUMing the COUNTs.  Since return type of
-   * COUNT is non-nullable and return type of SUM is nullable, this class enables
-   * creating a SUM whose return type is non-nullable.
-   *
-   */
-  /*public class SqlSumCountAggFunction extends SqlAggFunction {
-
-    private final RelDataType type;
-
-    public SqlSumCountAggFunction(RelDataType type) {
-      super("$SUM0",
-              SqlKind.OTHER_FUNCTION,
-              ReturnTypes.BIGINT, // use the inferred return type of SqlCountAggFunction
-              null,
-              OperandTypes.NUMERIC,
-              SqlFunctionCategory.NUMERIC);
-
-      this.type = type;
-    }
-
-    public List<RelDataType> getParameterTypes(RelDataTypeFactory typeFactory) {
-      return ImmutableList.of(type);
-    }
-
-    public RelDataType getType() {
-      return type;
-    }
-
-    public RelDataType getReturnType(RelDataTypeFactory typeFactory) {
-      return type;
-    }
-
-  }
-
-  protected LogicalExpression toDrill(AggregateCall call, List<String> fn) {
-    List<LogicalExpression> args = Lists.newArrayList();
-    for (Integer i : call.getArgList()) {
-      args.add(FieldReference.getWithQuotedRef(fn.get(i)));
-    }
-
-    // for count(1).
-    if (args.isEmpty()) {
-      args.add(new ValueExpressions.LongExpression(1l));
-    }
-    LogicalExpression expr = new FunctionCall(call.getAggregation().getName().toLowerCase(), args, ExpressionPosition.UNKNOWN );
-    return expr;
-  }*/
 }
