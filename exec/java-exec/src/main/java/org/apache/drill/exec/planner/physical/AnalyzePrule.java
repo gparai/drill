@@ -32,6 +32,8 @@ import org.apache.drill.exec.planner.logical.DrillAnalyzeRel;
 import org.apache.drill.exec.planner.logical.DrillRel;
 import org.apache.drill.exec.planner.logical.RelOptHelper;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -87,15 +89,64 @@ public class AnalyzePrule extends Prule {
         plus(DrillDistributionTrait.DEFAULT);
     final RelNode convertedInput = convert(input, traits);
 
-    final List<String> mapFields1 = Lists.newArrayList(PHASE_1_FUNCTIONS);
+    /*final List<String> mapFields1 = Lists.newArrayList(PHASE_1_FUNCTIONS);
     final Map<String, String> mapFields2 = Maps.newHashMap(PHASE_2_FUNCTIONS);
-    final List<String> mapFields3 = Lists.newArrayList(UNPIVOT_FUNCTIONS);
+    final List<String> mapFields3 = Lists.newArrayList(UNPIVOT_FUNCTIONS);*/
+
+    long statsToCompute = PrelUtil.getPlannerSettings(call.getPlanner()).typeOfStatistics();
+    int currentStat = 0;
+    int avgWidthDependency = 0;
+    int ndvDependency = 0;
+    List<String> PHASE_1_FUNCTIONS_SUBSET = new ArrayList<>();
+    Map<String, String> PHASE_2_FUNCTIONS_SUBSET = new HashMap<>();
+    List<String> PHASE_3_FUNCTIONS_SUBSET = new ArrayList<>();
+    boolean addedHLL = false;
+    for (String func : UNPIVOT_FUNCTIONS) {
+      long i = (long)(Math.pow(2, currentStat));
+      if ((statsToCompute & i) == i) {
+        PHASE_3_FUNCTIONS_SUBSET.add(func);
+        PHASE_2_FUNCTIONS_SUBSET.put(func, PHASE_2_FUNCTIONS.get(func));
+        if (func.equals(Statistic.STATCOUNT)) {
+          ++ avgWidthDependency;
+          ++ ndvDependency;
+        } else if (func.equals(Statistic.NNSTATCOUNT)) {
+          ++ avgWidthDependency;
+        }
+          else if (func.equals(Statistic.HLL_MERGE)) {
+          ++ ndvDependency;
+        }
+        if (func.equals(Statistic.AVG_WIDTH)) {
+          if (avgWidthDependency != 2) {
+            throw new UnsupportedOperationException("AVG_WIDTH STATISTICS REQUIRES BOTH NONNULLSTATCOUNT and STATCOUNT");
+          }
+        } else if (func.equals(Statistic.NDV)) {
+          if (ndvDependency != 2) {
+            throw new UnsupportedOperationException("NDV STATISTICS REQUIRES BOTH STATCOUNT and HLL_MERGE");
+          }
+        }
+        if (func.equals(Statistic.NDV)
+            || func.equals(Statistic.HLL_MERGE)) {
+          if (!addedHLL) {
+            PHASE_1_FUNCTIONS_SUBSET.add(PHASE_2_FUNCTIONS.get(func));
+            addedHLL = true;
+          }
+        } else {
+          PHASE_1_FUNCTIONS_SUBSET.add(PHASE_2_FUNCTIONS.get(func));
+        }
+      }
+      ++currentStat;
+    }
+    final List<String> mapFields1 = Lists.newArrayList(PHASE_1_FUNCTIONS_SUBSET);
+    final Map<String, String> mapFields2 = Maps.newHashMap(PHASE_2_FUNCTIONS_SUBSET);
+    final List<String> mapFields3 = Lists.newArrayList(PHASE_3_FUNCTIONS_SUBSET);
+
     mapFields1.add(0, Statistic.COLNAME);
     mapFields1.add(1, Statistic.COLTYPE);
     mapFields2.put(Statistic.COLNAME, Statistic.COLNAME);
     mapFields2.put(Statistic.COLTYPE, Statistic.COLTYPE);
     mapFields3.add(0, Statistic.COLNAME);
     mapFields3.add(1, Statistic.COLTYPE);
+
     // Now generate the two phase plan physical operators bottom-up:
     // STATSAGG->EXCHANGE->STATSMERGE->UNPIVOT
     final StatsAggPrel statsAggPrel = new StatsAggPrel(analyze.getCluster(), traits,

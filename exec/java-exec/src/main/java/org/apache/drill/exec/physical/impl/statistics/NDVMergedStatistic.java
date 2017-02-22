@@ -137,7 +137,7 @@ public class NDVMergedStatistic extends AbstractMergedStatistic {
     NDVConfiguration config = (NDVConfiguration) configurations;
     accuracy = config.context.getHllAccuracy();
     for (MergedStatistic statistic : config.dependencies) {
-      if (statistic instanceof AvgWidthMergedStatistic) {
+      if (statistic instanceof StatCountMergedStatistic) {
         targetTypeStatistic = statistic;
         break;
       }

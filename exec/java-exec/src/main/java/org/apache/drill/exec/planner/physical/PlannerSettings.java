@@ -106,6 +106,7 @@ public class PlannerSettings implements Context{
       Long.MAX_VALUE, 10000);
 
   public static final BooleanValidator STATISTICS_USE = new BooleanValidator("planner.statistics.use", true);
+  public static final PositiveLongValidator STATISTICS_TYPE = new PositiveLongValidator("planner.statistics.type", Integer.MAX_VALUE, 15);
 
   public OptionManager options = null;
   public FunctionImplementationRegistry functionImplementationRegistry = null;
@@ -265,6 +266,10 @@ public class PlannerSettings implements Context{
 
   public boolean useStatistics() {
     return options.getOption(STATISTICS_USE);
+  }
+
+  public long typeOfStatistics() {
+    return options.getOption(STATISTICS_TYPE);
   }
 
   @Override
