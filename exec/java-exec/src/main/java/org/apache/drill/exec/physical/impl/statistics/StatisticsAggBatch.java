@@ -214,7 +214,7 @@ public class StatisticsAggBatch extends StreamingAggBatch {
       for (MaterializedField mf : incoming.getSchema()) {
         if (mf.getType().getMinorType() == TypeProtos.MinorType.MAP) {
           throw new UnsupportedOperationException(
-              String.format("Column %s% has MAP type which is not supported", mf.getLastName()));
+              String.format("Column %s has MAP type which is not supported", mf.getLastName()));
         }
         if (!isImplicitFileColumn(mf)) {
           List<LogicalExpression> args = Lists.newArrayList();

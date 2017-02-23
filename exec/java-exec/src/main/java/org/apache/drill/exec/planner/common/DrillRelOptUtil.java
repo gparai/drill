@@ -213,7 +213,9 @@ public abstract class DrillRelOptUtil {
       if (table == null) {
         table = rel.getTable().unwrap(DrillTranslatableTable.class).getDrillTable();
       }
-      if (table != null && table.getStatsTable() != null) {
+      if (table != null
+          && table.getStatsTable() != null
+          && table.getStatsTable().isMaterialized()) {
         return false;
       } else {
         return true;

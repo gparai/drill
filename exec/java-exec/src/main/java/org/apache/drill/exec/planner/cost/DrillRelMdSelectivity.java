@@ -139,11 +139,17 @@ public class DrillRelMdSelectivity extends RelMdSelectivity {
   }
 
   private Double getScanSelectivity(TableScan scan, RexNode predicate) {
+    // If guessing, return selectivity from RelMDSelectivity
+    if (DrillRelOptUtil.guessRows(scan)) {
+      return super.getSelectivity(scan, predicate);
+    }
     DrillTable table = scan.getTable().unwrap(DrillTable.class);
     if (table == null) {
       table = scan.getTable().unwrap(DrillTranslatableTable.class).getDrillTable();
     }
-    if (table == null || table.getStatsTable() == null) {
+    if (table == null
+        || table.getStatsTable() == null
+        || !table.getStatsTable().isMaterialized()) {
       return super.getSelectivity(scan, predicate);
     } else {
       return getScanSelectivityInternal(table, predicate, scan.getRowType());
@@ -162,7 +168,7 @@ public class DrillRelMdSelectivity extends RelMdSelectivity {
       double orSel = 0;
       for (RexNode orPred : RelOptUtil.disjunctions(pred)) {
         //CALCITE guess
-        Double guess = RelMdUtil.guessSelectivity(pred);
+        Double guess = RelMdUtil.guessSelectivity(orPred);
         if (orPred.isA(SqlKind.EQUALS)) {
           if (orPred instanceof RexCall) {
             int colIdx = -1;
@@ -172,9 +178,10 @@ public class DrillRelMdSelectivity extends RelMdSelectivity {
             }
             if (colIdx != -1 && colIdx < type.getFieldNames().size()) {
               String col = type.getFieldNames().get(colIdx);
-              if (table.getStatsTable() != null
-                  && table.getStatsTable().getNdv(col) != null) {
+              if (table.getStatsTable().getNdv(col) != null) {
                 orSel += 1.00 / table.getStatsTable().getNdv(col);
+              } else {
+                orSel += guess;
               }
             } else {
               orSel += guess;
@@ -191,7 +198,8 @@ public class DrillRelMdSelectivity extends RelMdSelectivity {
       }
       sel *= orSel;
     }
-    return sel;
+    // Cap selectivity if it exceeds 1.0
+    return (sel > 1.0) ? 1.0 : sel;
   }
 
   public static RexInputRef findRexInputRef(final RexNode node) {

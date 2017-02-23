@@ -73,6 +73,12 @@ public class DrillStatsTable {
   public String getTableName() {
     return tableName;
   }
+
+  /*
+   * Returns whether statistics have materialized or not i.e. were the table statistics successfully read
+   * from the persistent store?
+   */
+  public boolean isMaterialized() { return materialized; }
   /**
    * Get number of distinct values of given column. If stats are not present for the given column,
    * a null is returned.
