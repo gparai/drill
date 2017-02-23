@@ -115,7 +115,7 @@ public class DrillRelMdSelectivity extends RelMdSelectivity {
       if (table == null) {
         table = rel.getTable().unwrap(DrillTranslatableTable.class).getDrillTable();
       }
-      if (table != null && table.getStatsTable() != null) {
+      if (table != null && table.getStatsTable() != null && table.getStatsTable().isMaterialized()) {
         return getScanSelectivityInternal(table, predicate, rel.getRowType());
       }
     }
@@ -144,6 +144,8 @@ public class DrillRelMdSelectivity extends RelMdSelectivity {
               if (table.getStatsTable() != null
                       && table.getStatsTable().getNdv(col) != null) {
                 orSel += 1.00 / table.getStatsTable().getNdv(col);
+              } else {
+                orSel += guess;
               }
             } else {
               orSel += guess;
@@ -160,7 +162,8 @@ public class DrillRelMdSelectivity extends RelMdSelectivity {
       }
       sel *= orSel;
     }
-    return sel;
+    // Cap selectivity if it exceeds 1.0
+    return (sel > 1.0) ? 1.0 : sel;
   }
 
   private Double getJoinSelectivity(DrillJoinRelBase rel, RelMetadataQuery mq, RexNode predicate) {

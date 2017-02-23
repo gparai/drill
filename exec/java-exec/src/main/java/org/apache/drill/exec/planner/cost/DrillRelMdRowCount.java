@@ -103,7 +103,7 @@ public class DrillRelMdRowCount extends RelMdRowCount{
   private Double getRowCountInternal(TableScan rel, RelMetadataQuery mq) {
     DrillTable table;
     PlannerSettings settings = PrelUtil.getSettings(rel.getCluster());
-
+    // If guessing, return selectivity from RelMDRowCount
     if (DrillRelOptUtil.guessRows(rel)) {
       return super.getRowCount(rel, mq);
     }
@@ -115,6 +115,7 @@ public class DrillRelMdRowCount extends RelMdRowCount{
     try {
       if (table != null
           && table.getStatsTable() != null
+          && table.getStatsTable().isMaterialized()
           /* For GroupScan rely on accurate count from the scan, if available, instead of
            * statistics since partition pruning/filter pushdown might have occurred.
            * e.g. ParquetGroupScan returns accurate rowcount. The other way would be to
