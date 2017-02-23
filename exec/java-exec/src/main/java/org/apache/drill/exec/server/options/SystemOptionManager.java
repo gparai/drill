@@ -167,6 +167,7 @@ public class SystemOptionManager extends BaseOptionManager implements AutoClosea
       ExecConstants.DYNAMIC_UDF_SUPPORT_ENABLED_VALIDATOR,
       ExecConstants.NDV_MEMORY_LIMIT,
       ExecConstants.STATISTICS_VERSION,
+      ExecConstants.CANCEL_ON_CHANNEL_CLOSE,
       ExecConstants.EXTERNAL_SORT_DISABLE_MANAGED_OPTION
     };
     final Map<String, OptionValidator> tmp = new HashMap<>();

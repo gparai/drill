@@ -425,4 +425,10 @@ public interface ExecConstants {
    * the older version of statistics
    */
   LongValidator STATISTICS_VERSION = new NonNegativeLongValidator("exec.statistics.capability_version", 1, 1);
+
+  /**
+   * Option whose value represents the current version of the statistics. Decreasing the value will generate
+   * the older version of statistics
+   */
+  BooleanValidator CANCEL_ON_CHANNEL_CLOSE = new BooleanValidator("exec.statistics.cancel_query", true);
 }

@@ -183,7 +183,10 @@ public class Foreman implements Runnable {
   private class ConnectionClosedListener implements GenericFutureListener<Future<Void>> {
     @Override
     public void operationComplete(Future<Void> future) throws Exception {
-      cancel();
+      if (queryContext.getOptions().getOption(ExecConstants.CANCEL_ON_CHANNEL_CLOSE)) {
+        logger.info("ConnectionClosedListener calling CANCELLATION_REQUESTED for query id {}", queryIdString);
+        cancel();
+      }
     }
   }
 
