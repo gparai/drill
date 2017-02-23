@@ -105,6 +105,10 @@ public class DrillRelMdDistinctRowCount extends RelMdDistinctRowCount{
    */
   private Double getDistinctRowCount(TableScan scan, RelMetadataQuery mq, ImmutableBitSet groupKey,
       RexNode predicate) {
+    // If guessing, return selectivity from RelMDDistinctRowCount
+    if (DrillRelOptUtil.guessRows(scan)) {
+      return super.getDistinctRowCount(scan, groupKey, predicate);
+    }
     DrillTable table = scan.getTable().unwrap(DrillTable.class);
     if (table == null) {
       table = scan.getTable().unwrap(DrillTranslatableTable.class).getDrillTable();
@@ -116,7 +120,9 @@ public class DrillRelMdDistinctRowCount extends RelMdDistinctRowCount{
       ImmutableBitSet groupKey, RelDataType type, RexNode predicate) {
     double selectivity, rowCount;
 
-    if (table == null || table.getStatsTable() == null) {
+    if (table == null
+        || table.getStatsTable() == null
+        || !table.getStatsTable().isMaterialized()) {
       /* If there is no table or metadata (stats) table associated with scan, estimate the
        * distinct row count. Consistent with the estimation of Aggregate row count in
        * RelMdRowCount: distinctRowCount = rowCount * 10%.
