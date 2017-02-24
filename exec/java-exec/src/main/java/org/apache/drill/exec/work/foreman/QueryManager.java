@@ -80,6 +80,7 @@ public class QueryManager implements AutoCloseable {
       .build();
 
   private final Map<DrillbitEndpoint, NodeTracker> nodeMap = Maps.newHashMap();
+  private Map<NodeTracker, Integer> nodeDisconnectMap = Maps.newHashMap();
   private final QueryId queryId;
   private final String stringQueryId;
   private final RunQuery runQuery;
@@ -185,6 +186,7 @@ public class QueryManager implements AutoCloseable {
     if (tracker == null) {
       tracker = new NodeTracker(assignment);
       nodeMap.put(assignment, tracker);
+      nodeDisconnectMap.put(tracker, 0);
     }
 
     tracker.addFragment();
@@ -545,14 +547,19 @@ public class QueryManager implements AutoCloseable {
         }
 
         // fragments were running on the Drillbit, capture node name for exception or logging message
-        if (atLeastOneFailure) {
-          failedNodeList.append(", ");
+        // sometimes nodes come back up - allow upto 10 failures
+        if (nodeDisconnectMap.get(tracker) > 10) {
+          if (atLeastOneFailure) {
+            failedNodeList.append(", ");
+          } else {
+            atLeastOneFailure = true;
+          }
+          failedNodeList.append(ep.getAddress());
+          failedNodeList.append(":");
+          failedNodeList.append(ep.getUserPort());
         } else {
-          atLeastOneFailure = true;
+          nodeDisconnectMap.put(tracker, nodeDisconnectMap.get(tracker)+1);
         }
-        failedNodeList.append(ep.getAddress());
-        failedNodeList.append(":");
-        failedNodeList.append(ep.getUserPort());
       }
 
       if (atLeastOneFailure) {
