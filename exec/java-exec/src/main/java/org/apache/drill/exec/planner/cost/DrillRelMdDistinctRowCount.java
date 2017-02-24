@@ -23,6 +23,7 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.SingleRel;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rel.core.TableScan;
+import org.apache.calcite.rel.core.Window;
 import org.apache.calcite.rel.metadata.ReflectiveRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMdDistinctRowCount;
 import org.apache.calcite.rel.metadata.RelMdUtil;
@@ -37,10 +38,13 @@ import org.apache.calcite.util.ImmutableBitSet;
 import org.apache.drill.exec.planner.common.DrillJoinRelBase;
 import org.apache.drill.exec.planner.common.DrillRelOptUtil;
 import org.apache.drill.exec.planner.common.DrillStatsTable;
+import org.apache.drill.exec.planner.common.DrillWindowRelBase;
 import org.apache.drill.exec.planner.logical.DrillTable;
 import org.apache.drill.exec.planner.logical.DrillTranslatableTable;
+import org.apache.drill.exec.planner.logical.DrillWindowRel;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 
 public class DrillRelMdDistinctRowCount extends RelMdDistinctRowCount{
@@ -56,6 +60,15 @@ public class DrillRelMdDistinctRowCount extends RelMdDistinctRowCount{
     if (rel instanceof TableScan) {
       return getDistinctRowCount((TableScan) rel, groupKey, predicate);
     } else if (rel instanceof SingleRel && !DrillRelOptUtil.guessRows(rel)) {
+        if (rel instanceof Window) {
+          int childFieldCount = ((Window)rel).getInput().getRowType().getFieldCount();
+          // For window aggregates delegate ndv to parent
+          for (int bit : groupKey) {
+            if (bit >= childFieldCount) {
+              return super.getDistinctRowCount(rel, groupKey, predicate);
+            }
+          }
+        }
         return RelMetadataQuery.getDistinctRowCount(((SingleRel) rel).getInput(), groupKey,
             predicate);
     } else if (rel instanceof DrillJoinRelBase) {
@@ -86,10 +99,6 @@ public class DrillRelMdDistinctRowCount extends RelMdDistinctRowCount{
    */
   private Double getDistinctRowCount(TableScan scan, ImmutableBitSet groupKey,
       RexNode predicate) {
-    // If guessing, return selectivity from RelMDDistinctRowCount
-    if (DrillRelOptUtil.guessRows(scan)) {
-      return super.getDistinctRowCount(scan, groupKey, predicate);
-    }
     DrillTable table = scan.getTable().unwrap(DrillTable.class);
     if (table == null) {
       table = scan.getTable().unwrap(DrillTranslatableTable.class).getDrillTable();
@@ -100,10 +109,8 @@ public class DrillRelMdDistinctRowCount extends RelMdDistinctRowCount{
   private Double getDistinctRowCountInternal(RelNode scan, DrillTable table,
       ImmutableBitSet groupKey, RelDataType type, RexNode predicate) {
     double selectivity, rowCount;
-
-    if (table == null
-        || table.getStatsTable() == null
-        || !table.getStatsTable().isMaterialized()) {
+    // If guessing, return NDV as 0.1 * rowCount
+    if (DrillRelOptUtil.guessRows(scan)) {
       /* If there is no table or metadata (stats) table associated with scan, estimate the
        * distinct row count. Consistent with the estimation of Aggregate row count in
        * RelMdRowCount: distinctRowCount = rowCount * 10%.

@@ -148,7 +148,7 @@ public class ConvertCountToDirectScan extends Prule {
 
       RelDataType scanRowType = getCountDirectScanRowType(agg.getCluster().getTypeFactory());
 
-      final ScanPrel newScan = ScanPrel.create(scan,
+      final DirectScanPrel newScan = DirectScanPrel.create(scan,
           scan.getTraitSet().plus(Prel.DRILL_PHYSICAL).plus(DrillDistributionTrait.SINGLETON), getCountDirectScan(cnt),
           scanRowType);
 

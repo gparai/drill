@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import org.apache.drill.common.exceptions.ExecutionSetupException;
 import org.apache.drill.exec.exception.OutOfMemoryException;
 import org.apache.drill.exec.exception.SchemaChangeException;
@@ -48,7 +49,7 @@ import org.apache.drill.exec.vector.ValueVector;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-
+@JsonTypeName("PojoRecordReader")
 public class PojoRecordReader<T> extends AbstractRecordReader implements Iterable<T> {
   private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(PojoRecordReader.class);
   private static final ControlsInjector injector = ControlsInjectorFactory.getInjector(PojoRecordReader.class);

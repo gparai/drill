@@ -42,7 +42,7 @@ import org.apache.calcite.rel.type.RelDataType;
 
 public class DirectScanPrel extends AbstractRelNode implements DrillScanPrel {
   static final org.slf4j.Logger logger = org.slf4j.LoggerFactory
-      .getLogger(ScanPrel.class);
+      .getLogger(DirectScanPrel.class);
 
   protected final GroupScan groupScan;
   private final RelDataType rowType;

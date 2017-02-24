@@ -17,6 +17,9 @@
  */
 package org.apache.drill.exec.planner.sql.handlers;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -194,14 +197,17 @@ public class FindLimit0Visitor extends RelShuttleImpl {
   /**
    * Reader for column names and types.
    */
+  @JsonTypeName("RelDataTypeRecordReader")
   public static class RelDataTypeReader extends AbstractRecordReader {
 
     public final List<String> columnNames;
     public final List<SqlTypeName> columnTypes;
     public final List<TypeProtos.DataMode> dataModes;
 
-    public RelDataTypeReader(List<String> columnNames, List<SqlTypeName> columnTypes,
-        List<TypeProtos.DataMode> dataModes) {
+    @JsonCreator
+    public RelDataTypeReader(@JsonProperty("columnNames") List<String> columnNames,
+                             @JsonProperty("columnTypes") List<SqlTypeName> columnTypes,
+                             @JsonProperty("dataModes") List<TypeProtos.DataMode> dataModes) {
       Preconditions.checkArgument(columnNames.size() == columnTypes.size() &&
           columnTypes.size() == dataModes.size());
       this.columnNames = columnNames;

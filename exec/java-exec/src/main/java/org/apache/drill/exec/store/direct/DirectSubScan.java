@@ -17,20 +17,26 @@
  */
 package org.apache.drill.exec.store.direct;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import org.apache.drill.exec.physical.base.AbstractSubScan;
 import org.apache.drill.exec.proto.UserBitShared.CoreOperatorType;
 import org.apache.drill.exec.store.RecordReader;
 
+@JsonTypeName("direct-subscan")
 public class DirectSubScan extends AbstractSubScan{
   static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(DirectSubScan.class);
+  @JsonProperty("reader") private final RecordReader reader;
 
-  private final RecordReader reader;
-
-  public DirectSubScan(RecordReader reader) {
+  @JsonCreator
+  public DirectSubScan(@JsonProperty("reader") RecordReader reader) {
     super(null);
     this.reader = reader;
   }
 
+  @JsonGetter("reader")
   public RecordReader getReader() {
     return reader;
   }
