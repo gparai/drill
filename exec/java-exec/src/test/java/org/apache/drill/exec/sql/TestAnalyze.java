@@ -122,7 +122,7 @@ public class TestAnalyze extends PlanTestBase {
       test("ANALYZE TABLE dfs_test.tmp.orders COMPUTE STATISTICS");
       test("SELECT * FROM dfs_test.tmp.`lineitem/.stats.drill`");
       test("SELECT * FROM dfs_test.tmp.`orders/.stats.drill`");
-
+      test("ALTER SESSION SET `planner.statistics.use` = true");
       test("SELECT * FROM dfs_test.tmp.`lineitem` l JOIN dfs_test.tmp.`orders` o ON l.l_orderkey = o.o_orderkey");
     } finally {
       test("ALTER SESSION SET `planner.slice_target` = " + ExecConstants.SLICE_TARGET_DEFAULT);
@@ -259,7 +259,7 @@ public class TestAnalyze extends PlanTestBase {
     test("CREATE TABLE dfs_test.tmp.departmentUseStat AS SELECT * from cp.`department.json`");
     test("ANALYZE TABLE dfs_test.tmp.employeeUseStat COMPUTE STATISTICS");
     test("ANALYZE TABLE dfs_test.tmp.departmentUseStat COMPUTE STATISTICS");
-
+    test("ALTER SESSION SET `planner.statistics.use` = true");
     String query = " select employee_id from dfs_test.tmp.employeeUseStat where department_id = 2";
     String[] expectedPlan1 = {"Filter\\(condition.*\\).*rowcount = 96.25,.*",
             "Scan.*columns=\\[`department_id`, `employee_id`\\].*rowcount = 1155.0.*"};
@@ -355,6 +355,7 @@ public class TestAnalyze extends PlanTestBase {
     // copy the data into the temporary location
     test("ALTER SESSION SET `planner.slice_target` = 1");
     test("ALTER SESSION SET `store.format` = 'json'");
+    test("ALTER SESSION SET `planner.statistics.use` = true");
     String tmpLocation = getDfsTestTmpSchemaLocation();
     String query = String.format("select count(distinct o_orderkey) from dfs_test.`%s/%s`", tmpLocation, "parquetStale");
     File dataDir1 = new File(tmpLocation + Path.SEPARATOR + "parquetStale");

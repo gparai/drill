@@ -44,8 +44,7 @@ import org.apache.drill.exec.planner.cost.DrillCostBase.DrillCostFactory;
 
 //public class DirectScanPrel extends AbstractRelNode implements DrillScanPrel
 public class DirectScanPrel extends AbstractRelNode implements Prel, HasDistributionAffinity {
-  static final org.slf4j.Logger logger = org.slf4j.LoggerFactory
-          .getLogger(DirectScanPrel.class);
+  static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(DirectScanPrel.class);
 
   private final GroupScan groupScan;
   private final RelDataType rowType;
