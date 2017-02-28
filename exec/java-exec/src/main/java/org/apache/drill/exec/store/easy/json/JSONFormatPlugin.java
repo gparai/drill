@@ -91,7 +91,7 @@ public class JSONFormatPlugin extends EasyFormatPlugin<JSONFormatConfig> {
     if (context.getSQLStatementType() == SqlStatementType.ANALYZE) {
       options.put("statsversion", Long.toString(context.getOptions().getOption(ExecConstants.STATISTICS_VERSION)));
       options.put("queryid", context.getQueryIdString());
-      recordWriter = new JsonStatisticsRecordWriter();
+      recordWriter = new JsonStatisticsRecordWriter(getFsConf());
     }
     recordWriter.init(options);
 
