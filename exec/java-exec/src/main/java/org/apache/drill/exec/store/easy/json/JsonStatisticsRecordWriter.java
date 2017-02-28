@@ -55,6 +55,7 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
   private int statisticsVersion;
   private final JsonFactory factory = new JsonFactory();
   private String lastDirectory = null;
+  private Configuration fsConf = null;
   private String nextField = null;
   private DrillStatsTable.TableStatistics statistics;
   private List<DrillStatsTable.ColumnStatistics> columnStatisticsList = new ArrayList<DrillStatsTable.ColumnStatistics>();
@@ -65,7 +66,8 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
   private long recordsWritten = -1;
   private boolean errStatus = false;
 
-  public JsonStatisticsRecordWriter(){
+  public JsonStatisticsRecordWriter(Configuration fsConf){
+    this.fsConf = fsConf;
   }
 
   @Override
@@ -79,10 +81,8 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
     final boolean uglify = Boolean.parseBoolean(writerOptions.get("uglify"));
     this.statisticsVersion = (int)Long.parseLong(writerOptions.get("statsversion"));
     this.queryId = writerOptions.get("queryid");
-    Configuration conf = new Configuration();
-    conf.set(FileSystem.FS_DEFAULT_NAME_KEY, writerOptions.get(FileSystem.FS_DEFAULT_NAME_KEY));
      //Write as DRILL process user
-    this.fs = ImpersonationUtil.createFileSystem(ImpersonationUtil.getProcessUserName(), conf);
+    this.fs = ImpersonationUtil.createFileSystem(ImpersonationUtil.getProcessUserName(), fsConf);
 
     fileName = new Path(location, prefix + "." + extension + ".tmp." + queryId);
     // Delete .tmp file if exists. Unexpected error in cleanup during last ANALYZE
@@ -108,8 +108,12 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
       logger.debug("Created file: {}", fileName);
     } catch (IOException ex) {
       logger.error("Unable to create file: " + fileName, ex);
-      generator.close();
-      stream.close();
+      if (generator != null) {
+        generator.close();
+      }
+      if (stream != null) {
+        stream.close();
+      }
       throw ex;
     }
   }
