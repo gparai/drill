@@ -336,7 +336,7 @@ public class QueryContext implements AutoCloseable, OptimizerRulesContext, Schem
     if (this.stmtType == null) {
       this.stmtType = stmtType;
     } else {
-      throw new UnsupportedOperationException("SQL Statement type is already set");
+      throw new IllegalStateException("SQL Statement type is already set");
     }
   }
 
@@ -344,6 +344,6 @@ public class QueryContext implements AutoCloseable, OptimizerRulesContext, Schem
    * @return Get the type {@link SqlStatementType} of the statement e.g. CTAS, ANALYZE
    */
   public SqlStatementType getSQLStatementType() {
-    return this.stmtType;
+    return stmtType;
   }
 }

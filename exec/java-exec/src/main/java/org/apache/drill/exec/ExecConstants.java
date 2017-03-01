@@ -907,15 +907,17 @@ public final class ExecConstants {
           "If set to false affected rows count will be returned instead and result set will be null. Default is true. (Drill 1.15+)"));
 
   /**
-   * Option whose value is a long value representing the number of bits required for computing ndv (using HLL)
+   * Option whose value is a long value representing the number of bits required for computing ndv (using HLL).
+   * Controls the trade-off between accuracy and memory requirements. The accuracy correlates positively with the
+   * number of bits.
    */
-  public static final String NDV_MEMORY_LIMIT = "exec.statistics.ndv_memory_limit";
-  public static final LongValidator NDV_MEMORY_LIMIT_VALIDATOR = new PositiveLongValidator(NDV_MEMORY_LIMIT, 30,
+  public static final String HLL_ACCURACY = "exec.statistics.ndv_accuracy";
+  public static final LongValidator HLL_ACCURACY_VALIDATOR = new PositiveLongValidator(HLL_ACCURACY, 30,
       new OptionDescription("Controls trade-off between NDV statistic storage cost and accuracy"));
 
   /**
    * Option whose value represents the current version of the statistics. Decreasing the value will generate
-   * the older version of statistics
+   * the older version of statistics.
    */
   public static final String STATISTICS_VERSION = "exec.statistics.capability_version";
   public static final LongValidator STATISTICS_VERSION_VALIDATOR = new NonNegativeLongValidator(STATISTICS_VERSION, 1,

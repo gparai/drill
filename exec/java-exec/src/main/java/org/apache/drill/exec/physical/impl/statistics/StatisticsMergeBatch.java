@@ -43,6 +43,7 @@ import org.apache.drill.exec.vector.complex.MapVector;
 
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -55,29 +56,29 @@ import java.util.TimeZone;
  *       "region_id"  : VARCHAR
  *       "sales_city" : VARCHAR
  *       "cnt"        : VARCHAR
- *    "statscount" : MAP
+ *    "statscount" : MAP - Number of entries (rows)
  *       "region_id"  : BIGINT - statscount(region_id)
  *                      in incoming batch
  *       "sales_city" : BIGINT - statscount(sales_city)
  *       "cnt"        : BIGINT - statscount(cnt)
- *    "nonnullstatcount" : MAP
+ *    "nonnullstatcount" : MAP - Number of non-null entries (rows)
  *       "region_id"  : BIGINT - nonnullstatcount(region_id)
  *       "sales_city" : BIGINT - nonnullstatcount(sales_city)
  *       "cnt"        : BIGINT - nonnullstatcount(cnt)
  *   .... another map for next stats function ....
  * Schema of outgoing batch:
  *    "schema" : BIGINT - Schema number. For each schema change this number is incremented.
- *    "computed" : BIGINT - What time is it computed?
+ *    "computed" : DATE - What time is it computed?
  *    "columns"       : MAP - Column names
  *       "region_id"  : VARCHAR
  *       "sales_city" : VARCHAR
  *       "cnt"        : VARCHAR
- *    "statscount" : MAP
+ *    "statscount" : MAP - Number of entries (rows)
  *       "region_id"  : BIGINT - statscount(region_id) - aggregation over all values of region_id
  *                      in incoming batch
  *       "sales_city" : BIGINT - statscount(sales_city)
  *       "cnt"        : BIGINT - statscount(cnt)
- *    "nonnullstatcount" : MAP
+ *    "nonnullstatcount" : MAP - Number of non-null entries (rows)
  *       "region_id"  : BIGINT - nonnullstatcount(region_id)
  *       "sales_city" : BIGINT - nonnullstatcount(sales_city)
  *       "cnt"        : BIGINT - nonnullstatcount(cnt)
@@ -131,28 +132,51 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
    * the same in each map
    */
   private void buildColumnsList() {
+    Map<String, Boolean> inputFunctions = new HashMap<>();
+    // Prepare map of input functions for verifying only they appear in the incoming batch
+    for (String inputFunc : functions.values()) {
+      inputFunctions.put(inputFunc, false);
+    }
     List<String> lastMapColumnsList = null;
+    //Populate the columns list from the `columns` map
     for (VectorWrapper<?> vw : incoming) {
+      String inputFunc = vw.getField().getLastName();
       if (vw.getField().getType().getMinorType() != TypeProtos.MinorType.MAP) {
         continue;
       }
-      columnsList = Lists.newArrayList();
-      for (ValueVector vv : vw.getValueVector()) {
-        if (vv.getField().getType().getMinorType() == TypeProtos.MinorType.MAP) {
-          throw new IllegalStateException("StatisticsMerge of nested map is not supported");
-        }
-        columnsList.add(vv.getField().getLastName());
-      }
-      if (lastMapColumnsList == null) {
-        lastMapColumnsList = columnsList;
+      if (inputFunctions.get(inputFunc)) {
+        throw new IllegalArgumentException (String.format("The statistic `%s` appears more than once",
+            inputFunc));
       } else {
-        if (columnsList.size() != lastMapColumnsList.size()
-            || !lastMapColumnsList.containsAll(columnsList)) {
-          // Error!! Maps with different size and/or keys. The map for each statistics (e.g. NDV)
-          // should match exactly with the column map i.e. we did not run into any issues while
-          // generating statistics for all the specified columns
-          throw new IllegalStateException("StatisticsMerge Maps have different fields");
+        inputFunctions.put(inputFunc, true);
+      }
+      if (vw.getField().getLastName().equals(Statistic.COLNAME)) {
+        columnsList = Lists.newArrayList();
+        for (ValueVector vv : vw.getValueVector()) {
+          if (vv.getField().getType().getMinorType() == TypeProtos.MinorType.MAP) {
+            throw new IllegalArgumentException("StatisticsMerge of nested map is not supported");
+          }
+          columnsList.add(vv.getField().getLastName());
         }
+        lastMapColumnsList = columnsList;
+      }
+    }
+    // Verify the rest of the maps have the same columns
+    for (VectorWrapper<?> vw : incoming) {
+      String inputFunc = vw.getField().getLastName();
+      if (vw.getField().getType().getMinorType() != TypeProtos.MinorType.MAP) {
+        continue;
+      }
+      if (!inputFunctions.get(inputFunc)) {
+        throw new IllegalArgumentException (String.format("The statistic `%s` is not expected here",
+            inputFunc));
+      }
+      if (columnsList.size() != lastMapColumnsList.size()
+          || !lastMapColumnsList.containsAll(columnsList)) {
+        // Error!! Maps with different size and/or keys. The map for each statistics (e.g. NDV)
+        // should match exactly with the column map i.e. we did not run into any issues while
+        // generating statistics for all the specified columns
+        throw new IllegalStateException("StatisticsMerge Maps have different fields");
       }
     }
   }
@@ -171,17 +195,17 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
         }
       }
     }
-    // Configure settings/dependencies for these statistics
+    // Configure settings/dependencies for statistics, if needed
     for (MergedStatistic statistic : mergedStatisticList) {
-      if (statistic instanceof AvgWidthMergedStatistic) {
-        statistic.configure(mergedStatisticList);
-      } else if (statistic instanceof NDVMergedStatistic) {
+      if (statistic.getName().equals(Statistic.AVG_WIDTH)) {
+        ((AvgWidthMergedStatistic)statistic).configure(mergedStatisticList);
+      } else if (statistic.getName().equals(Statistic.NDV)) {
         NDVMergedStatistic.NDVConfiguration config =
             new NDVMergedStatistic.NDVConfiguration(context.getContextInformation(),
                 mergedStatisticList);
-        statistic.configure(config);
-      } else if (statistic instanceof HLLMergedStatistic) {
-        statistic.configure(context.getContextInformation());
+        ((NDVMergedStatistic)statistic).configure(config);
+      } else if (statistic.getName().equals(Statistic.HLL_MERGE)) {
+        ((HLLMergedStatistic)statistic).configure(context.getContextInformation());
       }
     }
     // Create the schema number and time when computed in the outgoing vector
@@ -263,7 +287,7 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
       } else {
         // Populate the rest of the merged statistics. Each statistic is a map which
         // contains <COL_NAME, STATS_VALUE> pairs
-        ValueVector vv = vw.getValueVector();
+        MapVector vv = (MapVector) vw.getValueVector();
         for (MergedStatistic outputStat : mergedStatisticList) {
           if (outputStatName.equals(outputStat.getName())) {
             outputStat.setOutput(vv);
@@ -294,7 +318,7 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
     for (MergedStatistic outputStat : mergedStatisticList) {
       String inputStat = outputStat.getInput();
       for (VectorWrapper<?> vw : incoming) {
-        ValueVector vv = vw.getValueVector();
+        MapVector vv = (MapVector) vw.getValueVector();
         if (vv.getField().getLastName().equals(inputStat)) {
           outputStat.merge(vv);
           break;

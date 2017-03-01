@@ -17,29 +17,44 @@
  */
 package org.apache.drill.exec.physical.impl.statistics;
 
+import java.util.HashMap;
+
 public class MergedStatisticFactory {
+  private HashMap<String,Class<? extends MergedStatistic>> statsClasses = new HashMap<>( );
   /*
    * Creates the appropriate statistics object given the name of the statistics and the input statistic
    */
+  private static MergedStatisticFactory instance = new MergedStatisticFactory();
+  //Can not instantiate
+  private MergedStatisticFactory() {
+    statsClasses.put(Statistic.COLNAME, ColumnMergedStatistic.class);
+    statsClasses.put(Statistic.COLTYPE, ColTypeMergedStatistic.class);
+    statsClasses.put(Statistic.STATCOUNT, StatCountMergedStatistic.class);
+    statsClasses.put(Statistic.NNSTATCOUNT, NNStatCountMergedStatistic.class);
+    statsClasses.put(Statistic.AVG_WIDTH, AvgWidthMergedStatistic.class);
+    statsClasses.put(Statistic.HLL_MERGE, HLLMergedStatistic.class);
+    statsClasses.put(Statistic.NDV, NDVMergedStatistic.class);
+  }
+
+  private MergedStatistic newMergedStatistic(String outputStatName)
+      throws InstantiationException, IllegalAccessException {
+    MergedStatistic stat = statsClasses.get(outputStatName).newInstance();
+    return stat;
+  }
+
   public static MergedStatistic getMergedStatistic(String outputStatName, String inputStatName) {
-    if (outputStatName == null || inputStatName == null) {
-      return null;
-    } else if (outputStatName.equals(Statistic.COLNAME)) {
-      return new ColumnMergedStatistic(outputStatName, inputStatName);
-    } else if (outputStatName.equals(Statistic.COLTYPE)) {
-      return new ColTypeMergedStatistic(outputStatName, inputStatName);
-    } else if (outputStatName.equals(Statistic.STATCOUNT)) {
-      return new StatCountMergedStatistic(outputStatName, inputStatName);
-    } else if (outputStatName.equals(Statistic.NNSTATCOUNT)) {
-      return new NNStatCountMergedStatistic(outputStatName, inputStatName);
-    } else if (outputStatName.equals(Statistic.AVG_WIDTH)) {
-      return new AvgWidthMergedStatistic(outputStatName, inputStatName);
-    } else if (outputStatName.equals(Statistic.HLL_MERGE)) {
-      return new HLLMergedStatistic(outputStatName, inputStatName);
-    } else if (outputStatName.equals(Statistic.NDV)) {
-      return new NDVMergedStatistic(outputStatName, inputStatName);
-    } else {
-      return null;
+    try {
+      MergedStatistic statistic = instance.newMergedStatistic(outputStatName);
+      if (statistic == null) {
+        throw new IllegalArgumentException("No implementation found for " + outputStatName);
+      } else {
+        statistic.initialize(inputStatName);
+        return statistic;
+      }
+    } catch (InstantiationException ex) {
+      throw new IllegalArgumentException("Cannot instantiate class for " + outputStatName);
+    } catch (IllegalAccessException ex) {
+      throw new IllegalArgumentException("Cannot access class for " + outputStatName);
     }
   }
 }

@@ -146,12 +146,6 @@ public class StreamingAggBatch extends AbstractRecordBatch<StreamingAggregate> {
     ExternalSortBatch.retainSv4OnNone(incoming);
   }
 
-  public StreamingAggBatch(StreamingAggregate popConfig, RecordBatch incoming, FragmentContext context,
-                           final boolean buildSchema) throws OutOfMemoryException {
-    super(popConfig, context, buildSchema);
-    this.incoming = incoming;
-  }
-
   @Override
   public int getRecordCount() {
     if (done || aggregator == null) {
