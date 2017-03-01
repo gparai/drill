@@ -99,7 +99,7 @@ public interface FragmentContext extends UdfUtilities, AutoCloseable {
    * Returns the statement type (e.g. SELECT, CTAS, ANALYZE) from the query context.
    * @return query statement type {@link SqlStatementType}, if known.
    */
-  public SqlStatementType getStatementType();
+  public SqlStatementType getSQLStatementType();
 
   /**
    * Get this node's identity.

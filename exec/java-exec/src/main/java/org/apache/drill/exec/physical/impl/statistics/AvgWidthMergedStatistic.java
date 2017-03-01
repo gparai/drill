@@ -18,6 +18,7 @@
 package org.apache.drill.exec.physical.impl.statistics;
 
 import org.apache.drill.common.types.TypeProtos;
+import org.apache.drill.common.types.MinorType;
 import org.apache.drill.exec.expr.holders.NullableFloat8Holder;
 import org.apache.drill.exec.expr.holders.ValueHolder;
 import org.apache.drill.exec.vector.NullableFloat8Vector;
@@ -29,19 +30,23 @@ import java.util.List;
 import java.util.Map;
 
 public class AvgWidthMergedStatistic extends AbstractMergedStatistic {
+  private Map<String, Double> sumHolder;
+  ColTypeMergedStatistic types;
+  NNStatCountMergedStatistic nonNullStatCounts;
+  StatCountMergedStatistic statCounts;
 
-  private String name;
-  private String inputName;
-  private boolean configureComplete = false;
-  private boolean mergeComplete = false;
-  private Map<String, ValueHolder> sumHolder;
-  MergedStatistic types, nonNullStatCounts, statCounts;
-
-  public AvgWidthMergedStatistic (String name, String inputName) {
-    this.name = name;
-    this.inputName = inputName;
+  public AvgWidthMergedStatistic () {
     this.sumHolder = new HashMap<>();
-    types = nonNullStatCounts = statCounts = null;
+    types = null;
+    nonNullStatCounts = null;
+    statCounts = null;
+    state = State.INIT;
+  }
+
+  @Override
+  public void initialize(String inputName) {
+    super.initialize(Statistic.AVG_WIDTH, inputName);
+    state = State.CONFIG;
   }
 
   @Override
@@ -55,81 +60,79 @@ public class AvgWidthMergedStatistic extends AbstractMergedStatistic {
   }
 
   @Override
-  public void merge(ValueVector input) {
+  public void merge(MapVector input) {
     // Check the input is a Map Vector
     assert (input.getField().getType().getMinorType() == TypeProtos.MinorType.MAP);
-    MapVector inputMap = (MapVector) input;
-    for (ValueVector vv : inputMap) {
+    for (ValueVector vv : input) {
+      NullableFloat8Vector fv = (NullableFloat8Vector) vv;
+      NullableFloat8Vector.Accessor accessor = fv.getAccessor();
       String colName = vv.getField().getLastName();
-      NullableFloat8Holder colSumHolder;
+      double sum = 0;
       if (sumHolder.get(colName) != null) {
-        colSumHolder = (NullableFloat8Holder) sumHolder.get(colName);
-      } else {
-        colSumHolder = new NullableFloat8Holder();
-        sumHolder.put(colName, colSumHolder);
+        sum = sumHolder.get(colName);
       }
-      Object val = vv.getAccessor().getObject(0);
-      if (val != null) {
-        colSumHolder.value += (double) val;
-        colSumHolder.isSet = 1;
+      if (!accessor.isNull(0)) {
+        sum += accessor.get(0);
+        sumHolder.put(colName, sum);
       }
     }
   }
 
-  @Override
-  public Object getStat(String colName) {
-      if (mergeComplete != true) {
-        throw new IllegalStateException(
-            String.format("Statistic `%s` has not completed merging statistics", name));
-      }
-      NullableFloat8Holder colSumHolder = (NullableFloat8Holder) sumHolder.get(colName);
-      return (long) (colSumHolder.value/ getRowCount(colName));
+  public double getStat(String colName) {
+    if (state != State.COMPLETE) {
+      throw new IllegalStateException(
+          String.format("Statistic `%s` has not completed merging statistics", name));
     }
+    return sumHolder.get(colName)/getRowCount(colName);
+  }
 
   @Override
-  public void setOutput(ValueVector output) {
+  public void setOutput(MapVector output) {
     // Check the input is a Map Vector
     assert (output.getField().getType().getMinorType() == TypeProtos.MinorType.MAP);
     // Dependencies have been configured correctly
-    assert (configureComplete == true);
-    MapVector outputMap = (MapVector) output;
-
-    for (ValueVector outMapCol : outputMap) {
+    assert (state == State.MERGE);
+    for (ValueVector outMapCol : output) {
       String colName = outMapCol.getField().getLastName();
-      NullableFloat8Holder colSumHolder = (NullableFloat8Holder) sumHolder.get(colName);
       NullableFloat8Vector vv = (NullableFloat8Vector) outMapCol;
       vv.allocateNewSafe();
-      vv.getMutator().setSafe(0, (colSumHolder.value / getRowCount(colName)));
+      // For variable-length columns, we divide by non-null rows since NULL values do not
+      // take up space. For fixed-length columns NULL values take up space.
+      if (sumHolder.get(colName) != null) {
+        vv.getMutator().setSafe(0, sumHolder.get(colName) / getRowCount(colName));
+      } else {
+        vv.getMutator().setNull(0);
+      }
     }
-    mergeComplete = true;
+    state = State.COMPLETE;
   }
 
-  @Override
-  public void configure(Object configurations) {
-    List<MergedStatistic> statistics = (List<MergedStatistic>) configurations;
-    for (MergedStatistic statistic : statistics) {
-      if (statistic.getName().equals("type")) {
-        types = statistic;
-      } else if (statistic.getName().equals("statcount")) {
-        statCounts = statistic;
-      } else if (statistic.getName().equals("nonnullstatcount")) {
-        nonNullStatCounts = statistic;
+  public void configure(List<MergedStatistic> statisticList) {
+    assert (state == State.CONFIG);
+    for (MergedStatistic statistic : statisticList) {
+      if (statistic.getName().equals(Statistic.COLTYPE)) {
+        types = (ColTypeMergedStatistic) statistic;
+      } else if (statistic.getName().equals(Statistic.STATCOUNT)) {
+        statCounts = (StatCountMergedStatistic) statistic;
+      } else if (statistic.getName().equals(Statistic.NNSTATCOUNT)) {
+        nonNullStatCounts = (NNStatCountMergedStatistic) statistic;
       }
     }
     assert (types != null && statCounts != null && nonNullStatCounts != null);
-    configureComplete = true;
+    // Now config complete - moving to MERGE state
+    state = State.MERGE;
   }
 
   private long getRowCount(String colName) {
-    int type = (int) types.getStat(colName);
-    // If variable type - then use the nonNullCount. Otherwise, use the Count,
+    int type = types.getStat(colName);
+    // If variable length type - then use the nonNullCount. Otherwise, use the Count,
     // since even NULL values take up the same space.
-    if (type == TypeProtos.MinorType.VAR16CHAR.getNumber()
-        || type == TypeProtos.MinorType.VARCHAR.getNumber()
-        || type == TypeProtos.MinorType.VARBINARY.getNumber()) {
-      return (long) nonNullStatCounts.getStat(colName);
+    if (type == MinorType.VAR16CHAR.getNumber()
+        || type == MinorType.VARCHAR.getNumber()
+        || type == MinorType.VARBINARY.getNumber()) {
+      return nonNullStatCounts.getStat(colName);
     } else {
-      return (long) statCounts.getStat(colName);
+      return statCounts.getStat(colName);
     }
   }
 }
