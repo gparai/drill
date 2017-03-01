@@ -17,36 +17,30 @@
  */
 package org.apache.drill.exec.physical.impl.statistics;
 
-import org.apache.drill.exec.vector.ValueVector;
+import org.apache.drill.exec.vector.complex.MapVector;
 
 public abstract class AbstractMergedStatistic extends Statistic implements MergedStatistic {
-  @Override
-  public String getName() {
-    throw new UnsupportedOperationException("getName() not implemented");
+  protected String name;
+  protected String inputName;
+  protected State state;
+
+  public void initialize(String name, String inputName) {
+    this.name = name;
+    this.inputName = inputName;
   }
 
   @Override
-  public String getInput() {
-    throw new UnsupportedOperationException("getInput() not implemented");
-  }
+  public abstract void initialize(String inputName);
 
   @Override
-  public void merge(ValueVector input) {
-    throw new UnsupportedOperationException("merge() not implemented");
-  }
+  public abstract String getName();
 
   @Override
-  public Object getStat(String colName) {
-    throw new UnsupportedOperationException("getStat() not implemented");
-  }
+  public abstract String getInput();
 
   @Override
-  public void setOutput(ValueVector output) {
-    throw new UnsupportedOperationException("getOutput() not implemented");
-  }
+  public abstract void merge(MapVector input);
 
   @Override
-  public void configure(Object configurations) {
-    //Nothing to be configured by default
-  }
+  public abstract void setOutput(MapVector output);
 }

@@ -17,7 +17,8 @@
  */
 package org.apache.drill.exec.physical.impl.statistics;
 
-import org.apache.drill.exec.vector.ValueVector;
+import org.apache.drill.exec.vector.complex.MapVector;
+
 /*
  * Interface for implementing a merged statistic. A merged statistic can merge
  * the input statistics to get the overall value. e.g. `rowcount` merged statistic
@@ -25,17 +26,36 @@ import org.apache.drill.exec.vector.ValueVector;
  * Given `rowcount`s 10 and 20, the `rowcount` merged statistic will return 30.
  */
 public interface MergedStatistic {
-  // Gets the name of the merged statistic
+
+  /** Initialize the merged statistic
+   *
+   *  @param inputName - the input {@link StatisticsAggBatch} statistic for this merged statistic
+   */
+  void initialize(String inputName);
+
+  /** Gets the name of the merged statistic
+   *
+   * @return - name of this merged statistic
+   */
   String getName();
-  // Gets the name of the input statistic
+
+  /**
+   * Gets the name of the input statistic
+   *
+   *  @return - name of the input {@link StatisticsAggBatch} statistic for this merged statistic
+   */
   String getInput();
-  // Merges the input statistic (incoming value vector) into the existing
-  // merged statistic
-  void merge(ValueVector input);
-  // Returns the merged statistic for the column `colname`
-  Object getStat(String colName);
-  // Sets the merged statistic value in the output (outgoing value vector)
-  void setOutput(ValueVector output);
-  // Configures the merged statistic given the configuration parameters
-  void configure(Object configurations);
+
+  /** Merges the input statistic (incoming value vector) into the existing
+   * merged statistic
+   *
+   * @param input - the input value vector to merge
+   */
+  void merge(MapVector input);
+
+  /** Sets the merged statistic value in the output (outgoing value vector)
+   *
+   * @param output - the output vector where to populate the statistic value
+   */
+  void setOutput(MapVector output);
 }

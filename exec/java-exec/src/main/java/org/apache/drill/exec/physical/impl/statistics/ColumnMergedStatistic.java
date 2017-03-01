@@ -24,12 +24,15 @@ import org.apache.drill.exec.vector.VarCharVector;
 import org.apache.drill.exec.vector.complex.MapVector;
 
 public class ColumnMergedStatistic extends AbstractMergedStatistic {
-  private String name;
-  private String inputName;
 
-  public ColumnMergedStatistic (String name, String inputName) {
-    this.name = name;
-    this.inputName = inputName;
+  public ColumnMergedStatistic () {
+    state = State.INIT;
+  }
+
+  @Override
+  public void initialize(String inputName) {
+    super.initialize(Statistic.COLNAME, inputName);
+    state = State.MERGE;
   }
 
   @Override
@@ -43,13 +46,13 @@ public class ColumnMergedStatistic extends AbstractMergedStatistic {
   }
 
   @Override
-  public void merge(ValueVector input) {
+  public void merge(MapVector input) {
     // Check the input is a Map Vector
     assert (input.getField().getType().getMinorType() == TypeProtos.MinorType.MAP);
   }
 
   @Override
-  public void setOutput(ValueVector output) {
+  public void setOutput(MapVector output) {
     // Check the input is a Map Vector
     assert (output.getField().getType().getMinorType() == TypeProtos.MinorType.MAP);
     MapVector outputMap = (MapVector) output;
@@ -60,5 +63,7 @@ public class ColumnMergedStatistic extends AbstractMergedStatistic {
       // Set column name in ValueVector
       vv.getMutator().setSafe(0, colName.getBytes(), 0, colName.length());
     }
+    // Now moving to COMPLETE state
+    state = State.COMPLETE;
   }
 }

@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -21,6 +21,10 @@ package org.apache.drill.exec.physical.impl.statistics;
  * Base Statistics class - all statistics classes should extend this class
  */
 public abstract class Statistic {
+  /*
+   * The lifecycle states for statistics
+   */
+  public enum State {INIT, CONFIG, MERGE, COMPLETE};
   /*
    * List of statistics used in Drill.
    */

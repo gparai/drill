@@ -439,13 +439,15 @@ public interface ExecConstants {
       QUERY_PROFILE_DEBUG_OPTION, false, false);
 
   /**
-   * Option whose value is a long value representing the number of bits required for computing ndv (using HLL)
+   * Option whose value is a long value representing the number of bits required for computing ndv (using HLL).
+   * Controls the trade-off between accuracy and memory requirements. The accuracy correlates positively with the
+   * number of bits.
    */
-  LongValidator NDV_MEMORY_LIMIT = new PositiveLongValidator("exec.statistics.ndv_memory_limit", 30, 20);
+  LongValidator HLL_ACCURACY = new PositiveLongValidator("exec.statistics.ndv_accuracy", 30, 20);
 
   /**
    * Option whose value represents the current version of the statistics. Decreasing the value will generate
-   * the older version of statistics
+   * the older version of statistics.
    */
   LongValidator STATISTICS_VERSION = new NonNegativeLongValidator("exec.statistics.capability_version", 1, 1);
 }

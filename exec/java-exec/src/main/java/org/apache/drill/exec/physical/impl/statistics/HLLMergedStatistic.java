@@ -35,17 +35,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class HLLMergedStatistic extends AbstractMergedStatistic {
-  private String name;
-  private String inputName;
-  private boolean configureComplete = false;
-  private boolean mergeComplete = false;
-  private Map<String, ValueHolder> hllHolder;
+  private Map<String, HyperLogLog> hllHolder;
   private int accuracy;
 
-  public HLLMergedStatistic (String name, String inputName) {
-    this.name = name;
-    this.inputName = inputName;
+  public HLLMergedStatistic () {
     this.hllHolder = new HashMap<>();
+    state = State.INIT;
+  }
+
+  @Override
+  public void initialize(String inputName) {
+    super.initialize(Statistic.HLL_MERGE, inputName);
+    state = State.CONFIG;
   }
 
   @Override
@@ -59,28 +60,28 @@ public class HLLMergedStatistic extends AbstractMergedStatistic {
   }
 
   @Override
-  public void merge(ValueVector input) {
+  public void merge(MapVector input) {
     // Check the input is a Map Vector
     assert (input.getField().getType().getMinorType() == TypeProtos.MinorType.MAP);
-    MapVector inputMap = (MapVector) input;
-    for (ValueVector vv : inputMap) {
+    for (ValueVector vv : input) {
       String colName = vv.getField().getLastName();
-      ObjectHolder colHLLHolder;
+      HyperLogLog colHLLHolder = null;
       if (hllHolder.get(colName) != null) {
-        colHLLHolder = (ObjectHolder) hllHolder.get(colName);
-      } else {
-        colHLLHolder = new ObjectHolder();
-        colHLLHolder.obj = new HyperLogLog(accuracy);
-        hllHolder.put(colName, colHLLHolder);
+        colHLLHolder = hllHolder.get(colName);
       }
-
       NullableVarBinaryVector hllVector = (NullableVarBinaryVector) vv;
+      NullableVarBinaryVector.Accessor accessor = hllVector.getAccessor();
+
       try {
-        if (hllVector.getAccessor().isSet(0) == 1) {
-          ByteArrayInputStream bais = new ByteArrayInputStream(hllVector.getAccessor().getObject(0), 0,
-              vv.getBufferSize());
+        if (!accessor.isNull(0)) {
+          ByteArrayInputStream bais = new ByteArrayInputStream(accessor.get(0), 0, vv.getBufferSize());
           HyperLogLog other = HyperLogLog.Builder.build(new DataInputStream(bais));
-          ((HyperLogLog) colHLLHolder.obj).addAll(other);
+          if (colHLLHolder != null) {
+            colHLLHolder.addAll(other);
+            hllHolder.put(colName, colHLLHolder);
+          } else {
+            hllHolder.put(colName, other);
+          }
         }
       } catch (Exception ex) {
         //TODO: Catch IOException/CardinalityMergeException
@@ -89,42 +90,43 @@ public class HLLMergedStatistic extends AbstractMergedStatistic {
     }
   }
 
-  @Override
-  public Object getStat(String colName) {
-    if (mergeComplete != true) {
+  public HyperLogLog getStat(String colName) {
+    if (state != State.COMPLETE) {
       throw new IllegalStateException(String.format("Statistic `%s` has not completed merging statistics",
           name));
     }
-    ObjectHolder colHLLHolder = (ObjectHolder) hllHolder.get(colName);
-    return colHLLHolder.obj;
+    return hllHolder.get(colName);
   }
 
   @Override
-  public void setOutput(ValueVector output) {
+  public void setOutput(MapVector output) {
     // Check the input is a Map Vector
     assert (output.getField().getType().getMinorType() == TypeProtos.MinorType.MAP);
     // Dependencies have been configured correctly
-    assert (configureComplete == true);
-    MapVector outputMap = (MapVector) output;
-    for (ValueVector outMapCol : outputMap) {
+    assert (state == State.MERGE);
+    for (ValueVector outMapCol : output) {
       String colName = outMapCol.getField().getLastName();
-      ObjectHolder colHLLHolder = (ObjectHolder) hllHolder.get(colName);
+      HyperLogLog colHLLHolder = hllHolder.get(colName);
       NullableVarBinaryVector vv = (NullableVarBinaryVector) outMapCol;
       vv.allocateNewSafe();
-      HyperLogLog hll = (HyperLogLog) colHLLHolder.obj;
       try {
-        vv.getMutator().setSafe(0, hll.getBytes(), 0, hll.getBytes().length);
+        if (colHLLHolder != null) {
+          vv.getMutator().setSafe(0, colHLLHolder.getBytes(),
+              0, colHLLHolder.getBytes().length);
+        } else {
+          vv.getMutator().setNull(0);
+        }
       } catch (IOException ex) {
         // TODO: logger
       }
     }
-    mergeComplete = true;
+    state = State.COMPLETE;
   }
 
-  @Override
-  public void configure(Object configurations) {
-    ContextInformation contextInformation = (ContextInformation) configurations;
-    accuracy = contextInformation.getHllAccuracy();
-    configureComplete = true;
+  public void configure(ContextInformation contextInfo) {
+    assert (state == State.CONFIG);
+    accuracy = contextInfo.getHllAccuracy();
+    // Now config complete - moving to MERGE state
+    state = State.MERGE;
   }
 }

@@ -251,11 +251,8 @@ public class FragmentContext implements AutoCloseable, UdfUtilities {
    * @return query statement type {@link SqlStatementType}, if known.
    */
   public SqlStatementType getSQLStatementType() {
-    if (queryContext == null) {
-      fail(new UnsupportedOperationException("Statement type is only valid for root fragment. " +
-              "This is a non-root fragment."));
-      return null;
-    }
+    Preconditions.checkNotNull(queryContext, "Statement type is only valid for root fragment."
+        + " Calling from non-root fragment");
     return queryContext.getSQLStatementType();
   }
   /**
