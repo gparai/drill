@@ -28,16 +28,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ColTypeMergedStatistic extends AbstractMergedStatistic {
-  private String name;
-  private String inputName;
-  private boolean mergeComplete = false;
-  private Map<String, ValueHolder> typeHolder;
+  private Map<String, Integer> typeHolder;
 
-
-  public ColTypeMergedStatistic (String name, String inputName) {
-    this.name = name;
-    this.inputName = inputName;
+  public ColTypeMergedStatistic () {
     typeHolder = new HashMap<>();
+    state = State.INIT;
+  }
+
+  @Override
+  public void initialize(String inputName) {
+    super.initialize(Statistic.COLTYPE, inputName);
+    state = State.MERGE;
   }
 
   @Override
@@ -51,43 +52,39 @@ public class ColTypeMergedStatistic extends AbstractMergedStatistic {
   }
 
   @Override
-  public void merge(ValueVector input) {
+  public void merge(MapVector input) {
     // Check the input is a Map Vector
     assert (input.getField().getType().getMinorType() == TypeProtos.MinorType.MAP);
-    MapVector inputMap = (MapVector) input;
-    for (ValueVector vv : inputMap) {
+    for (ValueVector vv : input) {
       String colName = vv.getField().getLastName();
       if (typeHolder.get(colName) == null) {
-        IntHolder colType = new IntHolder();
-        ((IntVector) vv).getAccessor().get(0, colType);
-        typeHolder.put(colName, colType);
+        IntVector iv = (IntVector) vv;
+        IntVector.Accessor accessor = iv.getAccessor();
+        typeHolder.put(colName, accessor.get(0));
       }
     }
   }
 
-  @Override
-  public Object getStat(String colName) {
-    if (mergeComplete != true) {
+  public int getStat(String colName) {
+    if (state != State.COMPLETE) {
       throw new IllegalStateException(String.format("Statistic `%s` has not completed merging statistics",
           name));
     }
-    IntHolder colTypeHolder = (IntHolder) typeHolder.get(colName);
-    return colTypeHolder.value;
+    return typeHolder.get(colName);
   }
 
   @Override
-  public void setOutput(ValueVector output) {
+  public void setOutput(MapVector output) {
     // Check the input is a Map Vector
     assert (output.getField().getType().getMinorType() == TypeProtos.MinorType.MAP);
-    MapVector outputMap = (MapVector) output;
-    for (ValueVector outMapCol : outputMap) {
+    for (ValueVector outMapCol : output) {
       String colName = outMapCol.getField().getLastName();
-      IntHolder colTypeHolder = (IntHolder) typeHolder.get(colName);
       IntVector vv = (IntVector) outMapCol;
       vv.allocateNewSafe();
       // Set column name in ValueVector
-      vv.getMutator().setSafe(0, colTypeHolder.value);
+      vv.getMutator().setSafe(0, typeHolder.get(colName));
     }
-    mergeComplete = true;
+    // Now moving to COMPLETE state
+    state = State.COMPLETE;
   }
 }
