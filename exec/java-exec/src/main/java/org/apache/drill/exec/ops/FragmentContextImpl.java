@@ -615,12 +615,9 @@ public class FragmentContextImpl extends BaseFragmentContext implements Executor
   }
 
   @Override
-  public SqlStatementType getStatementType() {
-    if (queryContext == null) {
-      fail(new UnsupportedOperationException("Statement type is only valid for root fragment. " +
-              "This is a non-root fragment."));
-      return null;
-    }
+  public SqlStatementType getSQLStatementType() {
+    Preconditions.checkNotNull(queryContext, "Statement type is only valid for root fragment."
+            + " Calling from non-root fragment");
     return queryContext.getSQLStatementType();
   }
 }

@@ -20,6 +20,7 @@ package org.apache.drill.exec.physical.impl.statistics;
 import org.apache.drill.common.types.TypeProtos;
 import org.apache.drill.exec.expr.holders.BigIntHolder;
 import org.apache.drill.exec.expr.holders.ValueHolder;
+import org.apache.drill.exec.vector.BigIntVector;
 import org.apache.drill.exec.vector.NullableBigIntVector;
 import org.apache.drill.exec.vector.ValueVector;
 import org.apache.drill.exec.vector.complex.MapVector;
@@ -29,15 +30,18 @@ import java.util.Map;
 
 public class StatCountMergedStatistic extends AbstractMergedStatistic {
 
-  private String name;
-  private String inputName;
-  private boolean mergeComplete = false;
-  private Map<String, ValueHolder> sumHolder;
+  private Map<String, Long> sumHolder;
 
-  public StatCountMergedStatistic (String name, String inputName) {
-    this.name = name;
-    this.inputName = inputName;
+  public StatCountMergedStatistic () {
     this.sumHolder = new HashMap<>();
+    //No CONFIG state so move directly to MERGE state
+    state = State.INIT;
+  }
+
+  @Override
+  public void initialize(String inputName) {
+    super.initialize(Statistic.STATCOUNT, inputName);
+    state = State.MERGE;
   }
 
   @Override
@@ -51,48 +55,46 @@ public class StatCountMergedStatistic extends AbstractMergedStatistic {
   }
 
   @Override
-  public void merge(ValueVector input) {
+  public void merge(MapVector input) {
     // Check the input is a Map Vector
     assert (input.getField().getType().getMinorType() == TypeProtos.MinorType.MAP);
-    MapVector inputMap = (MapVector) input;
-    for (ValueVector vv : inputMap) {
+    for (ValueVector vv : input) {
       String colName = vv.getField().getLastName();
-      BigIntHolder colSumHolder;
+      NullableBigIntVector biv = (NullableBigIntVector) vv;
+      NullableBigIntVector.Accessor accessor = biv.getAccessor();
+      long sum = 0;
       if (sumHolder.get(colName) != null) {
-        colSumHolder = (BigIntHolder) sumHolder.get(colName);
-      } else {
-        colSumHolder = new BigIntHolder();
-        sumHolder.put(colName, colSumHolder);
+        sum = sumHolder.get(colName);
       }
-      Object val = vv.getAccessor().getObject(0);
-      if (val != null) {
-        colSumHolder.value += (long) val;
+      if (!accessor.isNull(0)) {
+        sum += accessor.get(0);
+        sumHolder.put(colName, sum);
       }
     }
   }
 
-  @Override
-  public Object getStat(String colName) {
-    if (mergeComplete != true) {
+  public long getStat(String colName) {
+    if (state != State.COMPLETE) {
       throw new IllegalStateException(String.format("Statistic `%s` has not completed merging statistics",
           name));
     }
-    BigIntHolder colSumHolder = (BigIntHolder) sumHolder.get(colName);
-    return colSumHolder.value;
+    return sumHolder.get(colName);
   }
 
   @Override
-  public void setOutput(ValueVector output) {
+  public void setOutput(MapVector output) {
     // Check the input is a Map Vector
     assert (output.getField().getType().getMinorType() == TypeProtos.MinorType.MAP);
-    MapVector outputMap = (MapVector) output;
-    for (ValueVector outMapCol : outputMap) {
+    for (ValueVector outMapCol : output) {
       String colName = outMapCol.getField().getLastName();
-      BigIntHolder holder = (BigIntHolder) sumHolder.get(colName);
       NullableBigIntVector vv = (NullableBigIntVector) outMapCol;
       vv.allocateNewSafe();
-      vv.getMutator().setSafe(0, holder);
+      if (sumHolder.get(colName) != null) {
+        vv.getMutator().setSafe(0, sumHolder.get(colName));
+      } else {
+        vv.getMutator().setNull(0);
+      }
     }
-    mergeComplete = true;
+    state = State.COMPLETE;
   }
 }
