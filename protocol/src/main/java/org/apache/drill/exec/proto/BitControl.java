@@ -9501,50 +9501,51 @@ public final class BitControl {
       "hake\022\023\n\013rpc_version\030\001 \001(\005\0225\n\007channel\030\002 \001" +
       "(\0162\027.exec.shared.RpcChannel:\013BIT_CONTROL" +
       "\022(\n\010endpoint\030\003 \001(\0132\026.exec.DrillbitEndpoi" +
-      "nt\"F\n\tBitStatus\0229\n\017fragment_status\030\001 \003(\013" +
-      "2 .exec.bit.control.FragmentStatus\"n\n\016Fr" +
-      "agmentStatus\0222\n\007profile\030\001 \001(\0132!.exec.sha" +
-      "red.MinorFragmentProfile\022(\n\006handle\030\002 \001(\013",
-      "2\030.exec.bit.FragmentHandle\"G\n\023Initialize" +
-      "Fragments\0220\n\010fragment\030\001 \003(\0132\036.exec.bit.c" +
-      "ontrol.PlanFragment\".\n\rCustomMessage\022\014\n\004" +
-      "type\030\001 \001(\005\022\017\n\007message\030\002 \001(\014\"\374\003\n\014PlanFrag" +
-      "ment\022(\n\006handle\030\001 \001(\0132\030.exec.bit.Fragment" +
-      "Handle\022\024\n\014network_cost\030\004 \001(\002\022\020\n\010cpu_cost" +
-      "\030\005 \001(\002\022\021\n\tdisk_cost\030\006 \001(\002\022\023\n\013memory_cost" +
-      "\030\007 \001(\002\022\025\n\rfragment_json\030\010 \001(\t\022\025\n\rleaf_fr" +
-      "agment\030\t \001(\010\022*\n\nassignment\030\n \001(\0132\026.exec." +
-      "DrillbitEndpoint\022\'\n\007foreman\030\013 \001(\0132\026.exec",
-      ".DrillbitEndpoint\022\035\n\013mem_initial\030\014 \001(\003:\010" +
-      "20000000\022\033\n\007mem_max\030\r \001(\003:\n2000000000\0221\n" +
-      "\013credentials\030\016 \001(\0132\034.exec.shared.UserCre" +
-      "dentials\022\024\n\014options_json\030\017 \001(\t\022:\n\007contex" +
-      "t\030\020 \001(\0132).exec.bit.control.QueryContextI" +
-      "nformation\022.\n\tcollector\030\021 \003(\0132\033.exec.bit" +
-      ".control.Collector\"\210\001\n\tCollector\022\"\n\032oppo" +
-      "site_major_fragment_id\030\001 \001(\005\022#\n\027incoming" +
-      "_minor_fragment\030\002 \003(\005B\002\020\001\022\035\n\025supports_ou" +
-      "t_of_order\030\003 \001(\010\022\023\n\013is_spooling\030\004 \001(\010\"\215\001",
-      "\n\027QueryContextInformation\022\030\n\020query_start" +
-      "_time\030\001 \001(\003\022\021\n\ttime_zone\030\002 \001(\005\022\033\n\023defaul" +
-      "t_schema_name\030\003 \001(\t\022\022\n\nsession_id\030\004 \001(\t\022" +
-      "\024\n\014hll_accuracy\030\005 \001(\005\"f\n\017WorkQueueStatus" +
-      "\022(\n\010endpoint\030\001 \001(\0132\026.exec.DrillbitEndpoi" +
-      "nt\022\024\n\014queue_length\030\002 \001(\005\022\023\n\013report_time\030" +
-      "\003 \001(\003\"h\n\020FinishedReceiver\022*\n\010receiver\030\001 " +
-      "\001(\0132\030.exec.bit.FragmentHandle\022(\n\006sender\030" +
-      "\002 \001(\0132\030.exec.bit.FragmentHandle*\364\002\n\007RpcT" +
-      "ype\022\r\n\tHANDSHAKE\020\000\022\007\n\003ACK\020\001\022\013\n\007GOODBYE\020\002",
-      "\022\034\n\030REQ_INITIALIZE_FRAGMENTS\020\003\022\027\n\023REQ_CA" +
-      "NCEL_FRAGMENT\020\006\022\031\n\025REQ_RECEIVER_FINISHED" +
-      "\020\007\022\027\n\023REQ_FRAGMENT_STATUS\020\010\022\022\n\016REQ_BIT_S" +
-      "TATUS\020\t\022\024\n\020REQ_QUERY_STATUS\020\n\022\024\n\020REQ_QUE" +
-      "RY_CANCEL\020\017\022\030\n\024REQ_UNPAUSE_FRAGMENT\020\020\022\016\n" +
-      "\nREQ_CUSTOM\020\021\022\030\n\024RESP_FRAGMENT_HANDLE\020\013\022" +
-      "\030\n\024RESP_FRAGMENT_STATUS\020\014\022\023\n\017RESP_BIT_ST" +
-      "ATUS\020\r\022\025\n\021RESP_QUERY_STATUS\020\016\022\017\n\013RESP_CU" +
-      "STOM\020\022B+\n\033org.apache.drill.exec.protoB\nB" +
-      "itControlH\001"
+      "nt\022 \n\030authenticationMechanisms\030\004 \003(\t\"F\n\t" +
+      "BitStatus\0229\n\017fragment_status\030\001 \003(\0132 .exe" +
+      "c.bit.control.FragmentStatus\"n\n\016Fragment" +
+      "Status\0222\n\007profile\030\001 \001(\0132!.exec.shared.Mi",
+      "norFragmentProfile\022(\n\006handle\030\002 \001(\0132\030.exe" +
+      "c.bit.FragmentHandle\"G\n\023InitializeFragme" +
+      "nts\0220\n\010fragment\030\001 \003(\0132\036.exec.bit.control" +
+      ".PlanFragment\".\n\rCustomMessage\022\014\n\004type\030\001" +
+      " \001(\005\022\017\n\007message\030\002 \001(\014\"\374\003\n\014PlanFragment\022(" +
+      "\n\006handle\030\001 \001(\0132\030.exec.bit.FragmentHandle" +
+      "\022\024\n\014network_cost\030\004 \001(\002\022\020\n\010cpu_cost\030\005 \001(\002" +
+      "\022\021\n\tdisk_cost\030\006 \001(\002\022\023\n\013memory_cost\030\007 \001(\002" +
+      "\022\025\n\rfragment_json\030\010 \001(\t\022\025\n\rleaf_fragment" +
+      "\030\t \001(\010\022*\n\nassignment\030\n \001(\0132\026.exec.Drillb",
+      "itEndpoint\022\'\n\007foreman\030\013 \001(\0132\026.exec.Drill" +
+      "bitEndpoint\022\035\n\013mem_initial\030\014 \001(\003:\010200000" +
+      "00\022\033\n\007mem_max\030\r \001(\003:\n2000000000\0221\n\013crede" +
+      "ntials\030\016 \001(\0132\034.exec.shared.UserCredentia" +
+      "ls\022\024\n\014options_json\030\017 \001(\t\022:\n\007context\030\020 \001(" +
+      "\0132).exec.bit.control.QueryContextInforma" +
+      "tion\022.\n\tcollector\030\021 \003(\0132\033.exec.bit.contr" +
+      "ol.Collector\"\210\001\n\tCollector\022\"\n\032opposite_m" +
+      "ajor_fragment_id\030\001 \001(\005\022#\n\027incoming_minor" +
+      "_fragment\030\002 \003(\005B\002\020\001\022\035\n\025supports_out_of_o",
+      "rder\030\003 \001(\010\022\023\n\013is_spooling\030\004 \001(\010\"\215\001\n\027Quer" +
+      "yContextInformation\022\030\n\020query_start_time\030" +
+      "\001 \001(\003\022\021\n\ttime_zone\030\002 \001(\005\022\033\n\023default_sche" +
+      "ma_name\030\003 \001(\t\022\022\n\nsession_id\030\004 \001(\t\022\024\n\014hll" +
+      "_accuracy\030\005 \001(\005\"f\n\017WorkQueueStatus\022(\n\010en" +
+      "dpoint\030\001 \001(\0132\026.exec.DrillbitEndpoint\022\024\n\014" +
+      "queue_length\030\002 \001(\005\022\023\n\013report_time\030\003 \001(\003\"" +
+      "h\n\020FinishedReceiver\022*\n\010receiver\030\001 \001(\0132\030." +
+      "exec.bit.FragmentHandle\022(\n\006sender\030\002 \001(\0132" +
+      "\030.exec.bit.FragmentHandle*\206\003\n\007RpcType\022\r\n",
+      "\tHANDSHAKE\020\000\022\007\n\003ACK\020\001\022\013\n\007GOODBYE\020\002\022\034\n\030RE" +
+      "Q_INITIALIZE_FRAGMENTS\020\003\022\027\n\023REQ_CANCEL_F" +
+      "RAGMENT\020\006\022\031\n\025REQ_RECEIVER_FINISHED\020\007\022\027\n\023" +
+      "REQ_FRAGMENT_STATUS\020\010\022\022\n\016REQ_BIT_STATUS\020" +
+      "\t\022\024\n\020REQ_QUERY_STATUS\020\n\022\024\n\020REQ_QUERY_CAN" +
+      "CEL\020\017\022\030\n\024REQ_UNPAUSE_FRAGMENT\020\020\022\016\n\nREQ_C" +
+      "USTOM\020\021\022\030\n\024RESP_FRAGMENT_HANDLE\020\013\022\030\n\024RES" +
+      "P_FRAGMENT_STATUS\020\014\022\023\n\017RESP_BIT_STATUS\020\r" +
+      "\022\025\n\021RESP_QUERY_STATUS\020\016\022\017\n\013RESP_CUSTOM\020\022" +
+      "\022\020\n\014SASL_MESSAGE\020\023B+\n\033org.apache.drill.e",
+      "xec.protoB\nBitControlH\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
