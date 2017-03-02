@@ -50,6 +50,10 @@ import org.apache.hadoop.fs.Path;
  */
 public class DrillStatsTable {
   private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(DrillStatsTable.class);
+  // All the statistics versions till date
+  public enum STATS_VERSION {V0, V1};
+  // The current version
+  public static final STATS_VERSION CURRENT_VERSION = STATS_VERSION.V1;
   private final FileSystem fs;
   private final Path tablePath;
   private final String schemaName;

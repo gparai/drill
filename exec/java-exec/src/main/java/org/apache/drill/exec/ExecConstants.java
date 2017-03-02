@@ -22,21 +22,20 @@ import org.apache.drill.exec.physical.impl.common.HashTable;
 import org.apache.drill.exec.rpc.user.InboundImpersonationManager;
 import org.apache.drill.exec.server.options.OptionValidator;
 import org.apache.drill.exec.server.options.OptionValidator.OptionDescription;
-import org.apache.drill.exec.server.options.TypeValidators.DateTimeFormatValidator;
-import org.apache.drill.exec.server.options.TypeValidators.IntegerValidator;
+import org.apache.drill.exec.server.options.TypeValidators.AdminUserGroupsValidator;
+import org.apache.drill.exec.server.options.TypeValidators.AdminUsersValidator;
 import org.apache.drill.exec.server.options.TypeValidators.BooleanValidator;
+import org.apache.drill.exec.server.options.TypeValidators.DateTimeFormatValidator;
 import org.apache.drill.exec.server.options.TypeValidators.DoubleValidator;
 import org.apache.drill.exec.server.options.TypeValidators.EnumeratedStringValidator;
+import org.apache.drill.exec.server.options.TypeValidators.IntegerValidator;
 import org.apache.drill.exec.server.options.TypeValidators.LongValidator;
 import org.apache.drill.exec.server.options.TypeValidators.MaxWidthValidator;
-import org.apache.drill.exec.server.options.TypeValidators.NonNegativeLongValidator;
 import org.apache.drill.exec.server.options.TypeValidators.PositiveLongValidator;
 import org.apache.drill.exec.server.options.TypeValidators.PowerOfTwoLongValidator;
 import org.apache.drill.exec.server.options.TypeValidators.RangeDoubleValidator;
 import org.apache.drill.exec.server.options.TypeValidators.RangeLongValidator;
 import org.apache.drill.exec.server.options.TypeValidators.StringValidator;
-import org.apache.drill.exec.server.options.TypeValidators.AdminUsersValidator;
-import org.apache.drill.exec.server.options.TypeValidators.AdminUserGroupsValidator;
 import org.apache.drill.exec.testing.ExecutionControls;
 import org.apache.drill.exec.vector.ValueVector;
 
@@ -921,12 +920,4 @@ public final class ExecConstants {
   public static final String HLL_ACCURACY = "exec.statistics.ndv_accuracy";
   public static final LongValidator HLL_ACCURACY_VALIDATOR = new PositiveLongValidator(HLL_ACCURACY, 30,
       new OptionDescription("Controls trade-off between NDV statistic storage cost and accuracy"));
-
-  /**
-   * Option whose value represents the current version of the statistics. Decreasing the value will generate
-   * the older version of statistics.
-   */
-  public static final String STATISTICS_VERSION = "exec.statistics.capability_version";
-  public static final LongValidator STATISTICS_VERSION_VALIDATOR = new NonNegativeLongValidator(STATISTICS_VERSION, 1,
-      new OptionDescription("Controls which version of statistics capability is written to persistent storage"));
 }
