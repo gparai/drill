@@ -167,8 +167,7 @@ public class SystemOptionManager extends BaseOptionManager implements AutoClosea
       ExecConstants.EXTERNAL_SORT_DISABLE_MANAGED_OPTION,
       ExecConstants.ENABLE_QUERY_PROFILE_VALIDATOR,
       ExecConstants.QUERY_PROFILE_DEBUG_VALIDATOR,
-      ExecConstants.HLL_ACCURACY,
-      ExecConstants.STATISTICS_VERSION
+      ExecConstants.HLL_ACCURACY
     };
     final Map<String, OptionValidator> tmp = new HashMap<>();
     for (final OptionValidator validator : validators) {

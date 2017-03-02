@@ -27,7 +27,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.drill.exec.physical.impl.statistics.Statistic;
 import org.apache.drill.exec.planner.common.DrillStatsTable;
+import org.apache.drill.exec.planner.common.DrillStatsTable.STATS_VERSION;
 import org.apache.drill.exec.record.VectorAccessible;
 import org.apache.drill.exec.store.EventBasedRecordWriter.FieldConverter;
 import org.apache.drill.exec.store.JSONOutputRecordWriter;
@@ -43,7 +45,6 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
 
   private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(JsonStatisticsRecordWriter.class);
   private static final String LINE_FEED = String.format("%n");
-
   private String location;
   private String prefix;
   private String fieldDelimiter;
@@ -52,7 +53,7 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
   private JsonGenerator generator;
   private FileSystem fs = null;
   private FSDataOutputStream stream = null;
-  private int statisticsVersion;
+  private STATS_VERSION statisticsVersion;
   private final JsonFactory factory = new JsonFactory();
   private String lastDirectory = null;
   private Configuration fsConf = null;
@@ -79,7 +80,7 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
     this.useExtendedOutput = Boolean.parseBoolean(writerOptions.get("extended"));
     this.skipNullFields = Boolean.parseBoolean(writerOptions.get("skipnulls"));
     final boolean uglify = Boolean.parseBoolean(writerOptions.get("uglify"));
-    this.statisticsVersion = (int)Long.parseLong(writerOptions.get("statsversion"));
+    this.statisticsVersion = DrillStatsTable.CURRENT_VERSION;
     this.queryId = writerOptions.get("queryid");
      //Write as DRILL process user
     this.fs = ImpersonationUtil.createFileSystem(ImpersonationUtil.getProcessUserName(), fsConf);
@@ -122,44 +123,22 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
     //TODO: Split up columnStatisticsList() based on directory names. We assume only
     //one directory right now but this WILL change in the future
     //HashMap<String, Boolean> dirNames = new HashMap<String, Boolean>();
-    if (statisticsVersion == 0) {
-      statistics = new DrillStatsTable.Statistics_v0();
-      List<DrillStatsTable.DirectoryStatistics_v0> dirStats = new ArrayList<DrillStatsTable.DirectoryStatistics_v0>();
-
-      //Create dirStats
-      DrillStatsTable.DirectoryStatistics_v0 dirStat = new DrillStatsTable.DirectoryStatistics_v0();
-      // value of PI
-      dirStat.setComputedTime(3.1415926535897932);
-      //Add this dirStats to the list of dirStats
-      dirStats.add(dirStat);
-
-      //Add list of dirStats to tableStats
-      ((DrillStatsTable.Statistics_v0) statistics).setDirectoryStatistics(dirStats);
-
-      return true;
-    } else if (statisticsVersion == 1) {
-      statistics = new DrillStatsTable.Statistics_v1();
-
-      List<DrillStatsTable.DirectoryStatistics_v1> dirStats = new ArrayList<DrillStatsTable.DirectoryStatistics_v1>();
-      List<DrillStatsTable.ColumnStatistics_v1> columnStatisticsV1s = new ArrayList<DrillStatsTable.ColumnStatistics_v1>();
-
-      //Create dirStats
-      DrillStatsTable.DirectoryStatistics_v1 dirStat = new DrillStatsTable.DirectoryStatistics_v1();
-      // Add columnStats corresponding to this dirStats
-      for (DrillStatsTable.ColumnStatistics colStats : columnStatisticsList) {
-        columnStatisticsV1s.add(((DrillStatsTable.ColumnStatistics_v1) colStats));
-      }
-
-      dirStat.setComputedTime(dirComputedTime);
-      dirStat.setColumnStatistics(columnStatisticsV1s);
-      //Add this dirStats to the list of dirStats
-      dirStats.add(dirStat);
-      //Add list of dirStats to tableStats
-      ((DrillStatsTable.Statistics_v1) statistics).setDirectoryStatistics(dirStats);
-
-      return true;
+    statistics = new DrillStatsTable.Statistics_v1();
+    List<DrillStatsTable.DirectoryStatistics_v1> dirStats = new ArrayList<DrillStatsTable.DirectoryStatistics_v1>();
+    List<DrillStatsTable.ColumnStatistics_v1> columnStatisticsV1s = new ArrayList<DrillStatsTable.ColumnStatistics_v1>();
+    //Create dirStats
+    DrillStatsTable.DirectoryStatistics_v1 dirStat = new DrillStatsTable.DirectoryStatistics_v1();
+    // Add columnStats corresponding to this dirStats
+    for (DrillStatsTable.ColumnStatistics colStats : columnStatisticsList) {
+      columnStatisticsV1s.add(((DrillStatsTable.ColumnStatistics_v1) colStats));
     }
-    return false;
+    dirStat.setComputedTime(dirComputedTime);
+    dirStat.setColumnStatistics(columnStatisticsV1s);
+    //Add this dirStats to the list of dirStats
+    dirStats.add(dirStat);
+    //Add list of dirStats to tableStats
+    ((DrillStatsTable.Statistics_v1) statistics).setDirectoryStatistics(dirStats);
+    return true;
   }
 
   @Override
@@ -180,44 +159,38 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
 
     @Override
     public void startField() throws IOException {
-      if (statisticsVersion == 1) {
-        if (fieldName.equalsIgnoreCase("SCHEMA")) {
-          nextField = fieldName;
-        } else if (fieldName.equalsIgnoreCase("STATCOUNT")
-              || fieldName.equalsIgnoreCase("NONNULLSTATCOUNT")
-              || fieldName.equalsIgnoreCase("NDV")
-              || fieldName.equalsIgnoreCase("AVG_WIDTH")) {
-          nextField = fieldName;
-        }
+      if (fieldName.equals(Statistic.SCHEMA)) {
+        nextField = fieldName;
+      } else if (fieldName.equals(Statistic.STATCOUNT)
+            || fieldName.equals(Statistic.NNSTATCOUNT)
+            || fieldName.equals(Statistic.NDV)
+            || fieldName.equals(Statistic.AVG_WIDTH)) {
+        nextField = fieldName;
       }
     }
 
     @Override
     public void writeField() throws IOException {
-      if (statisticsVersion == 1) {
-        if (nextField == null) {
-          errStatus = true;
-          throw new IOException("Statistics writer encountered unexpected field");
-        }
-        if (nextField.equalsIgnoreCase("SCHEMA")) {
-          ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setSchema(reader.readLong());
-        } else if (nextField.equalsIgnoreCase("STATCOUNT")) {
-          ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setCount(reader.readLong());
-        } else if (nextField.equalsIgnoreCase("NONNULLSTATCOUNT")) {
-          ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setNonNullCount(reader.readLong());
-        } else if (nextField.equalsIgnoreCase("NDV")) {
-          ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setNdv(reader.readLong());
-        } else if (nextField.equalsIgnoreCase("AVG_WIDTH")) {
-          ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setAvgWidth(reader.readLong());
-        }
+      if (nextField == null) {
+        errStatus = true;
+        throw new IOException("Statistics writer encountered unexpected field");
+      }
+      if (nextField.equals(Statistic.SCHEMA)) {
+        ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setSchema(reader.readLong());
+      } else if (nextField.equals(Statistic.STATCOUNT)) {
+        ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setCount(reader.readLong());
+      } else if (nextField.equals(Statistic.NNSTATCOUNT)) {
+        ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setNonNullCount(reader.readLong());
+      } else if (nextField.equals(Statistic.NDV)) {
+        ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setNdv(reader.readLong());
+      } else if (nextField.equals(Statistic.AVG_WIDTH)) {
+        ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setAvgWidth(reader.readLong());
       }
     }
 
     @Override
     public void endField() throws IOException {
-      if (statisticsVersion == 1) {
-        nextField = null;
-      }
+      nextField = null;
     }
   }
 
@@ -234,31 +207,25 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
 
     @Override
     public void startField() throws IOException {
-      if (statisticsVersion == 1) {
-        if (fieldName.equalsIgnoreCase("TYPE")) {
-          nextField = fieldName;
-        }
+      if (fieldName.equals(Statistic.COLTYPE)) {
+        nextField = fieldName;
       }
     }
 
     @Override
     public void writeField() throws IOException {
-      if (statisticsVersion == 1) {
-        if (nextField == null) {
-          errStatus = true;
-          throw new IOException("Statistics writer encountered unexpected field");
-        }
-        if (nextField.equalsIgnoreCase("TYPE")) {
-          // Do not write out the type
-        }
+      if (nextField == null) {
+        errStatus = true;
+        throw new IOException("Statistics writer encountered unexpected field");
+      }
+      if (nextField.equals(Statistic.COLTYPE)) {
+        // Do not write out the type
       }
     }
 
     @Override
     public void endField() throws IOException {
-      if (statisticsVersion == 1) {
-        nextField = null;
-      }
+      nextField = null;
     }
   }
 
@@ -275,35 +242,29 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
 
     @Override
     public void startField() throws IOException {
-      if (statisticsVersion == 1) {
-        if (fieldName.equalsIgnoreCase("COMPUTED")) {
-          nextField = fieldName;
-        }
+      if (fieldName.equals(Statistic.COMPUTED)) {
+        nextField = fieldName;
       }
     }
 
     @Override
     public void writeField() throws IOException {
-      if (statisticsVersion == 1) {
-        if (nextField == null) {
-          errStatus = true;
-          throw new IOException("Statistics writer encountered unexpected field");
-        }
-        if (nextField.equalsIgnoreCase(("COMPUTED"))) {
-          String computedTime = reader.readDateTime().toString();
-          if (dirComputedTime == null
-                 || computedTime.compareTo(dirComputedTime) > 0) {
-            dirComputedTime = computedTime;
-          }
+      if (nextField == null) {
+        errStatus = true;
+        throw new IOException("Statistics writer encountered unexpected field");
+      }
+      if (nextField.equals((Statistic.COMPUTED))) {
+        String computedTime = reader.readDateTime().toString();
+        if (dirComputedTime == null
+               || computedTime.compareTo(dirComputedTime) > 0) {
+          dirComputedTime = computedTime;
         }
       }
     }
 
     @Override
     public void endField() throws IOException {
-      if (statisticsVersion == 1) {
-        nextField = null;
-      }
+      nextField = null;
     }
   }
 
@@ -320,31 +281,25 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
 
     @Override
     public void startField() throws IOException {
-      if (statisticsVersion == 1) {
-        if (fieldName.equalsIgnoreCase("COLUMN")) {
-          nextField = fieldName;
-        }
+      if (fieldName.equals(Statistic.COLNAME)) {
+        nextField = fieldName;
       }
     }
 
     @Override
     public void writeField() throws IOException {
-      if (statisticsVersion == 1) {
-        if (nextField == null) {
-          errStatus = true;
-          throw new IOException("Statistics writer encountered unexpected field");
-        }
-        if (nextField.equalsIgnoreCase("COLUMN")) {
-          ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setName(reader.readText().toString());
-        }
+      if (nextField == null) {
+        errStatus = true;
+        throw new IOException("Statistics writer encountered unexpected field");
+      }
+      if (nextField.equals(Statistic.COLNAME)) {
+        ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setName(reader.readText().toString());
       }
     }
 
     @Override
     public void endField() throws IOException {
-      if (statisticsVersion == 1) {
-        nextField = null;
-      }
+      nextField = null;
     }
   }
 
@@ -360,41 +315,35 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
 
     @Override
     public void startField() throws IOException {
-      if (statisticsVersion == 1) {
-        if (!skipNullFields || this.reader.isSet()) {
-          if (fieldName.equalsIgnoreCase("STATCOUNT")
-              || fieldName.equalsIgnoreCase("NONNULLSTATCOUNT")
-              || fieldName.equalsIgnoreCase("NDV")) {
-            nextField = fieldName;
-          }
+      if (!skipNullFields || this.reader.isSet()) {
+        if (fieldName.equals(Statistic.STATCOUNT)
+            || fieldName.equals(Statistic.NNSTATCOUNT)
+            || fieldName.equals(Statistic.NDV)) {
+          nextField = fieldName;
         }
       }
     }
 
     @Override
     public void writeField() throws IOException {
-      if (statisticsVersion == 1) {
-        if (!skipNullFields || this.reader.isSet()) {
-          if (nextField == null) {
-            errStatus = true;
-            throw new IOException("Statistics writer encountered unexpected field");
-          }
-          if (nextField.equalsIgnoreCase("STATCOUNT")) {
-            ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setCount(reader.readLong());
-          } else if (nextField.equalsIgnoreCase("NONNULLSTATCOUNT")) {
-            ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setNonNullCount(reader.readLong());
-          } else if (nextField.equalsIgnoreCase("NDV")) {
-            ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setNdv(reader.readLong());
-          }
+      if (!skipNullFields || this.reader.isSet()) {
+        if (nextField == null) {
+          errStatus = true;
+          throw new IOException("Statistics writer encountered unexpected field");
+        }
+        if (nextField.equals(Statistic.STATCOUNT)) {
+          ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setCount(reader.readLong());
+        } else if (nextField.equals(Statistic.NNSTATCOUNT)) {
+          ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setNonNullCount(reader.readLong());
+        } else if (nextField.equals(Statistic.NDV)) {
+          ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setNdv(reader.readLong());
         }
       }
     }
 
     @Override
     public void endField() throws IOException {
-      if (statisticsVersion == 1) {
-        nextField = null;
-      }
+      nextField = null;
     }
   }
 
@@ -411,38 +360,32 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
 
     @Override
     public void startField() throws IOException {
-      if (statisticsVersion == 1) {
-        if (!skipNullFields || this.reader.isSet()) {
-          if (fieldName.equalsIgnoreCase("HLL")
-              || fieldName.equalsIgnoreCase("HLL_MERGE")) {
-            nextField = fieldName;
-          }
+      if (!skipNullFields || this.reader.isSet()) {
+        if (fieldName.equals(Statistic.HLL)
+            || fieldName.equals(Statistic.HLL_MERGE)) {
+          nextField = fieldName;
         }
       }
     }
 
     @Override
     public void writeField() throws IOException {
-      if (statisticsVersion == 1) {
-        if (!skipNullFields || this.reader.isSet()) {
-          if (nextField == null) {
-            errStatus = true;
-            throw new IOException("Statistics writer encountered unexpected field");
-          }
-          if (nextField.equalsIgnoreCase("HLL")
-              || nextField.equalsIgnoreCase("HLL_MERGE")) {
-            // Do NOT write out the HLL output, since it is not used yet for computing statistics for a
-            // subset of partitions in the query OR for computing NDV with incremental statistics.
-          }
+      if (!skipNullFields || this.reader.isSet()) {
+        if (nextField == null) {
+          errStatus = true;
+          throw new IOException("Statistics writer encountered unexpected field");
+        }
+        if (nextField.equals(Statistic.HLL)
+            || nextField.equals(Statistic.HLL_MERGE)) {
+          // Do NOT write out the HLL output, since it is not used yet for computing statistics for a
+          // subset of partitions in the query OR for computing NDV with incremental statistics.
         }
       }
     }
 
     @Override
     public void endField() throws IOException {
-      if (statisticsVersion == 1) {
-        nextField = null;
-      }
+      nextField = null;
     }
   }
 
@@ -459,50 +402,40 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
 
     @Override
     public void startField() throws IOException {
-      if (statisticsVersion == 1) {
-        if (!skipNullFields || this.reader.isSet()) {
-          if (fieldName.equalsIgnoreCase("AVG_WIDTH")) {
-            nextField = fieldName;
-          }
+      if (!skipNullFields || this.reader.isSet()) {
+        if (fieldName.equals(Statistic.AVG_WIDTH)) {
+          nextField = fieldName;
         }
       }
     }
 
     @Override
     public void writeField() throws IOException {
-      if (statisticsVersion == 1) {
-        if (!skipNullFields || this.reader.isSet()) {
-          if (nextField == null) {
-            errStatus = true;
-            throw new IOException("Statistics writer encountered unexpected field");
-          }
-          if (nextField.equalsIgnoreCase("AVG_WIDTH")) {
-            ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setAvgWidth(reader.readDouble());
-          }
+      if (!skipNullFields || this.reader.isSet()) {
+        if (nextField == null) {
+          errStatus = true;
+          throw new IOException("Statistics writer encountered unexpected field");
+        }
+        if (nextField.equals(Statistic.AVG_WIDTH)) {
+          ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setAvgWidth(reader.readDouble());
         }
       }
     }
 
     @Override
     public void endField() throws IOException {
-      if (statisticsVersion == 1) {
-        nextField = null;
-      }
+      nextField = null;
     }
   }
 
   @Override
   public void startRecord() throws IOException {
-    if (statisticsVersion == 1) {
-      columnStatistics = new DrillStatsTable.ColumnStatistics_v1();
-    }
+    columnStatistics = new DrillStatsTable.ColumnStatistics_v1();
   }
 
   @Override
   public void endRecord() throws IOException {
-    if (statisticsVersion == 1) {
-      columnStatisticsList.add(columnStatistics);
-    }
+    columnStatisticsList.add(columnStatistics);
     ++recordsWritten;
   }
 

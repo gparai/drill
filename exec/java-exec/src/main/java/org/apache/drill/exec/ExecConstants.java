@@ -445,9 +445,4 @@ public interface ExecConstants {
    */
   LongValidator HLL_ACCURACY = new PositiveLongValidator("exec.statistics.ndv_accuracy", 30, 20);
 
-  /**
-   * Option whose value represents the current version of the statistics. Decreasing the value will generate
-   * the older version of statistics.
-   */
-  LongValidator STATISTICS_VERSION = new NonNegativeLongValidator("exec.statistics.capability_version", 1, 1);
 }
