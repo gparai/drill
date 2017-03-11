@@ -18,9 +18,6 @@
 package org.apache.drill.exec.store.easy.json;
 
 import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.util.MinimalPrettyPrinter;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,16 +29,16 @@ import org.apache.drill.exec.planner.common.DrillStatsTable;
 import org.apache.drill.exec.planner.common.DrillStatsTable.STATS_VERSION;
 import org.apache.drill.exec.record.VectorAccessible;
 import org.apache.drill.exec.store.EventBasedRecordWriter.FieldConverter;
-import org.apache.drill.exec.store.JSONOutputRecordWriter;
-import org.apache.drill.exec.store.RecordWriter;
+import org.apache.drill.exec.store.JSONBaseStatisticsRecordWriter;
+import org.apache.drill.exec.store.dfs.FormatPlugin;
 import org.apache.drill.exec.util.ImpersonationUtil;
 import org.apache.drill.exec.vector.complex.reader.FieldReader;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.joda.time.DateTime;
 
-public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implements RecordWriter {
+public class JsonStatisticsRecordWriter extends JSONBaseStatisticsRecordWriter {
 
   private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(JsonStatisticsRecordWriter.class);
   private static final String LINE_FEED = String.format("%n");
@@ -50,25 +47,25 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
   private String fieldDelimiter;
   private String extension;
   private boolean useExtendedOutput;
-  private JsonGenerator generator;
   private FileSystem fs = null;
-  private FSDataOutputStream stream = null;
   private STATS_VERSION statisticsVersion;
   private final JsonFactory factory = new JsonFactory();
   private String lastDirectory = null;
   private Configuration fsConf = null;
+  private FormatPlugin formatPlugin = null;
   private String nextField = null;
   private DrillStatsTable.TableStatistics statistics;
   private List<DrillStatsTable.ColumnStatistics> columnStatisticsList = new ArrayList<DrillStatsTable.ColumnStatistics>();
   private DrillStatsTable.ColumnStatistics columnStatistics;
-  private String dirComputedTime = null;
+  private DateTime dirComputedTime = null;
   private Path fileName = null;
   private String queryId = null;
   private long recordsWritten = -1;
   private boolean errStatus = false;
 
-  public JsonStatisticsRecordWriter(Configuration fsConf){
+  public JsonStatisticsRecordWriter(Configuration fsConf, FormatPlugin formatPlugin){
     this.fsConf = fsConf;
+    this.formatPlugin = formatPlugin;
   }
 
   @Override
@@ -79,7 +76,6 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
     this.extension = writerOptions.get("extension");
     this.useExtendedOutput = Boolean.parseBoolean(writerOptions.get("extended"));
     this.skipNullFields = Boolean.parseBoolean(writerOptions.get("skipnulls"));
-    final boolean uglify = Boolean.parseBoolean(writerOptions.get("uglify"));
     this.statisticsVersion = DrillStatsTable.CURRENT_VERSION;
     this.queryId = writerOptions.get("queryid");
      //Write as DRILL process user
@@ -96,53 +92,30 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
       throw ex;
     }
     try {
-      stream = fs.create(fileName);
       // Delete the tmp file and .stats.drill on exit. After writing out the permanent file
       // we cancel the deleteOnExit. This ensures that if prior to writing out the stats
       // file the process is killed, we perform the cleanup.
       fs.deleteOnExit(fileName);
       fs.deleteOnExit(new Path(location));
-      generator = factory.createGenerator(stream).useDefaultPrettyPrinter();
-      if (uglify) {
-        generator = generator.setPrettyPrinter(new MinimalPrettyPrinter(LINE_FEED));
-      }
       logger.debug("Created file: {}", fileName);
     } catch (IOException ex) {
       logger.error("Unable to create file: " + fileName, ex);
-      if (generator != null) {
-        generator.close();
-      }
-      if (stream != null) {
-        stream.close();
-      }
       throw ex;
     }
   }
 
-  private boolean generateDirectoryStructure() {
-    //TODO: Split up columnStatisticsList() based on directory names. We assume only
-    //one directory right now but this WILL change in the future
-    //HashMap<String, Boolean> dirNames = new HashMap<String, Boolean>();
-    statistics = new DrillStatsTable.Statistics_v1();
-    List<DrillStatsTable.DirectoryStatistics_v1> dirStats = new ArrayList<DrillStatsTable.DirectoryStatistics_v1>();
-    List<DrillStatsTable.ColumnStatistics_v1> columnStatisticsV1s = new ArrayList<DrillStatsTable.ColumnStatistics_v1>();
-    //Create dirStats
-    DrillStatsTable.DirectoryStatistics_v1 dirStat = new DrillStatsTable.DirectoryStatistics_v1();
-    // Add columnStats corresponding to this dirStats
-    for (DrillStatsTable.ColumnStatistics colStats : columnStatisticsList) {
-      columnStatisticsV1s.add(((DrillStatsTable.ColumnStatistics_v1) colStats));
-    }
-    dirStat.setComputedTime(dirComputedTime);
-    dirStat.setColumnStatistics(columnStatisticsV1s);
-    //Add this dirStats to the list of dirStats
-    dirStats.add(dirStat);
-    //Add list of dirStats to tableStats
-    ((DrillStatsTable.Statistics_v1) statistics).setDirectoryStatistics(dirStats);
+  @Override
+  public void updateSchema(VectorAccessible batch) throws IOException {
+    // no op
+  }
+
+  @Override
+  public boolean isBlockingWriter() {
     return true;
   }
 
   @Override
-  public void updateSchema(VectorAccessible batch) throws IOException {
+  public void checkForNewPartition(int index) {
     // no op
   }
 
@@ -254,7 +227,7 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
         throw new IOException("Statistics writer encountered unexpected field");
       }
       if (nextField.equals((Statistic.COMPUTED))) {
-        String computedTime = reader.readDateTime().toString();
+        DateTime computedTime = reader.readDateTime();
         if (dirComputedTime == null
                || computedTime.compareTo(dirComputedTime) > 0) {
           dirComputedTime = computedTime;
@@ -429,18 +402,18 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
   }
 
   @Override
-  public void startRecord() throws IOException {
+  public void startStatisticsRecord() throws IOException {
     columnStatistics = new DrillStatsTable.ColumnStatistics_v1();
   }
 
   @Override
-  public void endRecord() throws IOException {
+  public void endStatisticsRecord() throws IOException {
     columnStatisticsList.add(columnStatistics);
     ++recordsWritten;
   }
 
   @Override
-  public void postProcessing() throws IOException {
+  public void flushBlockingWriter() throws IOException {
     Path permFileName = new Path(location, prefix + "." + extension);
     try {
       if (errStatus) {
@@ -449,29 +422,21 @@ public class JsonStatisticsRecordWriter extends JSONOutputRecordWriter implement
       } else if (recordsWritten < 0) {
         throw new IOException("Statistics writer did not have data");
       }
-
-      // Did not encounter any errors while performing the writes
-      if (generateDirectoryStructure()) {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.writeValue(generator, statistics);
+      // Generated the statistics data structure to be serialized
+      statistics = DrillStatsTable.generateDirectoryStructure(dirComputedTime.toString(),
+          columnStatisticsList);
+      if (formatPlugin.supportsStatistics()) {
+        // Invoke the format plugin stats API to write out the stats
+        formatPlugin.writeStatistics(statistics, fs, fileName);
+        // Delete existing permanent file and rename .tmp file to permanent file
+        // If failed to do so then delete the .tmp file
+        fs.delete(permFileName, false);
+        fs.rename(fileName, permFileName);
+        // Cancel delete once perm file is created
+        fs.cancelDeleteOnExit(fileName);
+        fs.cancelDeleteOnExit(new Path(location));
       }
-      generator.flush();
-      stream.close();
-
-      // Delete existing permanent file and rename .tmp file to permanent file
-      // If failed to do so then delete the .tmp file
-      fs.delete(permFileName, false);
-      fs.rename(fileName, permFileName);
-      // Cancel delete once perm file is created
-      fs.cancelDeleteOnExit(fileName);
-      fs.cancelDeleteOnExit(new Path(location));
       logger.debug("Created file: {}", permFileName);
-    } catch (com.fasterxml.jackson.core.JsonGenerationException ex) {
-      logger.error("Unable to create file (JSON generation error): " + permFileName, ex);
-      throw ex;
-    } catch (com.fasterxml.jackson.databind.JsonMappingException ex) {
-      logger.error("Unable to create file (JSON mapping error): " + permFileName, ex);
-      throw ex;
     } catch(IOException ex) {
       logger.error("Unable to create file: " + permFileName, ex);
       throw ex;

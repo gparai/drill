@@ -41,8 +41,7 @@
     "COMPUTE",
     "ESTIMATE",
     "STATISTICS",
-    "SAMPLE",
-    "PERCENT"
+    "SAMPLE"
   ]
 
   # List of methods for parsing custom SQL statements.
