@@ -35,6 +35,7 @@ import org.apache.drill.common.logical.FormatPluginConfig;
 import org.apache.drill.exec.dotdrill.DotDrillType;
 import org.apache.drill.exec.physical.PhysicalPlan;
 import org.apache.drill.exec.physical.base.PhysicalOperator;
+import org.apache.drill.exec.planner.common.DrillStatsTable;
 import org.apache.drill.exec.planner.logical.DrillAnalyzeRel;
 import org.apache.drill.exec.planner.logical.DrillRel;
 import org.apache.drill.exec.planner.logical.DrillScreenRel;
@@ -103,14 +104,14 @@ public class AnalyzeTableHandler extends DefaultSqlHandler {
     }
 
     if(! (table instanceof DrillTable)) {
-      return notSupported(tableName);
+      return DrillStatsTable.notSupported(context, tableName);
     }
 
     if (table instanceof DrillTable) {
       DrillTable drillTable = (DrillTable) table;
       final Object selection = drillTable.getSelection();
       if (!(selection instanceof FormatSelection)) {
-        return notSupported(tableName);
+        return DrillStatsTable.notSupported(context, tableName);
       }
       // Do not support non-parquet tables
       FormatSelection formatSelection = (FormatSelection) selection;
@@ -118,7 +119,7 @@ public class AnalyzeTableHandler extends DefaultSqlHandler {
       if (!((formatConfig instanceof ParquetFormatConfig)
             || ((formatConfig instanceof NamedFormatPluginConfig)
                  && ((NamedFormatPluginConfig) formatConfig).name.equals("parquet")))) {
-        return notSupported(tableName);
+        return DrillStatsTable.notSupported(context, tableName);
       }
 
       FileSystemPlugin plugin = (FileSystemPlugin) drillTable.getPlugin();
@@ -128,13 +129,13 @@ public class AnalyzeTableHandler extends DefaultSqlHandler {
       String selectionRoot = formatSelection.getSelection().getSelectionRoot();
       if (!selectionRoot.contains(tableName)
           || !fs.getFileStatus(new Path(selectionRoot)).isDirectory()) {
-        return notSupported(tableName);
+        return DrillStatsTable.notSupported(context, tableName);
       }
       // Do not recompute statistics, if stale
       Path statsFilePath = new Path(new Path(selectionRoot), DotDrillType.STATS.getEnding());
       if (fs.exists(statsFilePath)
           && !isStatsStale(fs, statsFilePath)) {
-       return notRequired(tableName);
+       return DrillStatsTable.notRequired(context, tableName);
       }
     }
     // Convert the query to Drill Logical plan and insert a writer operator on top.
@@ -184,20 +185,6 @@ public class AnalyzeTableHandler extends DefaultSqlHandler {
       }
     }
     return false;
-  }
-
-  private PhysicalPlan direct(boolean outcome, String message, Object... values){
-    return DirectPlan.createDirectPlan(context, outcome, String.format(message, values));
-  }
-
-  /* Helper function to generate error - statistics not supported on non-parquet tables */
-  private PhysicalPlan notSupported(String tbl){
-    return direct(false, "Table %s is not supported by ANALYZE."
-        + " Support is currently limited to directory-based Parquet tables.", tbl);
-  }
-
-  private PhysicalPlan notRequired(String tbl){
-    return direct(false, "Table %s has not changed since last ANALYZE!", tbl);
   }
 
   /* Generates the column list specified in the ANALYZE statement */
