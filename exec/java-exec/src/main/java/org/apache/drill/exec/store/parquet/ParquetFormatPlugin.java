@@ -21,8 +21,14 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Stopwatch;
 import org.apache.drill.common.exceptions.ExecutionSetupException;
 import org.apache.drill.common.expression.SchemaPath;
 import org.apache.drill.common.logical.StoragePluginConfig;
@@ -32,6 +38,7 @@ import org.apache.drill.exec.ops.FragmentContext;
 import org.apache.drill.exec.physical.base.AbstractWriter;
 import org.apache.drill.exec.physical.base.PhysicalOperator;
 import org.apache.drill.exec.physical.impl.WriterRecordBatch;
+import org.apache.drill.exec.planner.common.DrillStatsTable.TableStatistics;
 import org.apache.drill.exec.planner.logical.DrillTable;
 import org.apache.drill.exec.planner.logical.DynamicDrillTable;
 import org.apache.drill.exec.proto.ExecProtos.FragmentHandle;
@@ -55,6 +62,8 @@ import org.apache.drill.exec.store.parquet.Metadata.ParquetTableMetadataDirs;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 import org.apache.parquet.format.converter.ParquetMetadataConverter;
@@ -167,6 +176,29 @@ public class ParquetFormatPlugin implements FormatPlugin{
   public ParquetGroupScan getGroupScan(String userName, FileSelection selection, List<SchemaPath> columns)
       throws IOException {
     return new ParquetGroupScan(userName, selection, this, selection.selectionRoot, selection.cacheFileRoot, columns);
+  }
+
+  @Override
+  public boolean supportsStatistics() {
+    return true;
+  }
+
+  @Override
+  public TableStatistics readStatistics(FileSystem fs, Path statsTablePath) throws IOException {
+    Stopwatch timer = Stopwatch.createStarted();
+    ObjectMapper mapper = new ObjectMapper();
+    mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    FSDataInputStream is = fs.open(statsTablePath);
+
+    TableStatistics statistics = mapper.readValue(is, TableStatistics.class);
+    logger.info("Took {} ms to read statistics from {} format plugin", timer.elapsed(TimeUnit.MILLISECONDS), name);
+    timer.stop();
+    return statistics;
+  }
+
+  @Override
+  public void writeStatistics(TableStatistics statistics, FileSystem fs, Path statsTablePath) throws IOException {
+    throw new UnsupportedOperationException("unimplemented");
   }
 
   @Override

@@ -18,9 +18,10 @@
 package org.apache.drill.exec.planner.common;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonSetter;
@@ -28,18 +29,22 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Stopwatch;
 import com.google.common.collect.Maps;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelVisitor;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.drill.common.exceptions.DrillRuntimeException;
+import org.apache.drill.common.logical.FormatPluginConfig;
 import org.apache.drill.exec.ops.QueryContext;
+import org.apache.drill.exec.physical.PhysicalPlan;
 import org.apache.drill.exec.planner.logical.DrillTable;
+import org.apache.drill.exec.planner.sql.DirectPlan;
+import org.apache.drill.exec.store.StoragePlugin;
+import org.apache.drill.exec.store.dfs.FileSystemPlugin;
+import org.apache.drill.exec.store.dfs.FormatPlugin;
+import org.apache.drill.exec.store.dfs.FormatSelection;
+import org.apache.drill.exec.store.parquet.ParquetFormatConfig;
 import org.apache.drill.exec.util.ImpersonationUtil;
-import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.joda.time.DateTime;
@@ -125,16 +130,17 @@ public class DrillStatsTable {
 
   /**
    * Read the stats from storage and keep them in memory.
-   * @param context
+   * @param table - Drill table for which we require stats
+   * @param context - Query context
    * @throws Exception
    */
-  public void materialize(final QueryContext context) throws IOException {
+  public void materialize(final DrillTable table, final QueryContext context) throws IOException {
     if (materialized) {
       return;
     }
     // Deserialize statistics from JSON
     try {
-      this.statistics = readStatistics(tablePath);
+      this.statistics = readStatistics(table, tablePath);
       //Handle based on the statistics version read from the file
       if (statistics instanceof Statistics_v0) {
         //Do nothing
@@ -174,7 +180,7 @@ public class DrillStatsTable {
           final DrillTable drillTable = node.getTable().unwrap(DrillTable.class);
           final DrillStatsTable statsTable = drillTable.getStatsTable();
           if (statsTable != null) {
-            statsTable.materialize(context);
+            statsTable.materialize(drillTable, context);
           } else {
             throw new DrillRuntimeException(
                 String.format("Failed to find the stats for table [%s] in schema [%s]",
@@ -195,8 +201,8 @@ public class DrillStatsTable {
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY,
       property = "statistics_version")
   @JsonSubTypes({
-          @JsonSubTypes.Type(value = DrillStatsTable.Statistics_v1.class, name="v0"),
-          @JsonSubTypes.Type(value = DrillStatsTable.Statistics_v1.class, name="v1")
+      @JsonSubTypes.Type(value = DrillStatsTable.Statistics_v1.class, name="v0"),
+      @JsonSubTypes.Type(value = DrillStatsTable.Statistics_v1.class, name="v1")
   })
   public static abstract class TableStatistics {
     @JsonIgnore public abstract List<? extends DirectoryStatistics> getDirectoryStatistics();
@@ -280,11 +286,11 @@ public class DrillStatsTable {
 
   public static class ColumnStatistics_v1 extends ColumnStatistics {
     @JsonProperty ("column") private String name = null;
-    @JsonProperty ("schema") private long schema = -1;
-    @JsonProperty ("statcount") private long count = -1;
-    @JsonProperty ("nonnullstatcount") private long nonNullCount = -1;
-    @JsonProperty ("ndv") private long ndv = -1;
-    @JsonProperty ("avgwidth") private double width = -1;
+    @JsonProperty ("schema") private long schema = 0;
+    @JsonProperty ("statcount") private long count = 0;
+    @JsonProperty ("nonnullstatcount") private long nonNullCount = 0;
+    @JsonProperty ("ndv") private long ndv = 0;
+    @JsonProperty ("avgwidth") private double width = 0;
 
     public ColumnStatistics_v1() {}
     @JsonGetter ("column")
@@ -331,15 +337,63 @@ public class DrillStatsTable {
     public void setAvgWidth(double width) { this.width = width; }
   }
 
-  private TableStatistics readStatistics(Path path) throws IOException {
-    Stopwatch timer = Stopwatch.createStarted();
-    ObjectMapper mapper = new ObjectMapper();
-    mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    FSDataInputStream is = fs.open(path);
+  private TableStatistics readStatistics(DrillTable drillTable, Path path) throws IOException {
+    final Object selection = drillTable.getSelection();
 
-    TableStatistics statistics = mapper.readValue(is, TableStatistics.class);
-    logger.info("Took {} ms to read metadata from cache file", timer.elapsed(TimeUnit.MILLISECONDS));
-    timer.stop();
+    if (selection instanceof FormatSelection) {
+      StoragePlugin storagePlugin =  drillTable.getPlugin();
+      FormatSelection formatSelection = (FormatSelection) selection;
+      FormatPluginConfig formatConfig = formatSelection.getFormat();
+
+      //if ((formatConfig instanceof ParquetFormatConfig)
+      //    || ((formatConfig instanceof NamedFormatPluginConfig)
+      //    && ((NamedFormatPluginConfig) formatConfig).name.equals("parquet")))
+      //    || formatConfig instanceof MapRDBFormatPluginConfig
+      if (storagePlugin instanceof FileSystemPlugin
+          && (formatConfig instanceof ParquetFormatConfig)) {
+        FormatPlugin fmtPlugin = ((FileSystemPlugin) storagePlugin).getFormatPlugin(formatConfig);
+        if (fmtPlugin.supportsStatistics()) {
+          return fmtPlugin.readStatistics(fs, path);
+        }
+      }
+    }
+    return null;
+  }
+
+  public static TableStatistics generateDirectoryStructure(String dirComputedTime,
+      List<ColumnStatistics> columnStatisticsList) {
+    //TODO: Split up columnStatisticsList() based on directory names. We assume only
+    //one directory right now but this WILL change in the future
+    //HashMap<String, Boolean> dirNames = new HashMap<String, Boolean>();
+    TableStatistics statistics = new Statistics_v1();
+    List<DirectoryStatistics_v1> dirStats = new ArrayList<DirectoryStatistics_v1>();
+    List<ColumnStatistics_v1> columnStatisticsV1s = new ArrayList<DrillStatsTable.ColumnStatistics_v1>();
+    //Create dirStats
+    DirectoryStatistics_v1 dirStat = new DirectoryStatistics_v1();
+    // Add columnStats corresponding to this dirStats
+    for (ColumnStatistics colStats : columnStatisticsList) {
+      columnStatisticsV1s.add((ColumnStatistics_v1) colStats);
+    }
+    dirStat.setComputedTime(dirComputedTime);
+    dirStat.setColumnStatistics(columnStatisticsV1s);
+    //Add this dirStats to the list of dirStats
+    dirStats.add(dirStat);
+    //Add list of dirStats to tableStats
+    ((Statistics_v1) statistics).setDirectoryStatistics(dirStats);
     return statistics;
+  }
+
+  public static PhysicalPlan direct(QueryContext context, boolean outcome, String message, Object... values) {
+    return DirectPlan.createDirectPlan(context, outcome, String.format(message, values));
+  }
+
+  /* Helper function to generate error - statistics not supported on non-parquet tables */
+  public static PhysicalPlan notSupported(QueryContext context, String tbl) {
+    return direct(context, false, "Table %s is not supported by ANALYZE."
+        + " Support is currently limited to directory-based Parquet tables.", tbl);
+  }
+
+  public static PhysicalPlan notRequired(QueryContext context, String tbl) {
+    return direct(context, false, "Table %s has not changed since last ANALYZE!", tbl);
   }
 }

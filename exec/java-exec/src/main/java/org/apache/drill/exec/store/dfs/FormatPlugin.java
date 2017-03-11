@@ -27,9 +27,12 @@ import org.apache.drill.common.logical.StoragePluginConfig;
 import org.apache.drill.exec.physical.base.AbstractGroupScan;
 import org.apache.drill.exec.physical.base.AbstractWriter;
 import org.apache.drill.exec.physical.base.PhysicalOperator;
+import org.apache.drill.exec.planner.common.DrillStatsTable.TableStatistics;
 import org.apache.drill.exec.server.DrillbitContext;
 import org.apache.drill.exec.store.StoragePluginOptimizerRule;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 
 /**
  * Similar to a storage engine but built specifically to work within a FileSystem context.
@@ -53,6 +56,12 @@ public interface FormatPlugin {
   public Set<StoragePluginOptimizerRule> getOptimizerRules();
 
   public AbstractGroupScan getGroupScan(String userName, FileSelection selection, List<SchemaPath> columns) throws IOException;
+
+  public boolean supportsStatistics();
+
+  public TableStatistics readStatistics(FileSystem fs, Path statsTablePath) throws IOException;
+
+  public void writeStatistics(TableStatistics statistics, FileSystem fs, Path statsTablePath) throws IOException;
 
   public FormatPluginConfig getConfig();
   public StoragePluginConfig getStorageConfig();
