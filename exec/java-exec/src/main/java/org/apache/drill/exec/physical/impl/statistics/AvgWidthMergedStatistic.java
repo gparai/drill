@@ -98,7 +98,8 @@ public class AvgWidthMergedStatistic extends AbstractMergedStatistic {
       vv.allocateNewSafe();
       // For variable-length columns, we divide by non-null rows since NULL values do not
       // take up space. For fixed-length columns NULL values take up space.
-      if (sumHolder.get(colName) != null) {
+      if (sumHolder.get(colName) != null
+          && getRowCount(colName) > 0) {
         vv.getMutator().setSafe(0, sumHolder.get(colName) / getRowCount(colName));
       } else {
         vv.getMutator().setNull(0);
