@@ -36,7 +36,31 @@
     "REFRESH",
     "METADATA",
     "IF",
-    "JAR"
+    "JAR",
+    "ANALYZE",
+    "COMPUTE",
+    "ESTIMATE",
+    "STATISTICS",
+    "COLUMNS",
+    "SAMPLE"
+  ]
+
+  # List of keywords from "keywords" section that are not reserved by SQL:2003 standard.
+  # Example: "DATABASES", "TABLES" are keywords but are not reserved by SQL:2003 standard.
+  # First keyword that starts the statement should be a reserved keyword, otherwise the current parser
+  # ends up considering it as a expression and fails.
+  nonReservedKeywords: [
+    "DATABASES",
+    "REPLACE",
+    "SCHEMAS",
+    "TABLES",
+    "FILES",
+    "METADATA",
+    "COMPUTE",
+    "ESTIMATE",
+    "STATISTICS",
+    "COLUMNS",
+    "SAMPLE"
   ]
 
   # List of methods for parsing custom SQL statements.
@@ -53,7 +77,9 @@
     "SqlDropTable()",
     "SqlRefreshMetadata()",
     "SqlCreateFunction()",
-    "SqlDropFunction()"
+    "SqlDropFunction()",
+    "SqlRefreshMetadata()",
+    "SqlAnalyzeTable()"
   ]
 
   # List of methods for parsing custom literals.
