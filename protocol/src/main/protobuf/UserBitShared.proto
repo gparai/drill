@@ -350,6 +350,8 @@ enum CoreOperatorType {
   PCAPNG_SUB_SCAN = 55;
   RUNTIME_FILTER = 56;
   ROWKEY_JOIN = 57;
+  STATISTICS_AGGREGATE = 58;
+  UNPIVOT_MAPS = 59;
 }
 
 /* Registry that contains list of jars, each jar contains its name and list of function signatures.

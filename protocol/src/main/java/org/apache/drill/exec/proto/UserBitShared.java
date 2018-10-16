@@ -597,6 +597,14 @@ public final class UserBitShared {
      * <code>ROWKEY_JOIN = 57;</code>
      */
     ROWKEY_JOIN(57, 57),
+    /**
+     * <code>STATISTICS_AGGREGATE = 58;</code>
+     */
+    STATISTICS_AGGREGATE(58, 58),
+    /**
+     * <code>UNPIVOT_MAPS = 59;</code>
+     */
+    UNPIVOT_MAPS(59, 59),
     ;
 
     /**
@@ -831,6 +839,14 @@ public final class UserBitShared {
      * <code>ROWKEY_JOIN = 57;</code>
      */
     public static final int ROWKEY_JOIN_VALUE = 57;
+    /**
+     * <code>STATISTICS_AGGREGATE = 58;</code>
+     */
+    public static final int STATISTICS_AGGREGATE_VALUE = 58;
+    /**
+     * <code>UNPIVOT_MAPS = 59;</code>
+     */
+    public static final int UNPIVOT_MAPS_VALUE = 59;
 
 
     public final int getNumber() { return value; }
@@ -895,6 +911,8 @@ public final class UserBitShared {
         case 55: return PCAPNG_SUB_SCAN;
         case 56: return RUNTIME_FILTER;
         case 57: return ROWKEY_JOIN;
+        case 58: return STATISTICS_AGGREGATE;
+        case 59: return UNPIVOT_MAPS;
         default: return null;
       }
     }
@@ -24635,7 +24653,7 @@ public final class UserBitShared {
       "entState\022\013\n\007SENDING\020\000\022\027\n\023AWAITING_ALLOCA" +
       "TION\020\001\022\013\n\007RUNNING\020\002\022\014\n\010FINISHED\020\003\022\r\n\tCAN" +
       "CELLED\020\004\022\n\n\006FAILED\020\005\022\032\n\026CANCELLATION_REQ" +
-      "UESTED\020\006*\222\t\n\020CoreOperatorType\022\021\n\rSINGLE_" +
+      "UESTED\020\006*\276\t\n\020CoreOperatorType\022\021\n\rSINGLE_" +
       "SENDER\020\000\022\024\n\020BROADCAST_SENDER\020\001\022\n\n\006FILTER" +
       "\020\002\022\022\n\016HASH_AGGREGATE\020\003\022\r\n\tHASH_JOIN\020\004\022\016\n" +
       "\nMERGE_JOIN\020\005\022\031\n\025HASH_PARTITION_SENDER\020\006" +
@@ -24664,11 +24682,12 @@ public final class UserBitShared {
       "TPPD_LOG_SUB_SCAN\0203\022\022\n\016IMAGE_SUB_SCAN\0204\022" +
       "\025\n\021SEQUENCE_SUB_SCAN\0205\022\023\n\017PARTITION_LIMI" +
       "T\0206\022\023\n\017PCAPNG_SUB_SCAN\0207\022\022\n\016RUNTIME_FILT" +
-      "ER\0208\022\017\n\013ROWKEY_JOIN\0209*g\n\nSaslStatus\022\020\n\014S" +
-      "ASL_UNKNOWN\020\000\022\016\n\nSASL_START\020\001\022\024\n\020SASL_IN" +
-      "_PROGRESS\020\002\022\020\n\014SASL_SUCCESS\020\003\022\017\n\013SASL_FA" +
-      "ILED\020\004B.\n\033org.apache.drill.exec.protoB\rU" +
-      "serBitSharedH\001"
+      "ER\0208\022\017\n\013ROWKEY_JOIN\0209\022\030\n\024STATISTICS_AGGR" +
+      "EGATE\020:\022\020\n\014UNPIVOT_MAPS\020;*g\n\nSaslStatus\022" +
+      "\020\n\014SASL_UNKNOWN\020\000\022\016\n\nSASL_START\020\001\022\024\n\020SAS" +
+      "L_IN_PROGRESS\020\002\022\020\n\014SASL_SUCCESS\020\003\022\017\n\013SAS" +
+      "L_FAILED\020\004B.\n\033org.apache.drill.exec.prot" +
+      "oB\rUserBitSharedH\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
