@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * <p/>
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p/>
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,19 +20,16 @@ package org.apache.drill.exec.physical.impl.statistics;
 // Library implementing HLL algorithm to derive approximate #distinct values(NDV). Please refer:
 // 'HyperLogLog: the analysis of a near-optimal cardinality estimation algorithm.' Flajolet et. al.
 import com.clearspring.analytics.stream.cardinality.HyperLogLog;
-import org.apache.drill.common.types.TypeProtos;
-import org.apache.drill.exec.expr.holders.ObjectHolder;
-import org.apache.drill.exec.expr.holders.ValueHolder;
-import org.apache.drill.exec.ops.ContextInformation;
-import org.apache.drill.exec.vector.NullableVarBinaryVector;
-import org.apache.drill.exec.vector.ValueVector;
-import org.apache.drill.exec.vector.complex.MapVector;
-
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.drill.common.types.TypeProtos;
+import org.apache.drill.exec.ops.ContextInformation;
+import org.apache.drill.exec.vector.NullableVarBinaryVector;
+import org.apache.drill.exec.vector.ValueVector;
+import org.apache.drill.exec.vector.complex.MapVector;
 
 public class HLLMergedStatistic extends AbstractMergedStatistic {
   private Map<String, HyperLogLog> hllHolder;
@@ -64,7 +61,7 @@ public class HLLMergedStatistic extends AbstractMergedStatistic {
     // Check the input is a Map Vector
     assert (input.getField().getType().getMinorType() == TypeProtos.MinorType.MAP);
     for (ValueVector vv : input) {
-      String colName = vv.getField().getLastName();
+      String colName = vv.getField().getName();
       HyperLogLog colHLLHolder = null;
       if (hllHolder.get(colName) != null) {
         colHLLHolder = hllHolder.get(colName);
@@ -105,7 +102,7 @@ public class HLLMergedStatistic extends AbstractMergedStatistic {
     // Dependencies have been configured correctly
     assert (state == State.MERGE);
     for (ValueVector outMapCol : output) {
-      String colName = outMapCol.getField().getLastName();
+      String colName = outMapCol.getField().getName();
       HyperLogLog colHLLHolder = hllHolder.get(colName);
       NullableVarBinaryVector vv = (NullableVarBinaryVector) outMapCol;
       vv.allocateNewSafe();

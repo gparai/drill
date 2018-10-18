@@ -94,7 +94,7 @@ public abstract class DrillAggregateRelBase extends Aggregate implements DrillRe
     if (!DrillRelOptUtil.guessRows(this)) {
       return mq.getRowCount(this);
     } else {
-      return super.getRows();
+      return super.estimateRowCount(mq);
     }
   }
 }

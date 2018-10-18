@@ -227,7 +227,7 @@ public class PlannerSettings implements Context{
   public static final BooleanValidator FORCE_2PHASE_AGGR = new BooleanValidator(FORCE_2PHASE_AGGR_KEY,
       new OptionDescription("Forces the cost-based query planner to generate a two phase aggregation for an aggregate operator."));
 
-  public static final BooleanValidator PARALLEL_ANALYZE = new BooleanValidator("planner.statistics.parallel_analyze", null);
+  public static final BooleanValidator STATISTICS_PARALLEL_ANALYZE = new BooleanValidator("planner.statistics.parallel_analyze", null);
   public static final BooleanValidator STATISTICS_USE = new BooleanValidator("planner.statistics.use", null);
 
   public OptionManager options = null;
@@ -471,7 +471,7 @@ public class PlannerSettings implements Context{
   }
 
   public boolean getIsParallelAnalyze() {
-    return options.getOption(PARALLEL_ANALYZE);
+    return options.getOption(STATISTICS_PARALLEL_ANALYZE);
   }
 
   public boolean useStatistics() {

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * <p/>
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p/>
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,16 +17,12 @@
  */
 package org.apache.drill.exec.physical.impl.statistics;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.drill.common.types.TypeProtos;
-import org.apache.drill.exec.expr.holders.BigIntHolder;
-import org.apache.drill.exec.expr.holders.ValueHolder;
-import org.apache.drill.exec.vector.BigIntVector;
 import org.apache.drill.exec.vector.NullableBigIntVector;
 import org.apache.drill.exec.vector.ValueVector;
 import org.apache.drill.exec.vector.complex.MapVector;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class StatCountMergedStatistic extends AbstractMergedStatistic {
 
@@ -59,7 +55,7 @@ public class StatCountMergedStatistic extends AbstractMergedStatistic {
     // Check the input is a Map Vector
     assert (input.getField().getType().getMinorType() == TypeProtos.MinorType.MAP);
     for (ValueVector vv : input) {
-      String colName = vv.getField().getLastName();
+      String colName = vv.getField().getName();
       NullableBigIntVector biv = (NullableBigIntVector) vv;
       NullableBigIntVector.Accessor accessor = biv.getAccessor();
       long sum = 0;
@@ -86,7 +82,7 @@ public class StatCountMergedStatistic extends AbstractMergedStatistic {
     // Check the input is a Map Vector
     assert (output.getField().getType().getMinorType() == TypeProtos.MinorType.MAP);
     for (ValueVector outMapCol : output) {
-      String colName = outMapCol.getField().getLastName();
+      String colName = outMapCol.getField().getName();
       NullableBigIntVector vv = (NullableBigIntVector) outMapCol;
       vv.allocateNewSafe();
       if (sumHolder.get(colName) != null) {

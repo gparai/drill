@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * <p/>
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p/>
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,15 +17,12 @@
  */
 package org.apache.drill.exec.physical.impl.statistics;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.drill.common.types.TypeProtos;
-import org.apache.drill.exec.expr.holders.IntHolder;
-import org.apache.drill.exec.expr.holders.ValueHolder;
 import org.apache.drill.exec.vector.IntVector;
 import org.apache.drill.exec.vector.ValueVector;
 import org.apache.drill.exec.vector.complex.MapVector;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class ColTypeMergedStatistic extends AbstractMergedStatistic {
   private Map<String, Integer> typeHolder;
@@ -56,7 +53,7 @@ public class ColTypeMergedStatistic extends AbstractMergedStatistic {
     // Check the input is a Map Vector
     assert (input.getField().getType().getMinorType() == TypeProtos.MinorType.MAP);
     for (ValueVector vv : input) {
-      String colName = vv.getField().getLastName();
+      String colName = vv.getField().getName();
       if (typeHolder.get(colName) == null) {
         IntVector iv = (IntVector) vv;
         IntVector.Accessor accessor = iv.getAccessor();
@@ -78,7 +75,7 @@ public class ColTypeMergedStatistic extends AbstractMergedStatistic {
     // Check the input is a Map Vector
     assert (output.getField().getType().getMinorType() == TypeProtos.MinorType.MAP);
     for (ValueVector outMapCol : output) {
-      String colName = outMapCol.getField().getLastName();
+      String colName = outMapCol.getField().getName();
       IntVector vv = (IntVector) outMapCol;
       vv.allocateNewSafe();
       // Set column name in ValueVector

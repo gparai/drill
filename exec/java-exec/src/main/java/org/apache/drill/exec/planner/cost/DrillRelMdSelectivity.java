@@ -45,7 +45,6 @@ import org.apache.drill.exec.physical.base.DbGroupScan;
 import org.apache.drill.exec.physical.base.GroupScan;
 import org.apache.drill.exec.planner.common.DrillJoinRelBase;
 import org.apache.drill.exec.planner.common.DrillRelOptUtil;
-import org.apache.drill.exec.planner.logical.DrillJoinRel;
 import org.apache.drill.exec.planner.logical.DrillScanRel;
 import org.apache.drill.exec.planner.logical.DrillTable;
 import org.apache.drill.exec.planner.logical.DrillTranslatableTable;
@@ -65,7 +64,7 @@ public class DrillRelMdSelectivity extends RelMdSelectivity {
     } else if (rel instanceof TableScan) {
       return getScanSelectivity(rel, mq, predicate);
     } else if (rel instanceof DrillJoinRelBase) {
-      return getJoinSelectivity(((DrillJoinRel)rel), mq, predicate);
+      return getJoinSelectivity(((DrillJoinRelBase) rel), mq, predicate);
     } else if (rel instanceof SingleRel && !DrillRelOptUtil.guessRows(rel)) {
       return getSelectivity(((SingleRel)rel).getInput(), mq, predicate);
     } else {
