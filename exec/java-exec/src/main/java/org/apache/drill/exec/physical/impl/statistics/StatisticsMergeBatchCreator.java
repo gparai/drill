@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -17,21 +17,20 @@
  */
 package org.apache.drill.exec.physical.impl.statistics;
 
-import com.google.common.base.Preconditions;
+import java.util.List;
 import org.apache.drill.common.exceptions.ExecutionSetupException;
-import org.apache.drill.exec.ops.FragmentContext;
+import org.apache.drill.exec.ops.ExecutorFragmentContext;
 import org.apache.drill.exec.physical.config.StatisticsMerge;
 import org.apache.drill.exec.physical.impl.BatchCreator;
 import org.apache.drill.exec.record.CloseableRecordBatch;
 import org.apache.drill.exec.record.RecordBatch;
-
-import java.util.List;
+import org.apache.drill.shaded.guava.com.google.common.base.Preconditions;
 
 @SuppressWarnings("unused")
 public class StatisticsMergeBatchCreator implements BatchCreator<StatisticsMerge>{
 
   @Override
-  public CloseableRecordBatch getBatch(FragmentContext context, StatisticsMerge config,
+  public CloseableRecordBatch getBatch(ExecutorFragmentContext context, StatisticsMerge config,
                                        List<RecordBatch> children) throws ExecutionSetupException {
     Preconditions.checkArgument(children.size() == 1);
     return new StatisticsMergeBatch(config, children.iterator().next(), context);

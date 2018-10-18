@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * <p/>
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p/>
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,7 +17,6 @@
  */
 package org.apache.drill.exec.physical.impl.statistics;
 
-import com.google.common.collect.Lists;
 import org.apache.drill.common.exceptions.UserException;
 import org.apache.drill.common.expression.LogicalExpression;
 import org.apache.drill.common.expression.FunctionCallFactory;
@@ -47,6 +46,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import org.apache.drill.shaded.guava.com.google.common.collect.Lists;
 
 /**
  *
@@ -140,7 +140,7 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
     List<String> lastMapColumnsList = null;
     //Populate the columns list from the `columns` map
     for (VectorWrapper<?> vw : incoming) {
-      String inputFunc = vw.getField().getLastName();
+      String inputFunc = vw.getField().getName();
       if (vw.getField().getType().getMinorType() != TypeProtos.MinorType.MAP) {
         continue;
       }
@@ -150,20 +150,20 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
       } else {
         inputFunctions.put(inputFunc, true);
       }
-      if (vw.getField().getLastName().equals(Statistic.COLNAME)) {
+      if (vw.getField().getName().equals(Statistic.COLNAME)) {
         columnsList = Lists.newArrayList();
         for (ValueVector vv : vw.getValueVector()) {
           if (vv.getField().getType().getMinorType() == TypeProtos.MinorType.MAP) {
             throw new IllegalArgumentException("StatisticsMerge of nested map is not supported");
           }
-          columnsList.add(vv.getField().getLastName());
+          columnsList.add(vv.getField().getName());
         }
         lastMapColumnsList = columnsList;
       }
     }
     // Verify the rest of the maps have the same columns
     for (VectorWrapper<?> vw : incoming) {
-      String inputFunc = vw.getField().getLastName();
+      String inputFunc = vw.getField().getName();
       if (vw.getField().getType().getMinorType() != TypeProtos.MinorType.MAP) {
         continue;
       }
@@ -189,7 +189,7 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
     // Populate the list of statistics which will be output in the schema
     for (VectorWrapper<?> vw : incoming) {
       for (String outputStatName : functions.keySet()) {
-        if (functions.get(outputStatName).equals(vw.getField().getLastName())) {
+        if (functions.get(outputStatName).equals(vw.getField().getName())) {
           mergedStatisticList.add(MergedStatisticFactory.getMergedStatistic(outputStatName,
               functions.get(outputStatName)));
         }
@@ -221,7 +221,7 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
         targetTypeStatistic = ((NDVMergedStatistic) statistic).getMajorTypeFromStatistic();
       }
       for (VectorWrapper<?> vw : incoming) {
-        if (targetTypeStatistic.equals(vw.getField().getLastName())) {
+        if (targetTypeStatistic.equals(vw.getField().getName())) {
           addVectorToOutgoingContainer(statistic.getName(), vw);
         }
       }
@@ -249,7 +249,7 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
     MapVector outputVector = (MapVector) outputValueVector;
 
     for (ValueVector vv : inputVector) {
-      String columnName = vv.getField().getLastName();
+      String columnName = vv.getField().getName();
       // Except column name, type all the rest are actual statistic functions (rely on
       // statistic calculation functions).
       if (outStatName.equals(Statistic.COLNAME)
@@ -258,7 +258,7 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
       } else {
         List<LogicalExpression> args = Lists.newArrayList();
         LogicalExpression call;
-        args.add(SchemaPath.getSimplePath(vv.getField().getPath()));
+        args.add(SchemaPath.getSimplePath(vv.getField().getName()));
         // Add a call to the statistic function (e.g. ndv) passing in the column value
         // as arguments
         call = FunctionCallFactory.createExpression(outStatName, args);
@@ -273,7 +273,7 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
    */
   private IterOutcome buildOutgoingRecordBatch() {
     for (VectorWrapper<?> vw : container) {
-      String outputStatName = vw.getField().getLastName();
+      String outputStatName = vw.getField().getName();
       // Populate the `schema` and `computed` fields
       if (outputStatName.equals(Statistic.SCHEMA)) {
         BigIntVector vv = (BigIntVector) vw.getValueVector();
@@ -319,7 +319,7 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
       String inputStat = outputStat.getInput();
       for (VectorWrapper<?> vw : incoming) {
         MapVector vv = (MapVector) vw.getValueVector();
-        if (vv.getField().getLastName().equals(inputStat)) {
+        if (vv.getField().getName().equals(inputStat)) {
           outputStat.merge(vv);
           break;
         }
@@ -331,6 +331,11 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
   @Override
   public VectorContainer getOutgoingContainer() {
     return this.container;
+  }
+
+  @Override
+  public void dump() {
+
   }
 
   @Override
@@ -373,7 +378,7 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
       }
     } catch (SchemaChangeException ex) {
       kill(false);
-      context.fail(UserException.unsupportedError(ex).build(logger));
+      context.getExecutorState().fail(UserException.unsupportedError(ex).build(logger));
       return IterOutcome.STOP;
     }
 

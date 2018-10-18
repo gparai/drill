@@ -75,7 +75,7 @@ public class Utilities {
         .setQueryStartTime(queryStartTime)
         .setTimeZone(timeZone)
         .setSessionId(sessionId)
-        .setHllAccuracy((int)manager.getOption(ExecConstants.HLL_ACCURACY))
+        .setHllAccuracy((int)manager.getOption(ExecConstants.HLL_ACCURACY_VALIDATOR))
         .build();
   }
 
