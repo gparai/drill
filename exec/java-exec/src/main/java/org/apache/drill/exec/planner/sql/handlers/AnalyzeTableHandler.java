@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * <p/>
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p/>
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -31,6 +31,7 @@ import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.tools.RelConversionException;
 import org.apache.calcite.tools.ValidationException;
 import org.apache.drill.common.exceptions.UserException;
+import org.apache.drill.common.expression.SchemaPath;
 import org.apache.drill.common.logical.FormatPluginConfig;
 import org.apache.drill.exec.dotdrill.DotDrillType;
 import org.apache.drill.exec.physical.PhysicalPlan;
@@ -43,7 +44,6 @@ import org.apache.drill.exec.planner.logical.DrillStoreRel;
 import org.apache.drill.exec.planner.logical.DrillWriterRel;
 import org.apache.drill.exec.planner.logical.DrillTable;
 import org.apache.drill.exec.planner.physical.Prel;
-import org.apache.drill.exec.planner.sql.DirectPlan;
 import org.apache.drill.exec.planner.sql.SchemaUtilites;
 import org.apache.drill.exec.planner.sql.parser.SqlAnalyzeTable;
 import org.apache.drill.exec.store.AbstractSchema;
@@ -193,7 +193,7 @@ public class AnalyzeTableHandler extends DefaultSqlHandler {
 
     final List<String> fields = sqlAnalyzeTable.getFieldNames();
     if (fields == null || fields.size() <= 0) {
-      columnList.add(new SqlIdentifier("*", SqlParserPos.ZERO));
+      columnList.add(new SqlIdentifier(SchemaPath.STAR_COLUMN.rootName(), SqlParserPos.ZERO));
     } else {
       for(String field : fields) {
         columnList.add(new SqlIdentifier(field, SqlParserPos.ZERO));
@@ -206,7 +206,7 @@ public class AnalyzeTableHandler extends DefaultSqlHandler {
   /* Converts to Drill logical plan */
   protected DrillRel convertToDrel(RelNode relNode, AbstractSchema schema, String analyzeTableName)
       throws RelConversionException, SqlUnsupportedException {
-    final DrillRel convertedRelNode = convertToDrel(relNode);
+    final DrillRel convertedRelNode = convertToRawDrel(relNode);
 
     if (convertedRelNode instanceof DrillStoreRel) {
       throw new UnsupportedOperationException();

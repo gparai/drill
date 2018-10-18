@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * <p/>
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p/>
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,17 +17,14 @@
  */
 package org.apache.drill.exec.physical.impl.statistics;
 
-import org.apache.drill.common.types.TypeProtos;
-import org.apache.drill.common.types.MinorType;
-import org.apache.drill.exec.expr.holders.NullableFloat8Holder;
-import org.apache.drill.exec.expr.holders.ValueHolder;
-import org.apache.drill.exec.vector.NullableFloat8Vector;
-import org.apache.drill.exec.vector.ValueVector;
-import org.apache.drill.exec.vector.complex.MapVector;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.drill.common.types.MinorType;
+import org.apache.drill.common.types.TypeProtos;
+import org.apache.drill.exec.vector.NullableFloat8Vector;
+import org.apache.drill.exec.vector.ValueVector;
+import org.apache.drill.exec.vector.complex.MapVector;
 
 public class AvgWidthMergedStatistic extends AbstractMergedStatistic {
   private Map<String, Double> sumHolder;
@@ -66,7 +63,7 @@ public class AvgWidthMergedStatistic extends AbstractMergedStatistic {
     for (ValueVector vv : input) {
       NullableFloat8Vector fv = (NullableFloat8Vector) vv;
       NullableFloat8Vector.Accessor accessor = fv.getAccessor();
-      String colName = vv.getField().getLastName();
+      String colName = vv.getField().getName();
       double sum = 0;
       if (sumHolder.get(colName) != null) {
         sum = sumHolder.get(colName);
@@ -93,7 +90,7 @@ public class AvgWidthMergedStatistic extends AbstractMergedStatistic {
     // Dependencies have been configured correctly
     assert (state == State.MERGE);
     for (ValueVector outMapCol : output) {
-      String colName = outMapCol.getField().getLastName();
+      String colName = outMapCol.getField().getName();
       NullableFloat8Vector vv = (NullableFloat8Vector) outMapCol;
       vv.allocateNewSafe();
       // For variable-length columns, we divide by non-null rows since NULL values do not
