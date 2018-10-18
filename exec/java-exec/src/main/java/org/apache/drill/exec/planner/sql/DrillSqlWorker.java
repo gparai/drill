@@ -155,11 +155,13 @@ public class DrillSqlWorker {
       case DESCRIBE_TABLE:
         if (sqlNode instanceof DrillSqlDescribeTable) {
           handler = new DescribeTableHandler(config);
+          context.setSQLStatementType(SqlStatementType.DESCRIBE_TABLE);
           break;
         }
       case DESCRIBE_SCHEMA:
         if (sqlNode instanceof SqlDescribeSchema) {
           handler = new DescribeSchemaHandler(config);
+          context.setSQLStatementType(SqlStatementType.DESCRIBE_SCHEMA);
           break;
         }
       case CREATE_TABLE:

@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,12 +18,11 @@
 package org.apache.drill.exec.store.easy.json;
 
 import com.fasterxml.jackson.core.JsonFactory;
-
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.drill.exec.physical.impl.statistics.Statistic;
 import org.apache.drill.exec.planner.common.DrillStatsTable;
 import org.apache.drill.exec.planner.common.DrillStatsTable.STATS_VERSION;
@@ -36,7 +35,6 @@ import org.apache.drill.exec.vector.complex.reader.FieldReader;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.joda.time.DateTime;
 
 public class JsonStatisticsRecordWriter extends JSONBaseStatisticsRecordWriter {
 
@@ -57,7 +55,7 @@ public class JsonStatisticsRecordWriter extends JSONBaseStatisticsRecordWriter {
   private DrillStatsTable.TableStatistics statistics;
   private List<DrillStatsTable.ColumnStatistics> columnStatisticsList = new ArrayList<DrillStatsTable.ColumnStatistics>();
   private DrillStatsTable.ColumnStatistics columnStatistics;
-  private DateTime dirComputedTime = null;
+  private LocalDate dirComputedTime = null;
   private Path fileName = null;
   private String queryId = null;
   private long recordsWritten = -1;
@@ -227,7 +225,7 @@ public class JsonStatisticsRecordWriter extends JSONBaseStatisticsRecordWriter {
         throw new IOException("Statistics writer encountered unexpected field");
       }
       if (nextField.equals((Statistic.COMPUTED))) {
-        DateTime computedTime = reader.readDateTime();
+        LocalDate computedTime = reader.readLocalDate();
         if (dirComputedTime == null
                || computedTime.compareTo(dirComputedTime) > 0) {
           dirComputedTime = computedTime;

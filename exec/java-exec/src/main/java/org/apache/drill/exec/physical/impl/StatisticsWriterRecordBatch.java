@@ -77,6 +77,12 @@ public class StatisticsWriterRecordBatch extends AbstractRecordBatch<Writer> {
   }
 
   @Override
+  public void dump() {
+    logger.error("StatisticsWriterRecordBatch[container={}, popConfig={}, counter={}, fragmentUniqueId={}, schema={}]",
+        container, popConfig, counter, fragmentUniqueId, schema);
+  }
+
+  @Override
   public IterOutcome innerNext() {
     if (processed) {
       // if the upstream record batch is already processed and next() is called by
@@ -119,7 +125,7 @@ public class StatisticsWriterRecordBatch extends AbstractRecordBatch<Writer> {
     } catch(IOException ex) {
       logger.error("Failure during query", ex);
       kill(false);
-      context.fail(ex);
+      context.getExecutorState().fail(ex);
       return IterOutcome.STOP;
     }
 
@@ -185,7 +191,7 @@ public class StatisticsWriterRecordBatch extends AbstractRecordBatch<Writer> {
       //Perform any cleanup prior to closing the writer
       recordWriter.cleanup();
     } catch(IOException ex) {
-      context.fail(ex);
+      context.getExecutorState().fail(ex);
     } finally {
       try {
         if (!processed) {

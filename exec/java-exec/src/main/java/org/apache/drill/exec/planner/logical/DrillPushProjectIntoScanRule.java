@@ -76,7 +76,7 @@ public class DrillPushProjectIntoScanRule extends RelOptRule {
               drillScan.getTraitSet().plus(Prel.DRILL_PHYSICAL),
               drillScan.getGroupScan().clone(projectPushInfo.getFields()),
               projectPushInfo.createNewRowType(drillScan.getCluster().getTypeFactory()),
-              drillScan.getTable());
+              drillScan.getTable(), drillScan.getColumns());
         }
 
         @Override

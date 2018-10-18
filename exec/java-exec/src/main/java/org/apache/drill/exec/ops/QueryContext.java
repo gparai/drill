@@ -62,7 +62,7 @@ import io.netty.buffer.DrillBuf;
 public class QueryContext implements AutoCloseable, OptimizerRulesContext, SchemaConfigInfoProvider {
 
   private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(QueryContext.class);
-  public enum SqlStatementType {OTHER, ANALYZE, CTAS, EXPLAIN, REFRESH, SELECT, SETOPTION};
+  public enum SqlStatementType {OTHER, ANALYZE, CTAS, EXPLAIN, DESCRIBE_TABLE, DESCRIBE_SCHEMA, REFRESH, SELECT, SETOPTION};
 
   private final DrillbitContext drillbitContext;
   private final UserSession session;
@@ -267,6 +267,8 @@ public class QueryContext implements AutoCloseable, OptimizerRulesContext, Schem
    * Re-creates drill operator table to refresh functions list from local function registry.
    */
   public void reloadDrillOperatorTable() {
+    // This is re-trying the query plan on failure so qualifies to reset the SQL statement.
+    clearSQLStatementType();
     table = new DrillOperatorTable(
         drillbitContext.getFunctionImplementationRegistry(),
         drillbitContext.getOptionManager());
@@ -336,8 +338,16 @@ public class QueryContext implements AutoCloseable, OptimizerRulesContext, Schem
     if (this.stmtType == null) {
       this.stmtType = stmtType;
     } else {
-      throw new IllegalStateException("SQL Statement type is already set");
+      throw new IllegalStateException(String.format("SQL Statement type is already set to %s", this.stmtType));
     }
+  }
+
+  /*
+   * Clears the type {@link SqlStatementType} of the statement. Ideally we should not clear the statement type
+   * so this should never be exposed outside the QueryContext
+   */
+  private void clearSQLStatementType() {
+    this.stmtType = null;
   }
 
   /**
