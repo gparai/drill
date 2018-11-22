@@ -151,7 +151,9 @@ public class DrillStatsTable {
           }
         }
       }
-      materialized = true;
+      if (statistics != null) { // See stats are available before setting materialized
+        materialized = true;
+      }
     } catch (IOException ex) {
       logger.warn("Failed to read the stats file.", ex);
       throw ex;

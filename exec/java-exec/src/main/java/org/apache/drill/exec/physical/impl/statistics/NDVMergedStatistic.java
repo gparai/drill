@@ -27,7 +27,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.drill.common.types.TypeProtos;
-import org.apache.drill.exec.ops.ContextInformation;
+import org.apache.drill.exec.ExecConstants;
+import org.apache.drill.exec.server.options.OptionManager;
 import org.apache.drill.exec.vector.NullableBigIntVector;
 import org.apache.drill.exec.vector.NullableVarBinaryVector;
 import org.apache.drill.exec.vector.ValueVector;
@@ -35,7 +36,7 @@ import org.apache.drill.exec.vector.complex.MapVector;
 
 public class NDVMergedStatistic extends AbstractMergedStatistic {
   private Map<String, HyperLogLog> hllHolder;
-  private int accuracy;
+  private long accuracy;
   private MergedStatistic targetTypeStatistic;
 
   public NDVMergedStatistic () {
@@ -44,11 +45,11 @@ public class NDVMergedStatistic extends AbstractMergedStatistic {
   }
 
   public static class NDVConfiguration {
-    private final ContextInformation context;
+    private final OptionManager optionManager;
     private final List<MergedStatistic> dependencies;
 
-    public NDVConfiguration (ContextInformation context, List<MergedStatistic> statistics) {
-      this.context = context;
+    public NDVConfiguration (OptionManager optionsManager, List<MergedStatistic> statistics) {
+      this.optionManager = optionsManager;
       this.dependencies = statistics;
     }
   }
@@ -132,7 +133,7 @@ public class NDVMergedStatistic extends AbstractMergedStatistic {
 
   public void configure(NDVConfiguration ndvConfig) {
     assert (state == State.CONFIG);
-    accuracy = ndvConfig.context.getHllAccuracy();
+    accuracy = ndvConfig.optionManager.getLong(ExecConstants.HLL_ACCURACY);
     for (MergedStatistic statistic : ndvConfig.dependencies) {
       if (statistic instanceof AvgWidthMergedStatistic) {
         targetTypeStatistic = statistic;

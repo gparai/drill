@@ -26,14 +26,15 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.drill.common.types.TypeProtos;
-import org.apache.drill.exec.ops.ContextInformation;
+import org.apache.drill.exec.ExecConstants;
+import org.apache.drill.exec.server.options.OptionManager;
 import org.apache.drill.exec.vector.NullableVarBinaryVector;
 import org.apache.drill.exec.vector.ValueVector;
 import org.apache.drill.exec.vector.complex.MapVector;
 
 public class HLLMergedStatistic extends AbstractMergedStatistic {
   private Map<String, HyperLogLog> hllHolder;
-  private int accuracy;
+  private long accuracy;
 
   public HLLMergedStatistic () {
     this.hllHolder = new HashMap<>();
@@ -120,9 +121,9 @@ public class HLLMergedStatistic extends AbstractMergedStatistic {
     state = State.COMPLETE;
   }
 
-  public void configure(ContextInformation contextInfo) {
+  public void configure(OptionManager optionsManager) {
     assert (state == State.CONFIG);
-    accuracy = contextInfo.getHllAccuracy();
+    accuracy = optionsManager.getLong(ExecConstants.HLL_ACCURACY);
     // Now config complete - moving to MERGE state
     state = State.MERGE;
   }
