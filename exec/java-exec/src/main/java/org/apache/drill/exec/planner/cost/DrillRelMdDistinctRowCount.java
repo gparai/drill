@@ -162,10 +162,14 @@ public class DrillRelMdDistinctRowCount extends RelMdDistinctRowCount{
       }
       s *= 1 - d / rowCount;
     }
-    if (s < 0) {  /* rowCount maybe less than NDV(different source), sanity check */
-      return selectivity * rowCount;
-    } else {
+    if (s > 0 && s < 1.0) {
       return (1 - s) * selectivity * rowCount;
+    } else if (s == 1.0) {
+      // Could not get any NDV estimate from stats - probably stats not present for GBY cols. So Guess!
+      return scan.estimateRowCount(mq) * 0.1;
+    } else {
+      /* rowCount maybe less than NDV(different source), sanity check OR NDV not used at all */
+      return selectivity * rowCount;
     }
   }
 

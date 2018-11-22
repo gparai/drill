@@ -23,11 +23,12 @@
 package org.apache.drill.exec.expr.fn.impl;
 
 import io.netty.buffer.DrillBuf;
+import javax.inject.Inject;
 import org.apache.drill.exec.expr.DrillAggFunc;
 import org.apache.drill.exec.expr.DrillSimpleFunc;
 import org.apache.drill.exec.expr.annotations.FunctionTemplate;
-import org.apache.drill.exec.expr.annotations.FunctionTemplate.NullHandling;
 import org.apache.drill.exec.expr.annotations.FunctionTemplate.FunctionScope;
+import org.apache.drill.exec.expr.annotations.FunctionTemplate.NullHandling;
 import org.apache.drill.exec.expr.annotations.Output;
 import org.apache.drill.exec.expr.annotations.Param;
 import org.apache.drill.exec.expr.annotations.Workspace;
@@ -44,8 +45,6 @@ import org.apache.drill.exec.expr.holders.Float4Holder;
 import org.apache.drill.exec.expr.holders.Float8Holder;
 import org.apache.drill.exec.expr.holders.IntHolder;
 import org.apache.drill.exec.expr.holders.IntervalHolder;
-import org.apache.drill.exec.expr.holders.TimeHolder;
-import org.apache.drill.exec.expr.holders.TimeStampHolder;
 import org.apache.drill.exec.expr.holders.NullableBigIntHolder;
 import org.apache.drill.exec.expr.holders.NullableBitHolder;
 import org.apache.drill.exec.expr.holders.NullableDateHolder;
@@ -57,21 +56,21 @@ import org.apache.drill.exec.expr.holders.NullableDecimal38SparseHolder;
 import org.apache.drill.exec.expr.holders.NullableDecimal9Holder;
 import org.apache.drill.exec.expr.holders.NullableFloat4Holder;
 import org.apache.drill.exec.expr.holders.NullableFloat8Holder;
-import org.apache.drill.exec.expr.holders.NullableIntervalHolder;
 import org.apache.drill.exec.expr.holders.NullableIntHolder;
+import org.apache.drill.exec.expr.holders.NullableIntervalHolder;
 import org.apache.drill.exec.expr.holders.NullableTimeHolder;
 import org.apache.drill.exec.expr.holders.NullableTimeStampHolder;
-import org.apache.drill.exec.expr.holders.NullableVarCharHolder;
 import org.apache.drill.exec.expr.holders.NullableVar16CharHolder;
 import org.apache.drill.exec.expr.holders.NullableVarBinaryHolder;
+import org.apache.drill.exec.expr.holders.NullableVarCharHolder;
 import org.apache.drill.exec.expr.holders.ObjectHolder;
-import org.apache.drill.exec.expr.holders.VarCharHolder;
+import org.apache.drill.exec.expr.holders.TimeHolder;
+import org.apache.drill.exec.expr.holders.TimeStampHolder;
 import org.apache.drill.exec.expr.holders.Var16CharHolder;
 import org.apache.drill.exec.expr.holders.VarBinaryHolder;
-import org.apache.drill.exec.ops.ContextInformation;
+import org.apache.drill.exec.expr.holders.VarCharHolder;
+import org.apache.drill.exec.server.options.OptionManager;
 import org.apache.drill.exec.vector.complex.reader.FieldReader;
-
-import javax.inject.Inject;
 
 @SuppressWarnings("unused")
 public class StatisticsAggrFunctions {
@@ -151,13 +150,15 @@ public class StatisticsAggrFunctions {
     @Param FieldReader in;
     @Workspace ObjectHolder work;
     @Output NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -216,7 +217,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -226,14 +227,15 @@ public class StatisticsAggrFunctions {
     BitHolder in;
     @Workspace
     ObjectHolder work;
-    @Output
-    NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
+    @Output NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -259,7 +261,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -269,14 +271,15 @@ public class StatisticsAggrFunctions {
     NullableBitHolder in;
     @Workspace
     ObjectHolder work;
-    @Output
-    NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
+    @Output NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -306,7 +309,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -318,12 +321,14 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -349,7 +354,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -361,12 +366,14 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -396,7 +403,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -408,12 +415,14 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -439,7 +448,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -451,12 +460,14 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -486,7 +497,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -498,12 +509,14 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -529,7 +542,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -541,12 +554,14 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -576,7 +591,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -588,12 +603,14 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -619,7 +636,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -631,12 +648,14 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -666,7 +685,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -678,12 +697,14 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -709,7 +730,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -721,12 +742,14 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -756,7 +779,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -768,12 +791,14 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -799,7 +824,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -811,12 +836,14 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -846,7 +873,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -858,12 +885,14 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -889,7 +918,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -901,12 +930,14 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -936,7 +967,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -948,12 +979,14 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -979,7 +1012,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -991,12 +1024,14 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -1026,7 +1061,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -1038,12 +1073,14 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -1069,7 +1106,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -1081,12 +1118,14 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -1116,7 +1155,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -1130,13 +1169,15 @@ public class StatisticsAggrFunctions {
     ObjectHolder interval;
     @Output
     NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
       interval = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
       interval.obj = new int[3];
     }
 
@@ -1167,7 +1208,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
       interval.obj = new int[3];
     }
   }
@@ -1182,13 +1223,15 @@ public class StatisticsAggrFunctions {
     ObjectHolder interval;
     @Output
     NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
       interval = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
       interval.obj = new int[3];
     }
 
@@ -1224,7 +1267,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
       interval.obj = new int[3];
     }
   }
@@ -1237,12 +1280,14 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -1270,7 +1315,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -1282,12 +1327,14 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -1319,7 +1366,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -1331,12 +1378,14 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -1364,7 +1413,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -1376,12 +1425,14 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -1413,7 +1464,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -1425,12 +1476,14 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -1458,7 +1511,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -1470,12 +1523,14 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableBigIntHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -1507,7 +1562,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -1555,13 +1610,15 @@ public class StatisticsAggrFunctions {
     @Param NullableVarBinaryHolder in;
     @Workspace ObjectHolder work;
     @Output NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -1606,7 +1663,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -1624,13 +1681,15 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -1665,7 +1724,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -1677,13 +1736,15 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -1718,7 +1779,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -1730,13 +1791,15 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -1771,7 +1834,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -1783,13 +1846,15 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -1828,7 +1893,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -1840,13 +1905,15 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -1881,7 +1948,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -1893,13 +1960,15 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -1938,7 +2007,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -1950,13 +2019,15 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -1991,7 +2062,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -2003,13 +2074,15 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -2048,7 +2121,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -2060,13 +2133,15 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -2101,7 +2176,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -2113,13 +2188,15 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -2158,7 +2235,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -2170,13 +2247,15 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -2211,7 +2290,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -2223,13 +2302,15 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -2268,7 +2349,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -2280,13 +2361,15 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -2321,7 +2404,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -2333,13 +2416,15 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -2378,7 +2463,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -2390,13 +2475,15 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -2431,7 +2518,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -2443,13 +2530,15 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -2488,7 +2577,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -2500,13 +2589,15 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -2541,7 +2632,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -2553,13 +2644,15 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -2598,7 +2691,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -2610,13 +2703,15 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -2651,7 +2746,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -2663,13 +2758,15 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -2708,7 +2805,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -2722,14 +2819,16 @@ public class StatisticsAggrFunctions {
     ObjectHolder interval;
     @Output
     NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
       interval = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
       interval.obj = new java.util.ArrayList<Integer>(3);
     }
 
@@ -2770,7 +2869,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
       interval.obj = new java.util.ArrayList<Integer>(3);
     }
   }
@@ -2785,14 +2884,16 @@ public class StatisticsAggrFunctions {
     ObjectHolder interval;
     @Output
     NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
       interval = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
       interval.obj = new java.util.ArrayList<Integer>(3);
     }
 
@@ -2839,7 +2940,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
       interval.obj = new java.util.ArrayList<Integer>(3);
     }
   }
@@ -2852,13 +2953,15 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -2895,7 +2998,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -2907,13 +3010,15 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -2954,7 +3059,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -2966,13 +3071,15 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -3009,7 +3116,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -3021,13 +3128,15 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -3068,7 +3177,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -3080,13 +3189,15 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
+    @Workspace IntHolder hllAccuracy;
 
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -3123,7 +3234,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
@@ -3135,13 +3246,14 @@ public class StatisticsAggrFunctions {
     ObjectHolder work;
     @Output
     NullableVarBinaryHolder out;
-    @Inject ContextInformation contextInfo;
+    @Inject OptionManager options;
     @Inject DrillBuf buffer;
-
+    @Workspace IntHolder hllAccuracy;
     @Override
     public void setup() {
       work = new ObjectHolder();
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
 
     @Override
@@ -3182,7 +3294,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(contextInfo.getHllAccuracy());
+      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
     }
   }
 
