@@ -211,11 +211,9 @@ public class StatisticsAggBatch extends StreamingAggBatch {
       container.add(parent);
 
       for (MaterializedField mf : incoming.getSchema()) {
-        if (mf.getType().getMinorType() == TypeProtos.MinorType.MAP) {
-          throw new UnsupportedOperationException(
-              String.format("Column %s% has MAP type which is not supported", mf.getName()));
-        }
-        if (!isImplicitFileColumn(mf)) {
+        // Check stats collection is only being done for supported data-types. Complex types
+        // such as MAP, LIST are not supported!
+        if (isColMinorTypeValid(mf) && !isImplicitFileColumn(mf)) {
           List<LogicalExpression> args = Lists.newArrayList();
           args.add(SchemaPath.getSimplePath(mf.getName()));
           LogicalExpression call = FunctionCallFactory.createExpression(func, args);
@@ -225,5 +223,25 @@ public class StatisticsAggBatch extends StreamingAggBatch {
     }
     // Now generate the code for the statistics aggregate
     return codegenAggregator(keyExprs, valueExprs, keyOutputIds);
+  }
+
+  private boolean isColMinorTypeValid(MaterializedField mf) throws UnsupportedOperationException {
+    String mTypeStr = null;
+    if (mf.getType().getMinorType() == TypeProtos.MinorType.GENERIC_OBJECT) {
+      mTypeStr = "GENERIC OBJECT";
+    } else if (mf.getType().getMinorType() == TypeProtos.MinorType.LATE) {
+      mTypeStr = "LATE";
+    }else if (mf.getType().getMinorType() == TypeProtos.MinorType.LIST) {
+      mTypeStr = "LIST";
+    } else if (mf.getType().getMinorType() == TypeProtos.MinorType.MAP) {
+      mTypeStr = "MAP";
+    } else if (mf.getType().getMinorType() == TypeProtos.MinorType.UNION) {
+      mTypeStr = "UNION";
+    }
+    if (mTypeStr != null) {
+      throw new UnsupportedOperationException(String.format("Column %s has data-type %s which is not supported",
+          mf.getName(), mTypeStr));
+    }
+    return true;
   }
 }

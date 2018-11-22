@@ -29,7 +29,6 @@ public class ContextInformation {
   private final long queryStartTime;
   private final int rootFragmentTimeZone;
   private final String sessionId;
-  private final int hllAccuracy;
 
   public ContextInformation(final UserCredentials userCredentials, final QueryContextInformation queryContextInfo) {
     this.queryUser = userCredentials.getUserName();
@@ -37,7 +36,6 @@ public class ContextInformation {
     this.queryStartTime = queryContextInfo.getQueryStartTime();
     this.rootFragmentTimeZone = queryContextInfo.getTimeZone();
     this.sessionId = queryContextInfo.getSessionId();
-    this.hllAccuracy = queryContextInfo.getHllAccuracy();
   }
 
   /**
@@ -75,10 +73,4 @@ public class ContextInformation {
     return sessionId;
   }
 
-  /**
-   * @return HLL accuracy parameter
-   */
-  public int getHllAccuracy() {
-    return hllAccuracy;
-  }
 }

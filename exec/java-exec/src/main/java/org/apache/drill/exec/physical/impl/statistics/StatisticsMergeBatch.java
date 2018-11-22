@@ -201,11 +201,11 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
         ((AvgWidthMergedStatistic)statistic).configure(mergedStatisticList);
       } else if (statistic.getName().equals(Statistic.NDV)) {
         NDVMergedStatistic.NDVConfiguration config =
-            new NDVMergedStatistic.NDVConfiguration(context.getContextInformation(),
+            new NDVMergedStatistic.NDVConfiguration(context.getOptions(),
                 mergedStatisticList);
         ((NDVMergedStatistic)statistic).configure(config);
       } else if (statistic.getName().equals(Statistic.HLL_MERGE)) {
-        ((HLLMergedStatistic)statistic).configure(context.getContextInformation());
+        ((HLLMergedStatistic)statistic).configure(context.getOptions());
       }
     }
     // Create the schema number and time when computed in the outgoing vector
