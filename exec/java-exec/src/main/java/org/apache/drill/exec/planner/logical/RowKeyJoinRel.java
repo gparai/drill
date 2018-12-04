@@ -23,40 +23,65 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.InvalidRelException;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.JoinRelType;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.sql.validate.SqlValidatorUtil;
 import org.apache.calcite.util.Pair;
 import org.apache.drill.common.logical.data.Join;
 import org.apache.drill.common.logical.data.LogicalOperator;
 import org.apache.drill.exec.planner.torel.ConversionContext;
 
 import java.util.List;
+import org.apache.drill.shaded.guava.com.google.common.collect.ImmutableList;
 
 public class RowKeyJoinRel extends DrillJoinRel implements DrillRel {
+
+  boolean isSemiJoinDone;
 
   public RowKeyJoinRel(RelOptCluster cluster, RelTraitSet traits, RelNode left, RelNode right, RexNode condition,
                       JoinRelType joinType)  {
     super(cluster, traits, left, right, condition, joinType);
+    isSemiJoinDone = false;
+  }
+
+  public RowKeyJoinRel(RelOptCluster cluster, RelTraitSet traits, RelNode left, RelNode right, RexNode condition,
+                       JoinRelType joinType, boolean isSemiJoinDone)  {
+    super(cluster, traits, left, right, condition, joinType);
+    this.isSemiJoinDone = isSemiJoinDone;
   }
 
   public RowKeyJoinRel(RelOptCluster cluster, RelTraitSet traits, RelNode left, RelNode right, RexNode condition,
                       JoinRelType joinType, int joinControl)  {
     super(cluster, traits, left, right, condition, joinType, joinControl);
+    this.isSemiJoinDone = false;
   }
 
   public RowKeyJoinRel(RelOptCluster cluster, RelTraitSet traits, RelNode left, RelNode right, RexNode condition,
                       JoinRelType joinType, List<Integer> leftKeys, List<Integer> rightKeys) throws InvalidRelException {
     super(cluster, traits, left, right, condition, joinType, leftKeys, rightKeys);
+    this.isSemiJoinDone = false;
   }
 
   @Override
   public RowKeyJoinRel copy(RelTraitSet traitSet, RexNode condition, RelNode left, RelNode right, JoinRelType joinType,
       boolean semiJoinDone) {
-    return new RowKeyJoinRel(getCluster(), traitSet, left, right, condition, joinType);
+    return new RowKeyJoinRel(getCluster(), traitSet, left, right, condition, joinType, semiJoinDone);
   }
 
   @Override
   public LogicalOperator implement(DrillImplementor implementor) {
     return super.implement(implementor);
+  }
+
+  @Override
+  public RelDataType deriveRowType() {
+    return SqlValidatorUtil.deriveJoinRowType(
+            left.getRowType(),
+            isSemiJoinDone ? null : right.getRowType(),
+            JoinRelType.INNER,
+            getCluster().getTypeFactory(),
+            null,
+            ImmutableList.of());
   }
 
   public static RowKeyJoinRel convert(Join join, ConversionContext context) throws InvalidRelException {
