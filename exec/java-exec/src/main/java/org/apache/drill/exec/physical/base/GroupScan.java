@@ -110,6 +110,13 @@ public interface GroupScan extends Scan, HasAffinity{
   boolean supportsPartitionFilterPushdown();
 
   /**
+   * Returns a list of columns scanned by this group scan
+   *
+   */
+  @JsonIgnore
+  List<SchemaPath> getColumns();
+
+  /**
    * Returns a list of columns that can be used for partition pruning
    *
    */

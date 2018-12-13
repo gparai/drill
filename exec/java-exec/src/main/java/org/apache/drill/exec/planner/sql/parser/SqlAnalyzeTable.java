@@ -142,6 +142,10 @@ public class SqlAnalyzeTable extends DrillSqlCall {
     return columnNames;
   }
 
+  public SqlNodeList getFieldList() {
+    return fieldList;
+  }
+
   public boolean getEstimate() {
     return estimate.booleanValue();
   }
