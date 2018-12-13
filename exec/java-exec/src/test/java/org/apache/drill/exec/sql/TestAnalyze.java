@@ -58,14 +58,14 @@ public class TestAnalyze extends BaseTestQuery {
               + " tbl.`columns`.avgwidth as avgwidth"
               + " FROM dfs.tmp.flatstats1 tbl")
           .unOrdered()
-          .baselineColumns("column", "statcount", "nonnullstatcount", "ndv", "avgwidth")
-          .baselineValues("region_id", 110.0, 110.0, 110L, 8.0)
-          .baselineValues("sales_city", 110.0, 110.0, 109L, 8.663636363636364)
-          .baselineValues("sales_state_province", 110.0, 110.0, 13L, 2.4272727272727272)
-          .baselineValues("sales_district", 110.0, 110.0, 23L, 9.318181818181818)
-          .baselineValues("sales_region", 110.0, 110.0, 8L, 10.8)
-          .baselineValues("sales_country", 110.0, 110.0, 4L, 3.909090909090909)
-          .baselineValues("sales_district_id", 110.0, 110.0, 23L, 8.0)
+          .baselineColumns("column", "rowcount", "nonnullrowcount", "ndv", "avgwidth")
+          .baselineValues("`region_id`", 110.0, 110.0, 110L, 8.0)
+          .baselineValues("`sales_city`", 110.0, 110.0, 109L, 8.663636363636364)
+          .baselineValues("`sales_state_province`", 110.0, 110.0, 13L, 2.4272727272727272)
+          .baselineValues("`sales_district`", 110.0, 110.0, 23L, 9.318181818181818)
+          .baselineValues("`sales_region`", 110.0, 110.0, 8L, 10.8)
+          .baselineValues("`sales_country`", 110.0, 110.0, 4L, 3.909090909090909)
+          .baselineValues("`sales_district_id`", 110.0, 110.0, 23L, 8.0)
           .go();
     } finally {
       test("ALTER SESSION SET `planner.slice_target` = " + ExecConstants.SLICE_TARGET_DEFAULT);
@@ -90,9 +90,9 @@ public class TestAnalyze extends BaseTestQuery {
               + " tbl.`columns`.avgwidth as avgwidth"
               + " FROM dfs.tmp.flatstats2 tbl")
           .unOrdered()
-          .baselineColumns("column", "statcount", "nonnullstatcount", "ndv", "avgwidth")
-          .baselineValues("employee_id", 1155.0, 1155.0, 1155L, 8.0)
-          .baselineValues("birth_date", 1155.0, 1155.0, 52L, 10.0)
+          .baselineColumns("column", "rowcount", "nonnullrowcount", "ndv", "avgwidth")
+          .baselineValues("`employee_id`", 1155.0, 1155.0, 1155L, 8.0)
+          .baselineValues("`birth_date`", 1155.0, 1155.0, 52L, 10.0)
           .go();
     } finally {
       test("ALTER SESSION SET `planner.slice_target` = " + ExecConstants.SLICE_TARGET_DEFAULT);
@@ -159,18 +159,18 @@ public class TestAnalyze extends BaseTestQuery {
               + " tbl.`columns`.avgwidth as avgwidth"
               + " FROM dfs.tmp.flatstats3 tbl")
           .unOrdered()
-          .baselineColumns("column", "statcount", "nonnullstatcount", "ndv", "avgwidth")
-          .baselineValues("o_orderkey", 120.0, 120.0, 119L, 4.0)
-          .baselineValues("o_custkey", 120.0, 120.0, 113L, 4.0)
-          .baselineValues("o_orderstatus", 120.0, 120.0, 3L, 1.0)
-          .baselineValues("o_totalprice", 120.0, 120.0, 120L, 8.0)
-          .baselineValues("o_orderdate", 120.0, 120.0, 111L, 4.0)
-          .baselineValues("o_orderpriority", 120.0, 120.0, 5L, 8.458333333333334)
-          .baselineValues("o_clerk", 120.0, 120.0, 114L, 15.0)
-          .baselineValues("o_shippriority", 120.0, 120.0, 1L, 4.0)
-          .baselineValues("o_comment", 120.0, 120.0, 120L, 46.333333333333336)
-          .baselineValues("dir0", 120.0, 120.0, 3L, 4.0)
-          .baselineValues("dir1", 120.0, 120.0, 4L, 2.0)
+          .baselineColumns("column", "rowcount", "nonnullrowcount", "ndv", "avgwidth")
+          .baselineValues("`o_orderkey`", 120.0, 120.0, 119L, 4.0)
+          .baselineValues("`o_custkey`", 120.0, 120.0, 113L, 4.0)
+          .baselineValues("`o_orderstatus`", 120.0, 120.0, 3L, 1.0)
+          .baselineValues("`o_totalprice`", 120.0, 120.0, 120L, 8.0)
+          .baselineValues("`o_orderdate`", 120.0, 120.0, 111L, 4.0)
+          .baselineValues("`o_orderpriority`", 120.0, 120.0, 5L, 8.458333333333334)
+          .baselineValues("`o_clerk`", 120.0, 120.0, 114L, 15.0)
+          .baselineValues("`o_shippriority`", 120.0, 120.0, 1L, 4.0)
+          .baselineValues("`o_comment`", 120.0, 120.0, 120L, 46.333333333333336)
+          .baselineValues("`dir0`", 120.0, 120.0, 3L, 4.0)
+          .baselineValues("`dir1`", 120.0, 120.0, 4L, 2.0)
           .go();
     } finally {
       test("ALTER SESSION SET `planner.slice_target` = " + ExecConstants.SLICE_TARGET_DEFAULT);

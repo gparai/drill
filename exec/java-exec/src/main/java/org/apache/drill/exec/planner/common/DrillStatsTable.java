@@ -34,6 +34,7 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelVisitor;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.drill.common.exceptions.DrillRuntimeException;
+import org.apache.drill.common.expression.SchemaPath;
 import org.apache.drill.common.logical.FormatPluginConfig;
 import org.apache.drill.exec.ops.QueryContext;
 import org.apache.drill.exec.physical.PhysicalPlan;
@@ -103,7 +104,10 @@ public class DrillStatsTable {
       return null;
     }
     final String upperCol = col.toUpperCase();
-    final Long ndvCol = ndv.get(upperCol);
+    Long ndvCol = ndv.get(upperCol);
+    if (ndvCol == null) {
+      ndvCol = ndv.get(SchemaPath.getSimplePath(upperCol).toString());
+    }
     // Ndv estimation techniques like HLL may over-estimate, hence cap it at rowCount
     if (ndvCol != null) {
       return Math.min(ndvCol, rowCount);
