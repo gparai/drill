@@ -204,7 +204,8 @@ public abstract class ParquetPushDownFilter extends StoragePluginOptimizerRule {
       return;
     }
 
-    RelNode newNode = new ScanPrel(scan.getCluster(), scan.getTraitSet(), newGroupScan, scan.getRowType(), scan.getTable());
+    RelNode newNode = new ScanPrel(scan.getCluster(), scan.getTraitSet(),
+        newGroupScan, scan.getRowType(), scan.getTable(), scan.getColumns());
 
     if (project != null) {
       newNode = project.copy(project.getTraitSet(), Collections.singletonList(newNode));

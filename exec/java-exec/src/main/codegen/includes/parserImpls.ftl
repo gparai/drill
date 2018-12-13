@@ -371,9 +371,9 @@ Pair<SqlNodeList, SqlNodeList> ParenthesizedCompoundIdentifierList() :
     SqlIdentifier id;
 }
 {
-    id = SimpleIdentifier() {list.add(id);}
+    id = CompoundIdentifier() {list.add(id);}
     (
-   <COMMA> id = SimpleIdentifier() {list.add(id);}) *
+   <COMMA> id = CompoundIdentifier() {list.add(id);}) *
     {
        return Pair.of(new SqlNodeList(list, getPos()), null);
     }

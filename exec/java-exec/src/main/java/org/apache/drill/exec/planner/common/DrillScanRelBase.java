@@ -39,6 +39,7 @@ import org.apache.calcite.rel.metadata.RelMetadataQuery;
 public abstract class DrillScanRelBase extends TableScan implements DrillRelNode {
   protected GroupScan groupScan;
   protected final DrillTable drillTable;
+  protected List<SchemaPath> columns;
 
   public DrillScanRelBase(RelOptCluster cluster,
                           RelTraitSet traits,
@@ -46,6 +47,7 @@ public abstract class DrillScanRelBase extends TableScan implements DrillRelNode
                           final List<SchemaPath> columns) {
     super(cluster, traits, table);
     this.drillTable = Utilities.getDrillTable(table);
+    this.columns = columns;
     assert drillTable != null;
     try {
       this.groupScan = drillTable.getGroupScan().clone(columns);
@@ -57,7 +59,8 @@ public abstract class DrillScanRelBase extends TableScan implements DrillRelNode
   public DrillScanRelBase(RelOptCluster cluster,
                           RelTraitSet traits,
                           GroupScan grpScan,
-                          RelOptTable table) {
+                          RelOptTable table,
+                          final List<SchemaPath> columns) {
     super(cluster, traits, table);
     DrillTable unwrap = table.unwrap(DrillTable.class);
     if (unwrap == null) {
@@ -65,6 +68,7 @@ public abstract class DrillScanRelBase extends TableScan implements DrillRelNode
     }
     this.drillTable = unwrap;
     assert drillTable != null;
+    this.columns = columns;
     this.groupScan = grpScan;
   }
 
@@ -74,6 +78,10 @@ public abstract class DrillScanRelBase extends TableScan implements DrillRelNode
 
   public GroupScan getGroupScan() {
     return groupScan;
+  }
+
+  public List<SchemaPath> getColumns() {
+    return columns;
   }
 
   @Override public double estimateRowCount(RelMetadataQuery mq) {

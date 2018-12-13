@@ -22,7 +22,6 @@ import java.util.List;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.SingleRel;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.metadata.ReflectiveRelMetadataProvider;
@@ -30,7 +29,6 @@ import org.apache.calcite.rel.metadata.RelMdSelectivity;
 import org.apache.calcite.rel.metadata.RelMdUtil;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
-import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
@@ -41,10 +39,12 @@ import org.apache.calcite.rex.RexVisitorImpl;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.util.BuiltInMethod;
 import org.apache.calcite.util.Util;
+import org.apache.drill.common.expression.SchemaPath;
 import org.apache.drill.exec.physical.base.DbGroupScan;
 import org.apache.drill.exec.physical.base.GroupScan;
 import org.apache.drill.exec.planner.common.DrillJoinRelBase;
 import org.apache.drill.exec.planner.common.DrillRelOptUtil;
+import org.apache.drill.exec.planner.common.DrillScanRelBase;
 import org.apache.drill.exec.planner.logical.DrillScanRel;
 import org.apache.drill.exec.planner.logical.DrillTable;
 import org.apache.drill.exec.planner.logical.DrillTranslatableTable;
@@ -65,9 +65,9 @@ public class DrillRelMdSelectivity extends RelMdSelectivity {
       return getScanSelectivity(rel, mq, predicate);
     } else if (rel instanceof DrillJoinRelBase) {
       return getJoinSelectivity(((DrillJoinRelBase) rel), mq, predicate);
-    } else if (rel instanceof SingleRel && !DrillRelOptUtil.guessRows(rel)) {
+    } /*else if (rel instanceof SingleRel && !DrillRelOptUtil.guessRows(rel)) {
       return getSelectivity(((SingleRel)rel).getInput(), mq, predicate);
-    } else {
+    }*/ else {
       return super.getSelectivity(rel, mq, predicate);
     }
   }
@@ -115,13 +115,21 @@ public class DrillRelMdSelectivity extends RelMdSelectivity {
         table = rel.getTable().unwrap(DrillTranslatableTable.class).getDrillTable();
       }
       if (table != null && table.getStatsTable() != null && table.getStatsTable().isMaterialized()) {
-        return getScanSelectivityInternal(table, predicate, rel.getRowType());
+        if (rel instanceof DrillScanRelBase) {
+          List<String> fieldNames = new ArrayList<>();
+          for (SchemaPath fieldPath : ((DrillScanRelBase)rel).getColumns()) {
+            fieldNames.add(fieldPath.toString());
+          }
+          return getScanSelectivityInternal(table, predicate, fieldNames);
+        } else {
+          return getScanSelectivityInternal(table, predicate, rel.getRowType().getFieldNames());
+        }
       }
     }
     return super.getSelectivity(rel, mq, predicate);
   }
 
-  private double getScanSelectivityInternal(DrillTable table, RexNode predicate, RelDataType type) {
+  private double getScanSelectivityInternal(DrillTable table, RexNode predicate, List<String> fieldNames) {
     double sel = 1.0;
     if ((predicate == null) || predicate.isAlwaysTrue()) {
       return sel;
@@ -138,8 +146,8 @@ public class DrillRelMdSelectivity extends RelMdSelectivity {
             if (op != null) {
               colIdx = op.hashCode();
             }
-            if (colIdx != -1 && colIdx < type.getFieldNames().size()) {
-              String col = type.getFieldNames().get(colIdx);
+            if (colIdx != -1 && colIdx < fieldNames.size()) {
+              String col = fieldNames.get(colIdx);
               if (table.getStatsTable() != null
                       && table.getStatsTable().getNdv(col) != null) {
                 orSel += 1.00 / table.getStatsTable().getNdv(col);

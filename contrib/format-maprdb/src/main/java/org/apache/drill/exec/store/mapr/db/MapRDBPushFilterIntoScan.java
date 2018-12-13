@@ -141,7 +141,8 @@ public abstract class MapRDBPushFilterIntoScan extends StoragePluginOptimizerRul
     final JsonTableGroupScan newGroupsScan = (JsonTableGroupScan) groupScan.clone(newScanSpec);
     newGroupsScan.setFilterPushedDown(true);
 
-    final ScanPrel newScanPrel = new ScanPrel(scan.getCluster(), filter.getTraitSet(), newGroupsScan, scan.getRowType(), scan.getTable());
+    final ScanPrel newScanPrel = new ScanPrel(scan.getCluster(), filter.getTraitSet(),
+        newGroupsScan, scan.getRowType(), scan.getTable(), scan.getColumns());
 
     // Depending on whether is a project in the middle, assign either scan or copy of project to childRel.
     final RelNode childRel = project == null ? newScanPrel : project.copy(project.getTraitSet(), ImmutableList.of((RelNode)newScanPrel));
@@ -187,7 +188,8 @@ public abstract class MapRDBPushFilterIntoScan extends StoragePluginOptimizerRul
                                                                         groupScan.getTableStats());
     newGroupsScan.setFilterPushedDown(true);
 
-    final ScanPrel newScanPrel = new ScanPrel(scan.getCluster(), filter.getTraitSet(), newGroupsScan, scan.getRowType(), scan.getTable());
+    final ScanPrel newScanPrel = new ScanPrel(scan.getCluster(), filter.getTraitSet(),
+        newGroupsScan, scan.getRowType(), scan.getTable(), scan.getColumns());
 
     // Depending on whether is a project in the middle, assign either scan or copy of project to childRel.
     final RelNode childRel = project == null ? newScanPrel : project.copy(project.getTraitSet(), ImmutableList.of((RelNode)newScanPrel));

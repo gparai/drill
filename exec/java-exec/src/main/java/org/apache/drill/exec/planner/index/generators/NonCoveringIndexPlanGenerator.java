@@ -119,7 +119,8 @@ public class NonCoveringIndexPlanGenerator extends AbstractIndexPlanGenerator {
         DrillDistributionTrait.RANDOM_DISTRIBUTED : DrillDistributionTrait.SINGLETON;
 
     ScanPrel indexScanPrel = new ScanPrel(origScan.getCluster(),
-        origScan.getTraitSet().plus(Prel.DRILL_PHYSICAL).plus(partition), indexGroupScan, indexScanRowType, origScan.getTable());
+        origScan.getTraitSet().plus(Prel.DRILL_PHYSICAL).plus(partition),
+            indexGroupScan, indexScanRowType, origScan.getTable(), origScan.getColumns());
     DbGroupScan origDbGroupScan = (DbGroupScan)IndexPlanUtils.getGroupScan(origScan);
 
     // right (build) side of the rowkey join: do a distribution of project-filter-indexscan subplan
@@ -196,7 +197,7 @@ public class NonCoveringIndexPlanGenerator extends AbstractIndexPlanGenerator {
     }
 
     ScanPrel dbScan = new ScanPrel(origScan.getCluster(),
-        restrictedScanTraitSet, restrictedGroupScan, dbscanRowType, origScan.getTable());
+        restrictedScanTraitSet, restrictedGroupScan, dbscanRowType, origScan.getTable(), origScan.getColumns());
     RelNode lastLeft = dbScan;
     // build the row type for the left Project
     List<RexNode> leftProjectExprs = Lists.newArrayList();

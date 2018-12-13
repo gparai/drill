@@ -32,6 +32,7 @@ import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.drill.common.exceptions.DrillRuntimeException;
 import org.apache.drill.common.exceptions.ExecutionSetupException;
+import org.apache.drill.common.expression.SchemaPath;
 import org.apache.drill.exec.physical.base.GroupScan;
 import org.apache.drill.exec.physical.base.PhysicalOperator;
 import org.apache.drill.exec.physical.base.ScanStats;
@@ -48,21 +49,21 @@ public class ScanPrel extends DrillScanRelBase implements Prel, HasDistributionA
   private final RelDataType rowType;
 
   public ScanPrel(RelOptCluster cluster, RelTraitSet traits,
-                  GroupScan groupScan, RelDataType rowType, RelOptTable table) {
-    super(cluster, traits, getCopy(groupScan), table);
+                  GroupScan groupScan, RelDataType rowType, RelOptTable table, List<SchemaPath> columns) {
+    super(cluster, traits, getCopy(groupScan), table, columns);
     this.rowType = rowType;
   }
 
   @Override
   public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
     return new ScanPrel(this.getCluster(), traitSet, this.getGroupScan(),
-        this.rowType, this.getTable());
+        this.rowType, this.getTable(), this.getColumns());
   }
 
   @Override
   protected Object clone() throws CloneNotSupportedException {
     return new ScanPrel(this.getCluster(), this.getTraitSet(), getCopy(this.getGroupScan()),
-        this.rowType, this.getTable());
+        this.rowType, this.getTable(), this.getColumns());
   }
 
   private static GroupScan getCopy(GroupScan scan){
@@ -80,9 +81,9 @@ public class ScanPrel extends DrillScanRelBase implements Prel, HasDistributionA
   }
 
   public static ScanPrel create(RelNode old, RelTraitSet traitSets,
-      GroupScan scan, RelDataType rowType) {
+      GroupScan scan, RelDataType rowType, List<SchemaPath> columns) {
     return new ScanPrel(old.getCluster(), traitSets,
-        getCopy(scan), rowType, old.getTable());
+        getCopy(scan), rowType, old.getTable(), columns);
   }
 
   @Override

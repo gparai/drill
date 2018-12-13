@@ -97,7 +97,8 @@ public abstract class MapRDBPushProjectIntoScan extends StoragePluginOptimizerRu
       }
       final ScanPrel newScan = new ScanPrel(scan.getCluster(), newTraits.plus(Prel.DRILL_PHYSICAL),
           groupScan.clone(columnInfo.getFields()),
-          columnInfo.createNewRowType(project.getInput().getCluster().getTypeFactory()), scan.getTable());
+          columnInfo.createNewRowType(project.getInput().getCluster().getTypeFactory()),
+          scan.getTable(), scan.getColumns());
 
       List<RexNode> newProjects = Lists.newArrayList();
       for (RexNode n : project.getChildExps()) {

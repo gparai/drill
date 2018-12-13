@@ -683,7 +683,7 @@ public class IndexPlanUtils {
 
     ScanPrel indexScanPrel = new ScanPrel(origScan.getCluster(),
         indexScanTraitSet, indexGroupScan,
-        newRowType, origScan.getTable());
+        newRowType, origScan.getTable(), origScan.getColumns());
 
     return indexScanPrel;
   }

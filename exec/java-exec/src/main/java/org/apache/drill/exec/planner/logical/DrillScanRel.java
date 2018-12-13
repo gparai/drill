@@ -49,7 +49,6 @@ import org.apache.drill.exec.util.Utilities;
 public class DrillScanRel extends DrillScanRelBase implements DrillRel {
   private final static int STAR_COLUMN_COST = 10000;
   private PlannerSettings settings;
-  private List<SchemaPath> columns;
   private final boolean partitionFilterPushdown;
   final private RelDataType rowType;
 
@@ -80,7 +79,6 @@ public class DrillScanRel extends DrillScanRelBase implements DrillRel {
     this.settings = PrelUtil.getPlannerSettings(cluster.getPlanner());
     this.rowType = rowType;
     Preconditions.checkNotNull(columns);
-    this.columns = columns;
     this.partitionFilterPushdown = partitionFilterPushdown;
   }
 
@@ -93,9 +91,8 @@ public class DrillScanRel extends DrillScanRelBase implements DrillRel {
   /** Creates a DrillScanRel for a particular GroupScan */
   public DrillScanRel(final RelOptCluster cluster, final RelTraitSet traits,
                       final RelOptTable table, final GroupScan groupScan, final RelDataType rowType, final List<SchemaPath> columns, boolean partitionFilterPushdown) {
-    super(cluster, traits, groupScan, table);
+    super(cluster, traits, groupScan, table, columns);
     this.rowType = rowType;
-    this.columns = columns;
     this.settings = PrelUtil.getPlannerSettings(cluster.getPlanner());
     this.partitionFilterPushdown = partitionFilterPushdown;
   }
@@ -108,10 +105,6 @@ public class DrillScanRel extends DrillScanRelBase implements DrillRel {
 //      throw new DrillRuntimeException("Unexpected failure while coping node.", e);
 //    }
 //  }
-
-  public List<SchemaPath> getColumns() {
-    return this.columns;
-  }
 
   @Override
   public LogicalOperator implement(DrillImplementor implementor) {

@@ -179,7 +179,8 @@ public class IndexIntersectPlanGenerator extends AbstractIndexPlanGenerator {
         DrillDistributionTrait.RANDOM_DISTRIBUTED : DrillDistributionTrait.SINGLETON;
 
     ScanPrel indexScanPrel = new ScanPrel(origScan.getCluster(),
-        origScan.getTraitSet().plus(Prel.DRILL_PHYSICAL).plus(partition), indexScan, indexScanRowType, origScan.getTable());
+        origScan.getTraitSet().plus(Prel.DRILL_PHYSICAL).plus(partition),
+            indexScan, indexScanRowType, origScan.getTable(), origScan.getColumns());
     FilterPrel  indexFilterPrel = new FilterPrel(indexScanPrel.getCluster(), indexScanPrel.getTraitSet(),
         indexScanPrel, FunctionalIndexHelper.convertConditionForIndexScan(condition, origScan,
         indexScanRowType, builder, functionInfo));
@@ -258,7 +259,8 @@ public class IndexIntersectPlanGenerator extends AbstractIndexPlanGenerator {
     RelNode lastRelNode;
     RelDataType dbscanRowType = convertRowType(origScan.getRowType(), origScan.getCluster().getTypeFactory());
     ScanPrel dbScan = new ScanPrel(origScan.getCluster(),
-        origScan.getTraitSet().plus(Prel.DRILL_PHYSICAL).plus(partition), restrictedGroupScan, dbscanRowType, origScan.getTable());
+        origScan.getTraitSet().plus(Prel.DRILL_PHYSICAL).plus(partition),
+            restrictedGroupScan, dbscanRowType, origScan.getTable(), origScan.getColumns());
     lastRelNode = dbScan;
     // build the row type for the left Project
     List<RexNode> leftProjectExprs = Lists.newArrayList();

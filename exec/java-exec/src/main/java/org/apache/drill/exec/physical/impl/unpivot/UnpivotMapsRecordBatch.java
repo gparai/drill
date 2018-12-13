@@ -19,6 +19,7 @@ package org.apache.drill.exec.physical.impl.unpivot;
 
 import java.util.List;
 import java.util.Map;
+import org.apache.drill.common.expression.SchemaPath;
 import org.apache.drill.common.types.TypeProtos.MajorType;
 import org.apache.drill.common.types.TypeProtos.MinorType;
 import org.apache.drill.exec.exception.OutOfMemoryException;
@@ -191,7 +192,7 @@ public class UnpivotMapsRecordBatch extends AbstractSingleRecordBatch<UnpivotMap
       keyList = Lists.newArrayList();
 
       for (ValueVector vv : vw.getValueVector()) {
-        keyList.add(vv.getField().getName());
+        keyList.add(SchemaPath.getSimplePath(vv.getField().getName()).toString());
       }
 
       if (lastMapKeyList == null) {
@@ -209,11 +210,11 @@ public class UnpivotMapsRecordBatch extends AbstractSingleRecordBatch<UnpivotMap
     copySrcVecMap = Maps.newHashMap();
     for (VectorWrapper<?> vw : incoming) {
       MaterializedField ds = vw.getField();
-      String col = vw.getField().getName();
+      String colName = vw.getField().getName();
 
-      if (!mapFieldsNames.contains(col)) {
+      if (!mapFieldsNames.contains(colName)) {
         MajorType mt = vw.getValueVector().getField().getType();
-        MaterializedField mf = MaterializedField.create(col, mt);
+        MaterializedField mf = MaterializedField.create(colName, mt);
         container.add(TypeHelper.getNewVector(mf, oContext.getAllocator()));
         copySrcVecMap.put(mf, vw.getValueVector());
         continue;
@@ -223,7 +224,7 @@ public class UnpivotMapsRecordBatch extends AbstractSingleRecordBatch<UnpivotMap
       assert mapVector.getPrimitiveVectors().size() > 0;
 
       MajorType mt = mapVector.iterator().next().getField().getType();
-      MaterializedField mf = MaterializedField.create(col, mt);
+      MaterializedField mf = MaterializedField.create(colName, mt);
       assert !dataSrcVecMap.containsKey(mf);
       container.add(TypeHelper.getNewVector(mf, oContext.getAllocator()));
 
@@ -231,7 +232,7 @@ public class UnpivotMapsRecordBatch extends AbstractSingleRecordBatch<UnpivotMap
       dataSrcVecMap.put(mf, m);
 
       for (ValueVector vv : mapVector) {
-        String fieldName = vv.getField().getName();
+        String fieldName = SchemaPath.getSimplePath(vv.getField().getName()).toString();
         if (!keyList.contains(fieldName)) {
           throw new UnsupportedOperationException("Unpivot data vector " +
               ds + " contains key " + fieldName + " not contained in key source!");

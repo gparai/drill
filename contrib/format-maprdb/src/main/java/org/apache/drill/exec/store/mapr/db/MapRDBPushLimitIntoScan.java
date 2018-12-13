@@ -141,7 +141,7 @@ public abstract class MapRDBPushLimitIntoScan extends StoragePluginOptimizerRule
         return;
       }
       final ScanPrel newScan = new ScanPrel(scan.getCluster(), scan.getTraitSet(), newGroupScan,
-          scan.getRowType(), scan.getTable());
+          scan.getRowType(), scan.getTable(), scan.getColumns());
       final RelNode newChild;
       if (project != null) {
         final ProjectPrel newProject = new ProjectPrel(project.getCluster(), project.getTraitSet(),

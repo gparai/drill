@@ -91,7 +91,7 @@ public class StatisticsAggBatch extends StreamingAggBatch {
    * Returns whether the given column is an implicit column
    */
   private boolean isImplicitFileColumn(MaterializedField mf) {
-    return implicitFileColumnsMap.get(mf.getName()) != null;
+    return implicitFileColumnsMap.get(SchemaPath.getSimplePath(mf.getName()).toString()) != null;
   }
 
   /*
@@ -186,7 +186,7 @@ public class StatisticsAggBatch extends StreamingAggBatch {
       for (MaterializedField mf : incoming.getSchema()) {
         LogicalExpression expr;
         if (col.equals(colMeta[0])) {
-          expr = ValueExpressions.getChar(mf.getName(), 0);
+          expr = ValueExpressions.getChar(SchemaPath.getSimplePath(mf.getName()).toString(), 0);
         } else {
           expr = ValueExpressions.getInt(mf.getType().getMinorType().getNumber());
         }
@@ -194,7 +194,7 @@ public class StatisticsAggBatch extends StreamingAggBatch {
         if (!isImplicitFileColumn(mf)) {
           createNestedKeyColumn(
               parent,
-              mf.getName(),
+              SchemaPath.getSimplePath(mf.getName()).toString(),
               expr,
               keyExprs,
               keyOutputIds
@@ -217,7 +217,7 @@ public class StatisticsAggBatch extends StreamingAggBatch {
           List<LogicalExpression> args = Lists.newArrayList();
           args.add(SchemaPath.getSimplePath(mf.getName()));
           LogicalExpression call = FunctionCallFactory.createExpression(func, args);
-          addMapVector(mf.getName(), parent, call, valueExprs);
+          addMapVector(SchemaPath.getSimplePath(mf.getName()).toString(), parent, call, valueExprs);
         }
       }
     }
