@@ -36,7 +36,7 @@ public class StatCountMergedStatistic extends AbstractMergedStatistic {
 
   @Override
   public void initialize(String inputName) {
-    super.initialize(Statistic.STATCOUNT, inputName);
+    super.initialize(Statistic.ROWCOUNT, inputName);
     state = State.MERGE;
   }
 

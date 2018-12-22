@@ -80,8 +80,8 @@ public class StatisticsAggrFunctions {
   * This will result in more performant generated code. Use switch-case/if-else statements judiciously
   * as it MAY cause the generated code to slow down considerably.
   * */
-  @FunctionTemplate(name = "statcount", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class StatCount implements DrillAggFunc {
+  @FunctionTemplate(name = "rowcount", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class RowCount implements DrillAggFunc {
     @Param FieldReader in;
     @Workspace BigIntHolder count;
     @Output NullableBigIntHolder out;
@@ -108,8 +108,8 @@ public class StatisticsAggrFunctions {
     }
   }
 
-  @FunctionTemplate(name = "nonnullstatcount", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class NonNullStatCount implements DrillAggFunc {
+  @FunctionTemplate(name = "nonnullrowcount", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class NonNullRowCount implements DrillAggFunc {
     @Param FieldReader in;
     @Workspace BigIntHolder count;
     @Output NullableBigIntHolder out;

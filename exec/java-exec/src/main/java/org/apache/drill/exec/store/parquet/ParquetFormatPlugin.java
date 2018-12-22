@@ -38,6 +38,7 @@ import org.apache.drill.exec.physical.base.AbstractWriter;
 import org.apache.drill.exec.physical.base.PhysicalOperator;
 import org.apache.drill.exec.physical.base.SchemalessScan;
 import org.apache.drill.exec.physical.impl.WriterRecordBatch;
+import org.apache.drill.exec.planner.common.DrillStatsTable;
 import org.apache.drill.exec.planner.common.DrillStatsTable.TableStatistics;
 import org.apache.drill.exec.planner.logical.DrillTable;
 import org.apache.drill.exec.planner.logical.DynamicDrillTable;
@@ -206,10 +207,9 @@ public class ParquetFormatPlugin implements FormatPlugin {
   @Override
   public TableStatistics readStatistics(FileSystem fs, Path statsTablePath) throws IOException {
     Stopwatch timer = Stopwatch.createStarted();
-    ObjectMapper mapper = new ObjectMapper();
+    ObjectMapper mapper = DrillStatsTable.getMapper();
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     FSDataInputStream is = fs.open(statsTablePath);
-
     TableStatistics statistics = mapper.readValue((InputStream) is, TableStatistics.class);
     logger.info("Took {} ms to read statistics from {} format plugin", timer.elapsed(TimeUnit.MILLISECONDS), name);
     timer.stop();

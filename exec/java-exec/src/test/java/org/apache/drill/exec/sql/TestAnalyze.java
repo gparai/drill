@@ -53,8 +53,8 @@ public class TestAnalyze extends BaseTestQuery {
               + " from dfs.tmp.`region_basic1/.stats.drill`");
 
       testBuilder()
-          .sqlQuery("SELECT tbl.`columns`.`column` as `column`, tbl.`columns`.statcount as statcount,"
-              + " tbl.`columns`.nonnullstatcount as nonnullstatcount, tbl.`columns`.ndv as ndv,"
+          .sqlQuery("SELECT tbl.`columns`.`column` as `column`, tbl.`columns`.rowcount as rowcount,"
+              + " tbl.`columns`.nonnullrowcount as nonnullrowcount, tbl.`columns`.ndv as ndv,"
               + " tbl.`columns`.avgwidth as avgwidth"
               + " FROM dfs.tmp.flatstats1 tbl")
           .unOrdered()
@@ -85,8 +85,8 @@ public class TestAnalyze extends BaseTestQuery {
           + " from dfs.tmp.`employee_basic2/.stats.drill`");
 
       testBuilder()
-          .sqlQuery("SELECT tbl.`columns`.`column` as `column`, tbl.`columns`.statcount as statcount,"
-              + " tbl.`columns`.nonnullstatcount as nonnullstatcount, tbl.`columns`.ndv as ndv,"
+          .sqlQuery("SELECT tbl.`columns`.`column` as `column`, tbl.`columns`.rowcount as rowcount,"
+              + " tbl.`columns`.nonnullrowcount as nonnullrowcount, tbl.`columns`.ndv as ndv,"
               + " tbl.`columns`.avgwidth as avgwidth"
               + " FROM dfs.tmp.flatstats2 tbl")
           .unOrdered()
@@ -154,8 +154,8 @@ public class TestAnalyze extends BaseTestQuery {
            "from dfs.tmp.`parquet1/.stats.drill`");
       //Verify statistics
       testBuilder()
-          .sqlQuery("SELECT tbl.`columns`.`column` as `column`, tbl.`columns`.statcount as statcount,"
-              + " tbl.`columns`.nonnullstatcount as nonnullstatcount, tbl.`columns`.ndv as ndv,"
+          .sqlQuery("SELECT tbl.`columns`.`column` as `column`, tbl.`columns`.rowcount as rowcount,"
+              + " tbl.`columns`.nonnullrowcount as nonnullrowcount, tbl.`columns`.ndv as ndv,"
               + " tbl.`columns`.avgwidth as avgwidth"
               + " FROM dfs.tmp.flatstats3 tbl")
           .unOrdered()
