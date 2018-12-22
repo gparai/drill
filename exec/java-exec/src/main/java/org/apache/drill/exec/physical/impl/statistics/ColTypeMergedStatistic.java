@@ -20,12 +20,12 @@ package org.apache.drill.exec.physical.impl.statistics;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.drill.common.types.TypeProtos;
-import org.apache.drill.exec.vector.IntVector;
 import org.apache.drill.exec.vector.ValueVector;
+import org.apache.drill.exec.vector.VarCharVector;
 import org.apache.drill.exec.vector.complex.MapVector;
 
 public class ColTypeMergedStatistic extends AbstractMergedStatistic {
-  private Map<String, Integer> typeHolder;
+  private Map<String, byte[]> typeHolder;
 
   public ColTypeMergedStatistic () {
     typeHolder = new HashMap<>();
@@ -55,14 +55,14 @@ public class ColTypeMergedStatistic extends AbstractMergedStatistic {
     for (ValueVector vv : input) {
       String colName = vv.getField().getName();
       if (typeHolder.get(colName) == null) {
-        IntVector iv = (IntVector) vv;
-        IntVector.Accessor accessor = iv.getAccessor();
+        VarCharVector iv = (VarCharVector) vv;
+        VarCharVector.Accessor accessor = iv.getAccessor();
         typeHolder.put(colName, accessor.get(0));
       }
     }
   }
 
-  public int getStat(String colName) {
+  public byte[] getStat(String colName) {
     if (state != State.COMPLETE) {
       throw new IllegalStateException(String.format("Statistic `%s` has not completed merging statistics",
           name));
@@ -76,7 +76,7 @@ public class ColTypeMergedStatistic extends AbstractMergedStatistic {
     assert (output.getField().getType().getMinorType() == TypeProtos.MinorType.MAP);
     for (ValueVector outMapCol : output) {
       String colName = outMapCol.getField().getName();
-      IntVector vv = (IntVector) outMapCol;
+      VarCharVector vv = (VarCharVector) outMapCol;
       vv.allocateNewSafe();
       // Set column name in ValueVector
       vv.getMutator().setSafe(0, typeHolder.get(colName));

@@ -17,35 +17,38 @@
  */
 package org.apache.drill.exec.planner.common;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import org.apache.drill.shaded.guava.com.google.common.collect.Maps;
-import java.util.Map;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelVisitor;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.drill.common.exceptions.DrillRuntimeException;
 import org.apache.drill.common.expression.SchemaPath;
 import org.apache.drill.common.logical.FormatPluginConfig;
+import org.apache.drill.common.types.TypeProtos;
 import org.apache.drill.exec.ops.QueryContext;
 import org.apache.drill.exec.physical.PhysicalPlan;
 import org.apache.drill.exec.planner.logical.DrillTable;
 import org.apache.drill.exec.planner.sql.DirectPlan;
+import org.apache.drill.exec.record.MajorTypeSerDe;
 import org.apache.drill.exec.store.StoragePlugin;
 import org.apache.drill.exec.store.dfs.FileSystemPlugin;
 import org.apache.drill.exec.store.dfs.FormatPlugin;
 import org.apache.drill.exec.store.dfs.FormatSelection;
 import org.apache.drill.exec.store.parquet.ParquetFormatConfig;
 import org.apache.drill.exec.util.ImpersonationUtil;
+import org.apache.drill.shaded.guava.com.google.common.collect.Maps;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
@@ -292,9 +295,10 @@ public class DrillStatsTable {
 
   public static class ColumnStatistics_v1 extends ColumnStatistics {
     @JsonProperty ("column") private String name = null;
+    @JsonProperty ("majortype")   private TypeProtos.MajorType type = null;
     @JsonProperty ("schema") private long schema = 0;
-    @JsonProperty ("statcount") private long count = 0;
-    @JsonProperty ("nonnullstatcount") private long nonNullCount = 0;
+    @JsonProperty ("rowcount") private long count = 0;
+    @JsonProperty ("nonnullrowcount") private long nonNullCount = 0;
     @JsonProperty ("ndv") private long ndv = 0;
     @JsonProperty ("avgwidth") private double width = 0;
 
@@ -305,6 +309,12 @@ public class DrillStatsTable {
     public void setName(String name) {
       this.name = name;
     }
+    @JsonGetter ("majortype")
+    public TypeProtos.MajorType getType() { return this.type; }
+    @JsonSetter ("type")
+    public void setType(TypeProtos.MajorType type) {
+      this.type = type;
+    }
     @JsonGetter ("schema")
     public double getSchema() {
       return this.schema;
@@ -313,19 +323,19 @@ public class DrillStatsTable {
     public void setSchema(long schema) {
       this.schema = schema;
     }
-    @JsonGetter ("statcount")
+    @JsonGetter ("rowcount")
     public double getCount() {
       return this.count;
     }
-    @JsonSetter ("statcount")
+    @JsonSetter ("rowcount")
     public void setCount(long count) {
       this.count = count;
     }
-    @JsonGetter ("nonnullstatcount")
+    @JsonGetter ("nonnullrowcount")
     public double getNonNullCount() {
       return this.nonNullCount;
     }
-    @JsonSetter ("nonnullstatcount")
+    @JsonSetter ("nonnullrowcount")
     public void setNonNullCount(long nonNullCount) {
       this.nonNullCount = nonNullCount;
     }
@@ -401,5 +411,18 @@ public class DrillStatsTable {
 
   public static PhysicalPlan notRequired(QueryContext context, String tbl) {
     return direct(context, false, "Table %s has not changed since last ANALYZE!", tbl);
+  }
+
+  /**
+   * This method returns the statistics (de)serializer which can be used to (de)/serialize the
+   * {@link TableStatistics} from/to JSON
+   */
+  public static ObjectMapper getMapper() {
+    ObjectMapper mapper = new ObjectMapper();
+    SimpleModule deModule = new SimpleModule("StatisticsSerDeModule") //
+        .addSerializer(TypeProtos.MajorType.class, new MajorTypeSerDe.Se())
+        .addDeserializer(TypeProtos.MajorType.class, new MajorTypeSerDe.De());
+    mapper.registerModule(deModule);
+    return mapper;
   }
 }

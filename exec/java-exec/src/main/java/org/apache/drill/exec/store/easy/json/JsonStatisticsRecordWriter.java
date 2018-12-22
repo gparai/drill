@@ -23,6 +23,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.apache.drill.common.types.TypeProtos.MajorType;
 import org.apache.drill.exec.physical.impl.statistics.Statistic;
 import org.apache.drill.exec.planner.common.DrillStatsTable;
 import org.apache.drill.exec.planner.common.DrillStatsTable.STATS_VERSION;
@@ -132,8 +133,8 @@ public class JsonStatisticsRecordWriter extends JSONBaseStatisticsRecordWriter {
     public void startField() throws IOException {
       if (fieldName.equals(Statistic.SCHEMA)) {
         nextField = fieldName;
-      } else if (fieldName.equals(Statistic.STATCOUNT)
-            || fieldName.equals(Statistic.NNSTATCOUNT)
+      } else if (fieldName.equals(Statistic.ROWCOUNT)
+            || fieldName.equals(Statistic.NNROWCOUNT)
             || fieldName.equals(Statistic.NDV)
             || fieldName.equals(Statistic.AVG_WIDTH)) {
         nextField = fieldName;
@@ -148,9 +149,9 @@ public class JsonStatisticsRecordWriter extends JSONBaseStatisticsRecordWriter {
       }
       if (nextField.equals(Statistic.SCHEMA)) {
         ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setSchema(reader.readLong());
-      } else if (nextField.equals(Statistic.STATCOUNT)) {
+      } else if (nextField.equals(Statistic.ROWCOUNT)) {
         ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setCount(reader.readLong());
-      } else if (nextField.equals(Statistic.NNSTATCOUNT)) {
+      } else if (nextField.equals(Statistic.NNROWCOUNT)) {
         ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setNonNullCount(reader.readLong());
       } else if (nextField.equals(Statistic.NDV)) {
         ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setNdv(reader.readLong());
@@ -254,6 +255,8 @@ public class JsonStatisticsRecordWriter extends JSONBaseStatisticsRecordWriter {
     public void startField() throws IOException {
       if (fieldName.equals(Statistic.COLNAME)) {
         nextField = fieldName;
+      } else if (fieldName.equals(Statistic.COLTYPE)) {
+        nextField = fieldName;
       }
     }
 
@@ -265,6 +268,9 @@ public class JsonStatisticsRecordWriter extends JSONBaseStatisticsRecordWriter {
       }
       if (nextField.equals(Statistic.COLNAME)) {
         ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setName(reader.readText().toString());
+      } else if (nextField.equals(Statistic.COLTYPE)) {
+        MajorType fieldType = DrillStatsTable.getMapper().readValue(reader.readText().toString(), MajorType.class);
+        ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setType(fieldType);
       }
     }
 
@@ -280,6 +286,7 @@ public class JsonStatisticsRecordWriter extends JSONBaseStatisticsRecordWriter {
   }
 
   public class NullableBigIntJsonConverter extends FieldConverter {
+
     public NullableBigIntJsonConverter(int fieldId, String fieldName, FieldReader reader) {
       super(fieldId, fieldName, reader);
     }
@@ -287,8 +294,8 @@ public class JsonStatisticsRecordWriter extends JSONBaseStatisticsRecordWriter {
     @Override
     public void startField() throws IOException {
       if (!skipNullFields || this.reader.isSet()) {
-        if (fieldName.equals(Statistic.STATCOUNT)
-            || fieldName.equals(Statistic.NNSTATCOUNT)
+        if (fieldName.equals(Statistic.ROWCOUNT)
+            || fieldName.equals(Statistic.NNROWCOUNT)
             || fieldName.equals(Statistic.NDV)) {
           nextField = fieldName;
         }
@@ -302,9 +309,9 @@ public class JsonStatisticsRecordWriter extends JSONBaseStatisticsRecordWriter {
           errStatus = true;
           throw new IOException("Statistics writer encountered unexpected field");
         }
-        if (nextField.equals(Statistic.STATCOUNT)) {
+        if (nextField.equals(Statistic.ROWCOUNT)) {
           ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setCount(reader.readLong());
-        } else if (nextField.equals(Statistic.NNSTATCOUNT)) {
+        } else if (nextField.equals(Statistic.NNROWCOUNT)) {
           ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setNonNullCount(reader.readLong());
         } else if (nextField.equals(Statistic.NDV)) {
           ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setNdv(reader.readLong());

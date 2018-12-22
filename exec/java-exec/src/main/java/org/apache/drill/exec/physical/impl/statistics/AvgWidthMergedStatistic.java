@@ -17,11 +17,15 @@
  */
 package org.apache.drill.exec.physical.impl.statistics;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.drill.common.types.MinorType;
 import org.apache.drill.common.types.TypeProtos;
+import org.apache.drill.exec.record.MajorTypeSerDe;
 import org.apache.drill.exec.vector.NullableFloat8Vector;
 import org.apache.drill.exec.vector.ValueVector;
 import org.apache.drill.exec.vector.complex.MapVector;
@@ -110,9 +114,9 @@ public class AvgWidthMergedStatistic extends AbstractMergedStatistic {
     for (MergedStatistic statistic : statisticList) {
       if (statistic.getName().equals(Statistic.COLTYPE)) {
         types = (ColTypeMergedStatistic) statistic;
-      } else if (statistic.getName().equals(Statistic.STATCOUNT)) {
+      } else if (statistic.getName().equals(Statistic.ROWCOUNT)) {
         statCounts = (StatCountMergedStatistic) statistic;
-      } else if (statistic.getName().equals(Statistic.NNSTATCOUNT)) {
+      } else if (statistic.getName().equals(Statistic.NNROWCOUNT)) {
         nonNullStatCounts = (NNStatCountMergedStatistic) statistic;
       }
     }
@@ -122,7 +126,17 @@ public class AvgWidthMergedStatistic extends AbstractMergedStatistic {
   }
 
   private long getRowCount(String colName) {
-    int type = types.getStat(colName);
+    byte[] typeAsBytes = types.getStat(colName);
+    int type  = -1;
+    ObjectMapper mapper = new ObjectMapper();
+    SimpleModule deModule = new SimpleModule("StatisticsSerDeModeule") //
+            .addDeserializer(TypeProtos.MajorType.class, new MajorTypeSerDe.De());
+    mapper.registerModule(deModule);
+    try {
+      type = mapper.readValue(typeAsBytes, TypeProtos.MajorType.class).getMinorType().getNumber();
+    } catch (IOException ex) {
+      //Ignore exception
+    }
     // If variable length type - then use the nonNullCount. Otherwise, use the Count,
     // since even NULL values take up the same space.
     if (type == MinorType.VAR16CHAR.getNumber()
