@@ -17,8 +17,10 @@
  */
 package org.apache.drill.exec.physical.impl.statistics;
 
-import org.apache.drill.shaded.guava.com.google.common.collect.Lists;
 import com.sun.codemodel.JExpr;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 import org.apache.drill.common.expression.FunctionCallFactory;
 import org.apache.drill.common.expression.LogicalExpression;
 import org.apache.drill.common.expression.SchemaPath;
@@ -37,6 +39,7 @@ import org.apache.drill.exec.physical.config.StatisticsAggregate;
 import org.apache.drill.exec.physical.impl.aggregate.StreamingAggBatch;
 import org.apache.drill.exec.physical.impl.aggregate.StreamingAggTemplate;
 import org.apache.drill.exec.physical.impl.aggregate.StreamingAggregator;
+import org.apache.drill.exec.planner.common.DrillStatsTable;
 import org.apache.drill.exec.record.BatchSchema.SelectionVectorMode;
 import org.apache.drill.exec.record.MaterializedField;
 import org.apache.drill.exec.record.RecordBatch;
@@ -45,10 +48,7 @@ import org.apache.drill.exec.store.ColumnExplorer;
 import org.apache.drill.exec.vector.ValueVector;
 import org.apache.drill.exec.vector.complex.FieldIdUtil;
 import org.apache.drill.exec.vector.complex.MapVector;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
+import org.apache.drill.shaded.guava.com.google.common.collect.Lists;
 
 /*
  * TODO: This needs cleanup. Currently the key values are constants and we compare the constants
@@ -188,7 +188,7 @@ public class StatisticsAggBatch extends StreamingAggBatch {
         if (col.equals(colMeta[0])) {
           expr = ValueExpressions.getChar(SchemaPath.getSimplePath(mf.getName()).toString(), 0);
         } else {
-          expr = ValueExpressions.getInt(mf.getType().getMinorType().getNumber());
+          expr = ValueExpressions.getChar(DrillStatsTable.getMapper().writeValueAsString(mf.getType()), 0);
         }
         // Ignore implicit columns
         if (!isImplicitFileColumn(mf)) {
@@ -239,9 +239,11 @@ public class StatisticsAggBatch extends StreamingAggBatch {
       mTypeStr = "UNION";
     }
     if (mTypeStr != null) {
-      throw new UnsupportedOperationException(String.format("Column %s has data-type %s which is not supported",
-          mf.getName(), mTypeStr));
+      return false;
+      //throw new UnsupportedOperationException(String.format("Column %s has data-type %s which is not supported",
+      //    mf.getName(), mTypeStr));
+    } else {
+      return true;
     }
-    return true;
   }
 }

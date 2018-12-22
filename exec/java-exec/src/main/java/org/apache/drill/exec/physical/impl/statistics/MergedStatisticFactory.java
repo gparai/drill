@@ -29,8 +29,8 @@ public class MergedStatisticFactory {
   private MergedStatisticFactory() {
     statsClasses.put(Statistic.COLNAME, ColumnMergedStatistic.class);
     statsClasses.put(Statistic.COLTYPE, ColTypeMergedStatistic.class);
-    statsClasses.put(Statistic.STATCOUNT, StatCountMergedStatistic.class);
-    statsClasses.put(Statistic.NNSTATCOUNT, NNStatCountMergedStatistic.class);
+    statsClasses.put(Statistic.ROWCOUNT, StatCountMergedStatistic.class);
+    statsClasses.put(Statistic.NNROWCOUNT, NNStatCountMergedStatistic.class);
     statsClasses.put(Statistic.AVG_WIDTH, AvgWidthMergedStatistic.class);
     statsClasses.put(Statistic.HLL_MERGE, HLLMergedStatistic.class);
     statsClasses.put(Statistic.NDV, NDVMergedStatistic.class);

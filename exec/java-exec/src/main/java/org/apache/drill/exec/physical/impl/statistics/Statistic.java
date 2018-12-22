@@ -29,11 +29,11 @@ public abstract class Statistic {
    * List of statistics used in Drill.
    */
   public static final String COLNAME = "column";
-  public static final String COLTYPE = "type";
+  public static final String COLTYPE = "majortype";
   public static final String SCHEMA = "schema";
   public static final String COMPUTED = "computed";
-  public static final String STATCOUNT = "statcount";
-  public static final String NNSTATCOUNT = "nonnullstatcount";
+  public static final String ROWCOUNT = "rowcount";
+  public static final String NNROWCOUNT = "nonnullrowcount";
   public static final String NDV = "ndv";
   public static final String HLL_MERGE = "hll_merge";
   public static final String HLL = "hll";

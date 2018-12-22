@@ -39,18 +39,18 @@ public class AnalyzePrule extends Prule {
   public static final RelOptRule INSTANCE = new AnalyzePrule();
   // List of output functions (from StatsAggBatch)
   private static final List<String> PHASE_1_FUNCTIONS = ImmutableList.of(
-      Statistic.STATCOUNT,    // total number of entries in table fragment
-      Statistic.NNSTATCOUNT,  // total number of non-null entries in table fragment
+      Statistic.ROWCOUNT,    // total number of entries in table fragment
+      Statistic.NNROWCOUNT,  // total number of non-null entries in table fragment
       Statistic.SUM_WIDTH,    // total column width across all entries in table fragment
       Statistic.HLL           // total distinct values in table fragment
     );
   // Mapping between output functions (from StatsMergeBatch) and
   // input functions (from StatsAggBatch)
   private static final Map<String, String> PHASE_2_FUNCTIONS = ImmutableMap.of(
-      Statistic.STATCOUNT,    // total number of entries in the table (merged)
-      Statistic.STATCOUNT,    // total number of entries in the table
-      Statistic.NNSTATCOUNT,  // total number of non-null entries in the table
-      Statistic.NNSTATCOUNT,  // total number of non-null entries in the table (merged)
+      Statistic.ROWCOUNT,    // total number of entries in the table (merged)
+      Statistic.ROWCOUNT,    // total number of entries in the table
+      Statistic.NNROWCOUNT,  // total number of non-null entries in the table
+      Statistic.NNROWCOUNT,  // total number of non-null entries in the table (merged)
       Statistic.AVG_WIDTH,    // average column width across all entries in the table (merged)
       Statistic.SUM_WIDTH,    // total column width across all entries in table
       Statistic.HLL_MERGE,    // total distinct values(computed using hll) in the table (merged)
@@ -60,8 +60,8 @@ public class AnalyzePrule extends Prule {
     );
   // List of input functions (from StatsMergeBatch) to UnpivotMapsBatch
   private static final List<String> UNPIVOT_FUNCTIONS = ImmutableList.of(
-      Statistic.STATCOUNT,    // total number of entries in the table
-      Statistic.NNSTATCOUNT,  // total number of non-null entries in the table
+      Statistic.ROWCOUNT,    // total number of entries in the table
+      Statistic.NNROWCOUNT,  // total number of non-null entries in the table
       Statistic.AVG_WIDTH,    // average column width across all entries in the table
       Statistic.HLL_MERGE,    // total distinct values(computed using hll) in the table
       Statistic.NDV           // total distinct values across all entries in the table

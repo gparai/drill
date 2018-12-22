@@ -35,7 +35,7 @@ public class NNStatCountMergedStatistic extends AbstractMergedStatistic {
 
   @Override
   public void initialize(String inputName) {
-    super.initialize(Statistic.NNSTATCOUNT, inputName);
+    super.initialize(Statistic.NNROWCOUNT, inputName);
     state = State.MERGE;
   }
 
