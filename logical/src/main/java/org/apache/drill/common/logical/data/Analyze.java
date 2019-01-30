@@ -25,11 +25,22 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 @JsonTypeName("analyze")
 public class Analyze extends SingleInputOperator {
 
+  double percent = 100.0;
+
   @JsonCreator
   public Analyze() { }
+
+  @JsonCreator
+  public Analyze(double percent) {
+    this.percent = percent;
+  }
 
   @Override
   public <T, X, E extends Throwable> T accept(LogicalVisitor<T, X, E> logicalVisitor, X value) throws E {
     return logicalVisitor.visitAnalyze(this, value);
+  }
+
+  public double getPercent() {
+    return percent;
   }
 }

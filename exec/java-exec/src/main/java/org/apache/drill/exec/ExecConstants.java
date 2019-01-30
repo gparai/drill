@@ -914,10 +914,27 @@ public final class ExecConstants {
 
   /**
    * Option whose value is a long value representing the number of bits required for computing ndv (using HLL).
-   * Controls the trade-off between accuracy and memory requirements. The accuracy correlates positively with the
-   * number of bits.
+   * Controls the trade-off between accuracy and memory requirements. The number of bits correlates positively with accuracy
    */
   public static final String HLL_ACCURACY = "exec.statistics.ndv_accuracy";
   public static final LongValidator HLL_ACCURACY_VALIDATOR = new PositiveLongValidator(HLL_ACCURACY, 30,
-      new OptionDescription("Controls trade-off between NDV statistic storage cost and accuracy"));
+      new OptionDescription("Controls trade-off between NDV statistic computation memory cost and accuracy"));
+
+  /**
+   * Option whose value is a long value representing the expected number of elements in the bloom filter. The bloom filter
+   * computes the number of duplicates which is used for extrapolating the NDV when using sampling. Controls the trade-off
+   * between accuracy and memory requirements. The number of elements correlates positively with accuracy.
+   */
+  public static final String NDV_BLOOM_FILTER_ELEMENTS = "exec.statistics.ndv_extrapolation_bf_elements";
+  public static final LongValidator NDV_BLOOM_FILTER_ELEMENTS_VALIDATOR = new PositiveLongValidator(NDV_BLOOM_FILTER_ELEMENTS, Integer.MAX_VALUE,
+          new OptionDescription("Controls trade-off between NDV statistic computation memory cost and sampling extrapolation accuracy"));
+
+  /**
+   * Option whose value is a double value representing the desired max false positive probability in the bloom filter. The bloom filter
+   * computes the number of duplicates which is used for extrapolating the NDV when using sampling. Controls the trade-off
+   * between accuracy and memory requirements. The probability correlates negatively with the accuracy.
+   */
+  public static final String NDV_BLOOM_FILTER_FPOS_PROB = "exec.statistics.ndv_extrapolation_bf_fpprobability";
+  public static final LongValidator NDV_BLOOM_FILTER_FPOS_PROB_VALIDATOR = new PositiveLongValidator(NDV_BLOOM_FILTER_FPOS_PROB,
+          100, new OptionDescription("Controls trade-off between NDV statistic computation memory cost and sampling extrapolation accuracy"));
 }

@@ -99,6 +99,32 @@ public class TestAnalyze extends BaseTestQuery {
     }
   }
 
+  public void basic3() throws Exception {
+    try {
+      test("ALTER SESSION SET `planner.slice_target` = 1");
+      test("ALTER SESSION SET `store.format` = 'parquet'");
+      test("CREATE TABLE dfs.tmp.employee_basic3 AS SELECT * from cp.`employee.json`");
+      test("ANALYZE TABLE dfs.tmp.employee_basic3 COMPUTE STATISTICS (employee_id, birth_date) SAMPLE 55 PERCENT");
+      test("SELECT * FROM dfs.tmp.`employee_basic3/.stats.drill`");
+      test("create table dfs.tmp.flatstats3 as select flatten(`directories`[0].`columns`) as `columns`"
+              + " from dfs.tmp.`employee_basic3/.stats.drill`");
+
+      testBuilder()
+              .sqlQuery("SELECT tbl.`columns`.`column` as `column`, tbl.`columns`.rowcount as rowcount,"
+                      + " tbl.`columns`.nonnullrowcount as nonnullrowcount, tbl.`columns`.ndv as ndv,"
+                      + " tbl.`columns`.avgwidth as avgwidth"
+                      + " FROM dfs.tmp.flatstats2 tbl")
+              .unOrdered()
+              .approximateEquality(0.1)
+              .baselineColumns("column", "rowcount", "nonnullrowcount", "ndv", "avgwidth")
+              .baselineValues("`employee_id`", 1155.0, 1155.0, 1155L, 8.0)
+              .baselineValues("`birth_date`", 1155.0, 1155.0, 52L, 10.0)
+              .go();
+    } finally {
+      test("ALTER SESSION SET `planner.slice_target` = " + ExecConstants.SLICE_TARGET_DEFAULT);
+    }
+  }
+
   @Test
   public void join() throws Exception {
     try {

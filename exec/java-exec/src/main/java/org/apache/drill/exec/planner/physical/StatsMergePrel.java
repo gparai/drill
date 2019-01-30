@@ -36,15 +36,19 @@ import java.util.Map;
 public class StatsMergePrel extends SingleRel implements DrillRelNode, Prel {
 
   private Map<String, String> functions;
+  // Percent will be used to extrapolate statistics
+  private double percent;
 
-  public StatsMergePrel(RelOptCluster cluster, RelTraitSet traits, RelNode child, Map<String, String> functions) {
+  public StatsMergePrel(RelOptCluster cluster, RelTraitSet traits, RelNode child,
+      Map<String, String> functions, double percent) {
     super(cluster, traits, child);
     this.functions = ImmutableMap.copyOf(functions);
+    this.percent = percent;
   }
 
   @Override
   public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-    return new StatsMergePrel(getCluster(), traitSet, sole(inputs), ImmutableMap.copyOf(functions));
+    return new StatsMergePrel(getCluster(), traitSet, sole(inputs), ImmutableMap.copyOf(functions), percent);
   }
 
   @Override
@@ -52,7 +56,7 @@ public class StatsMergePrel extends SingleRel implements DrillRelNode, Prel {
       throws IOException {
     Prel child = (Prel) this.getInput();
     PhysicalOperator childPOP = child.getPhysicalOperator(creator);
-    StatisticsMerge g = new StatisticsMerge(childPOP, functions);
+    StatisticsMerge g = new StatisticsMerge(childPOP, functions, percent);
     return creator.addMetadata(this, g);
   }
 

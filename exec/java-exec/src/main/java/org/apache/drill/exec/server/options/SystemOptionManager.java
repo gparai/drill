@@ -274,7 +274,9 @@ public class SystemOptionManager extends BaseOptionManager implements AutoClosea
       new OptionDefinition(ExecConstants.LIST_FILES_RECURSIVELY_VALIDATOR),
       new OptionDefinition(ExecConstants.QUERY_ROWKEYJOIN_BATCHSIZE),
       new OptionDefinition(ExecConstants.RETURN_RESULT_SET_FOR_DDL_VALIDATOR),
-      new OptionDefinition(ExecConstants.HLL_ACCURACY_VALIDATOR)
+      new OptionDefinition(ExecConstants.HLL_ACCURACY_VALIDATOR),
+      new OptionDefinition(ExecConstants.NDV_BLOOM_FILTER_ELEMENTS_VALIDATOR),
+      new OptionDefinition(ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB_VALIDATOR)
     };
 
     CaseInsensitiveMap<OptionDefinition> map = Arrays.stream(definitions)

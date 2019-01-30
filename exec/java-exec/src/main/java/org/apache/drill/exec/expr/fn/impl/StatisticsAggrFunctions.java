@@ -236,6 +236,7 @@ public class StatisticsAggrFunctions {
       work = new ObjectHolder();
       hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
       work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(1000000, 0.10);
     }
 
     @Override
@@ -5511,6 +5512,1519 @@ public class StatisticsAggrFunctions {
     public void reset() {
       totWidth.value = 0;
       nonNullCount.value = 0;
+    }
+  }
+
+  @FunctionTemplate(name = "approx_count_dups", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class BitCntDupsFunction implements DrillAggFunc {
+    @Param
+    BitHolder in;
+    @Workspace
+    ObjectHolder work;
+    @Workspace BigIntHolder dups;
+    @Output NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder ndvBloomFilterElts;
+    @Workspace IntHolder ndvBloomFilterFPProb;
+
+    @Override
+    public void setup() {
+      work = new ObjectHolder();
+      ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
+      ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+
+    @Override
+    public void add() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        if (!filter.isPresent(String.valueOf(in.value))) {
+          filter.add(String.valueOf(in.value));
+        } else {
+          dups.value++;
+        }
+      }
+    }
+
+    @Override
+    public void output() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        out.isSet = 1;
+        out.value = dups.value;
+      } else {
+        out.isSet = 0;
+      }
+    }
+
+    @Override
+    public void reset() {
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+  }
+
+  @FunctionTemplate(name = "approx_count_dups", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class NullableBitCntDupsFunction implements DrillAggFunc {
+    @Param
+    NullableBitHolder in;
+    @Workspace
+    ObjectHolder work;
+    @Workspace BigIntHolder dups;
+    @Output NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder ndvBloomFilterElts;
+    @Workspace IntHolder ndvBloomFilterFPProb;
+
+    @Override
+    public void setup() {
+      work = new ObjectHolder();
+      ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
+      ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+
+    @Override
+    public void add() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        if (in.isSet == 1) {
+          if (!filter.isPresent(String.valueOf(in.value))) {
+            filter.add(String.valueOf(in.value));
+          } else {
+            dups.value++;
+          }
+        }
+      }
+    }
+
+    @Override
+    public void output() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        out.isSet = 1;
+        out.value = dups.value;
+      } else {
+        out.isSet = 0;
+      }
+    }
+
+    @Override
+    public void reset() {
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+  }
+
+  @FunctionTemplate(name = "approx_count_dups", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class IntCntDupsFunction implements DrillAggFunc {
+    @Param
+    IntHolder in;
+    @Workspace
+    ObjectHolder work;
+    @Workspace BigIntHolder dups;
+    @Output
+    NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder ndvBloomFilterElts;
+    @Workspace IntHolder ndvBloomFilterFPProb;
+
+    @Override
+    public void setup() {
+      work = new ObjectHolder();
+      ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
+      ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+
+    @Override
+    public void add() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        if (!filter.isPresent(String.valueOf(in.value))) {
+          filter.add(String.valueOf(in.value));
+        } else {
+          dups.value++;
+        }
+      }
+    }
+
+    @Override
+    public void output() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        out.isSet = 1;
+        out.value = dups.value;
+      } else {
+        out.isSet = 0;
+      }
+    }
+
+    @Override
+    public void reset() {
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+  }
+
+  @FunctionTemplate(name = "approx_count_dups", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class NullableIntCntDupsFunction implements DrillAggFunc {
+    @Param
+    NullableIntHolder in;
+    @Workspace
+    ObjectHolder work;
+    @Workspace BigIntHolder dups;
+    @Output
+    NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder ndvBloomFilterElts;
+    @Workspace IntHolder ndvBloomFilterFPProb;
+
+    @Override
+    public void setup() {
+      work = new ObjectHolder();
+      ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
+      ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+
+    @Override
+    public void add() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        if (in.isSet == 1) {
+          if (!filter.isPresent(String.valueOf(in.value))) {
+            filter.add(String.valueOf(in.value));
+          } else {
+            dups.value++;
+          }
+        }
+      }
+    }
+
+    @Override
+    public void output() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        out.isSet = 1;
+        out.value = dups.value;
+      } else {
+        out.isSet = 0;
+      }
+    }
+
+    @Override
+    public void reset() {
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+  }
+
+  @FunctionTemplate(name = "approx_count_dups", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class BigIntCntDupsFunction implements DrillAggFunc {
+    @Param
+    BigIntHolder in;
+    @Workspace
+    ObjectHolder work;
+    @Workspace BigIntHolder dups;
+    @Output
+    NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder ndvBloomFilterElts;
+    @Workspace IntHolder ndvBloomFilterFPProb;
+
+    @Override
+    public void setup() {
+      work = new ObjectHolder();
+      ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
+      ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+
+    @Override
+    public void add() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        if (!filter.isPresent(String.valueOf(in.value))) {
+          filter.add(String.valueOf(in.value));
+        } else {
+          dups.value++;
+        }
+      }
+    }
+
+    @Override
+    public void output() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        out.isSet = 1;
+        out.value = dups.value;
+      } else {
+        out.isSet = 0;
+      }
+    }
+
+    @Override
+    public void reset() {
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+  }
+
+  @FunctionTemplate(name = "approx_count_dups", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class NullableBigIntCntDupsFunction implements DrillAggFunc {
+    @Param
+    NullableBigIntHolder in;
+    @Workspace
+    ObjectHolder work;
+    @Workspace BigIntHolder dups;
+    @Output
+    NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder ndvBloomFilterElts;
+    @Workspace IntHolder ndvBloomFilterFPProb;
+
+    @Override
+    public void setup() {
+      work = new ObjectHolder();
+      ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
+      ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+
+    @Override
+    public void add() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        if (in.isSet == 1) {
+          if (!filter.isPresent(String.valueOf(in.value))) {
+            filter.add(String.valueOf(in.value));
+          } else {
+            dups.value++;
+          }
+        }
+      }
+    }
+
+    @Override
+    public void output() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        out.isSet = 1;
+        out.value = dups.value;
+      } else {
+        out.isSet = 0;
+      }
+    }
+
+    @Override
+    public void reset() {
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+  }
+
+  @FunctionTemplate(name = "approx_count_dups", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class Float4CntDupsFunction implements DrillAggFunc {
+    @Param
+    Float4Holder in;
+    @Workspace
+    ObjectHolder work;
+    @Workspace BigIntHolder dups;
+    @Output
+    NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder ndvBloomFilterElts;
+    @Workspace IntHolder ndvBloomFilterFPProb;
+
+    @Override
+    public void setup() {
+      work = new ObjectHolder();
+      ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
+      ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+
+    @Override
+    public void add() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        if (!filter.isPresent(String.valueOf(in.value))) {
+          filter.add(String.valueOf(in.value));
+        } else {
+          dups.value++;
+        }
+      }
+    }
+
+    @Override
+    public void output() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        out.isSet = 1;
+        out.value = dups.value;
+      } else {
+        out.isSet = 0;
+      }
+    }
+
+    @Override
+    public void reset() {
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+  }
+
+  @FunctionTemplate(name = "approx_count_dups", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class NullableFloat4CntDupsFunction implements DrillAggFunc {
+    @Param
+    NullableFloat4Holder in;
+    @Workspace
+    ObjectHolder work;
+    @Workspace BigIntHolder dups;
+    @Output
+    NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder ndvBloomFilterElts;
+    @Workspace IntHolder ndvBloomFilterFPProb;
+
+    @Override
+    public void setup() {
+      work = new ObjectHolder();
+      ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
+      ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+
+    @Override
+    public void add() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        if (in.isSet == 1) {
+          if (!filter.isPresent(String.valueOf(in.value))) {
+            filter.add(String.valueOf(in.value));
+          } else {
+            dups.value++;
+          }
+        }
+      }
+    }
+
+    @Override
+    public void output() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        out.isSet = 1;
+        out.value = dups.value;
+      } else {
+        out.isSet = 0;
+      }
+    }
+
+    @Override
+    public void reset() {
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+  }
+
+  @FunctionTemplate(name = "approx_count_dups", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class Float8CntDupsFunction implements DrillAggFunc {
+    @Param
+    Float8Holder in;
+    @Workspace
+    ObjectHolder work;
+    @Workspace BigIntHolder dups;
+    @Output
+    NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder ndvBloomFilterElts;
+    @Workspace IntHolder ndvBloomFilterFPProb;
+
+    @Override
+    public void setup() {
+      work = new ObjectHolder();
+      ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
+      ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+
+    @Override
+    public void add() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        if (!filter.isPresent(String.valueOf(in.value))) {
+          filter.add(String.valueOf(in.value));
+        } else {
+          dups.value++;
+        }
+      }
+    }
+
+    @Override
+    public void output() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        out.isSet = 1;
+        out.value = dups.value;
+      } else {
+        out.isSet = 0;
+      }
+    }
+
+    @Override
+    public void reset() {
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+  }
+
+  @FunctionTemplate(name = "approx_count_dups", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class NullableFloat8CntDupsFunction implements DrillAggFunc {
+    @Param
+    NullableFloat8Holder in;
+    @Workspace
+    ObjectHolder work;
+    @Workspace BigIntHolder dups;
+    @Output
+    NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder ndvBloomFilterElts;
+    @Workspace IntHolder ndvBloomFilterFPProb;
+
+    @Override
+    public void setup() {
+      work = new ObjectHolder();
+      ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
+      ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+
+    @Override
+    public void add() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        if (in.isSet == 1) {
+          if (!filter.isPresent(String.valueOf(in.value))) {
+            filter.add(String.valueOf(in.value));
+          } else {
+            dups.value++;
+          }
+        }
+      }
+    }
+
+    @Override
+    public void output() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        out.isSet = 1;
+        out.value = dups.value;
+      } else {
+        out.isSet = 0;
+      }
+    }
+
+    @Override
+    public void reset() {
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+  }
+
+  @FunctionTemplate(name = "approx_count_dups", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class Decimal9CntDupsFunction implements DrillAggFunc {
+    @Param
+    Decimal9Holder in;
+    @Workspace
+    ObjectHolder work;
+    @Workspace BigIntHolder dups;
+    @Output
+    NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder ndvBloomFilterElts;
+    @Workspace IntHolder ndvBloomFilterFPProb;
+
+    @Override
+    public void setup() {
+      work = new ObjectHolder();
+      ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
+      ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+
+    @Override
+    public void add() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        if (!filter.isPresent(String.valueOf(in.value))) {
+          filter.add(String.valueOf(in.value));
+        } else {
+          dups.value++;
+        }
+      }
+    }
+
+    @Override
+    public void output() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        out.isSet = 1;
+        out.value = dups.value;
+      } else {
+        out.isSet = 0;
+      }
+    }
+
+    @Override
+    public void reset() {
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+  }
+
+  @FunctionTemplate(name = "approx_count_dups", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class NullableDecimal9CntDupsFunction implements DrillAggFunc {
+    @Param
+    NullableDecimal9Holder in;
+    @Workspace
+    ObjectHolder work;
+    @Workspace BigIntHolder dups;
+    @Output
+    NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder ndvBloomFilterElts;
+    @Workspace IntHolder ndvBloomFilterFPProb;
+
+    @Override
+    public void setup() {
+      work = new ObjectHolder();
+      ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
+      ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+
+    @Override
+    public void add() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        if (in.isSet == 1) {
+          if (!filter.isPresent(String.valueOf(in.value))) {
+            filter.add(String.valueOf(in.value));
+          } else {
+            dups.value++;
+          }
+        }
+      }
+    }
+
+    @Override
+    public void output() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        out.isSet = 1;
+        out.value = dups.value;
+      } else {
+        out.isSet = 0;
+      }
+    }
+
+    @Override
+    public void reset() {
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+  }
+
+  @FunctionTemplate(name = "approx_count_dups", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class Decimal18CntDupsFunction implements DrillAggFunc {
+    @Param
+    Decimal18Holder in;
+    @Workspace
+    ObjectHolder work;
+    @Workspace BigIntHolder dups;
+    @Output
+    NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder ndvBloomFilterElts;
+    @Workspace IntHolder ndvBloomFilterFPProb;
+
+    @Override
+    public void setup() {
+      work = new ObjectHolder();
+      ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
+      ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+
+    @Override
+    public void add() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        if (!filter.isPresent(String.valueOf(in.value))) {
+          filter.add(String.valueOf(in.value));
+        } else {
+          dups.value++;
+        }
+      }
+    }
+
+    @Override
+    public void output() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        out.isSet = 1;
+        out.value = dups.value;
+      } else {
+        out.isSet = 0;
+      }
+    }
+
+    @Override
+    public void reset() {
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+  }
+
+  @FunctionTemplate(name = "approx_count_dups", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class NullableDecimal18CntDupsFunction implements DrillAggFunc {
+    @Param
+    NullableDecimal18Holder in;
+    @Workspace
+    ObjectHolder work;
+    @Workspace BigIntHolder dups;
+    @Output
+    NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder ndvBloomFilterElts;
+    @Workspace IntHolder ndvBloomFilterFPProb;
+
+    @Override
+    public void setup() {
+      work = new ObjectHolder();
+      ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
+      ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+
+    @Override
+    public void add() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        if (in.isSet == 1) {
+          if (!filter.isPresent(String.valueOf(in.value))) {
+            filter.add(String.valueOf(in.value));
+          } else {
+            dups.value++;
+          }
+        }
+      }
+    }
+
+    @Override
+    public void output() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        out.isSet = 1;
+        out.value = dups.value;
+      } else {
+        out.isSet = 0;
+      }
+    }
+
+    @Override
+    public void reset() {
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+  }
+
+  @FunctionTemplate(name = "approx_count_dups", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class DateCntDupsFunction implements DrillAggFunc {
+    @Param
+    DateHolder in;
+    @Workspace
+    ObjectHolder work;
+    @Workspace BigIntHolder dups;
+    @Output
+    NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder ndvBloomFilterElts;
+    @Workspace IntHolder ndvBloomFilterFPProb;
+
+    @Override
+    public void setup() {
+      work = new ObjectHolder();
+      ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
+      ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+
+    @Override
+    public void add() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        if (!filter.isPresent(String.valueOf(in.value))) {
+          filter.add(String.valueOf(in.value));
+        } else {
+          dups.value++;
+        }
+      }
+    }
+
+    @Override
+    public void output() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        out.isSet = 1;
+        out.value = dups.value;
+      } else {
+        out.isSet = 0;
+      }
+    }
+
+    @Override
+    public void reset() {
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+  }
+
+  @FunctionTemplate(name = "approx_count_dups", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class NullableDateCntDupsFunction implements DrillAggFunc {
+    @Param
+    NullableDateHolder in;
+    @Workspace
+    ObjectHolder work;
+    @Workspace BigIntHolder dups;
+    @Output
+    NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder ndvBloomFilterElts;
+    @Workspace IntHolder ndvBloomFilterFPProb;
+
+    @Override
+    public void setup() {
+      work = new ObjectHolder();
+      ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
+      ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+
+    @Override
+    public void add() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        if (in.isSet == 1) {
+          if (!filter.isPresent(String.valueOf(in.value))) {
+            filter.add(String.valueOf(in.value));
+          } else {
+            dups.value++;
+          }
+        }
+      }
+    }
+
+    @Override
+    public void output() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        out.isSet = 1;
+        out.value = dups.value;
+      } else {
+        out.isSet = 0;
+      }
+    }
+
+    @Override
+    public void reset() {
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+  }
+
+  @FunctionTemplate(name = "approx_count_dups", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class TimeCntDupsFunction implements DrillAggFunc {
+    @Param
+    TimeHolder in;
+    @Workspace
+    ObjectHolder work;
+    @Workspace BigIntHolder dups;
+    @Output
+    NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder ndvBloomFilterElts;
+    @Workspace IntHolder ndvBloomFilterFPProb;
+
+    @Override
+    public void setup() {
+      work = new ObjectHolder();
+      ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
+      ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+
+    @Override
+    public void add() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        if (!filter.isPresent(String.valueOf(in.value))) {
+          filter.add(String.valueOf(in.value));
+        } else {
+          dups.value++;
+        }
+      }
+    }
+
+    @Override
+    public void output() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        out.isSet = 1;
+        out.value = dups.value;
+      } else {
+        out.isSet = 0;
+      }
+    }
+
+    @Override
+    public void reset() {
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+  }
+
+  @FunctionTemplate(name = "approx_count_dups", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class NullableTimeCntDupsFunction implements DrillAggFunc {
+    @Param
+    NullableTimeHolder in;
+    @Workspace
+    ObjectHolder work;
+    @Workspace BigIntHolder dups;
+    @Output
+    NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder ndvBloomFilterElts;
+    @Workspace IntHolder ndvBloomFilterFPProb;
+
+    @Override
+    public void setup() {
+      work = new ObjectHolder();
+      ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
+      ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+
+    @Override
+    public void add() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        if (in.isSet == 1) {
+          if (!filter.isPresent(String.valueOf(in.value))) {
+            filter.add(String.valueOf(in.value));
+          } else {
+            dups.value++;
+          }
+        }
+      }
+    }
+
+    @Override
+    public void output() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        out.isSet = 1;
+        out.value = dups.value;
+      } else {
+        out.isSet = 0;
+      }
+    }
+
+    @Override
+    public void reset() {
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+  }
+
+  @FunctionTemplate(name = "approx_count_dups", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class TimeStampCntDupsFunction implements DrillAggFunc {
+    @Param
+    TimeStampHolder in;
+    @Workspace
+    ObjectHolder work;
+    @Workspace BigIntHolder dups;
+    @Output
+    NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder ndvBloomFilterElts;
+    @Workspace IntHolder ndvBloomFilterFPProb;
+
+    @Override
+    public void setup() {
+      work = new ObjectHolder();
+      ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
+      ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+
+    @Override
+    public void add() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        if (!filter.isPresent(String.valueOf(in.value))) {
+          filter.add(String.valueOf(in.value));
+        } else {
+          dups.value++;
+        }
+      }
+    }
+
+    @Override
+    public void output() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        out.isSet = 1;
+        out.value = dups.value;
+      } else {
+        out.isSet = 0;
+      }
+    }
+
+    @Override
+    public void reset() {
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+  }
+
+  @FunctionTemplate(name = "approx_count_dups", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class NullableTimeStampCntDupsFunction implements DrillAggFunc {
+    @Param
+    NullableTimeStampHolder in;
+    @Workspace
+    ObjectHolder work;
+    @Workspace BigIntHolder dups;
+    @Output
+    NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder ndvBloomFilterElts;
+    @Workspace IntHolder ndvBloomFilterFPProb;
+
+    @Override
+    public void setup() {
+      work = new ObjectHolder();
+      ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
+      ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+
+    @Override
+    public void add() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        if (in.isSet == 1) {
+          if (!filter.isPresent(String.valueOf(in.value))) {
+            filter.add(String.valueOf(in.value));
+          } else {
+            dups.value++;
+          }
+        }
+      }
+    }
+
+    @Override
+    public void output() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        out.isSet = 1;
+        out.value = dups.value;
+      } else {
+        out.isSet = 0;
+      }
+    }
+
+    @Override
+    public void reset() {
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+  }
+
+  @FunctionTemplate(name = "approx_count_dups", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class IntervalCntDupsFunction implements DrillAggFunc {
+    @Param
+    IntervalHolder in;
+    @Workspace
+    ObjectHolder work;
+    @Workspace BigIntHolder dups;
+    @Workspace
+    ObjectHolder interval;
+    @Output
+    NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder ndvBloomFilterElts;
+    @Workspace IntHolder ndvBloomFilterFPProb;
+
+    @Override
+    public void setup() {
+      work = new ObjectHolder();
+      interval = new ObjectHolder();
+      ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
+      ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+      interval.obj = new int[3];
+    }
+
+    @Override
+    public void add() {
+      if (work.obj != null
+              && interval.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        ((int[])interval.obj)[0] = in.days;
+        ((int[])interval.obj)[1] = in.months;
+        ((int[])interval.obj)[2] = in.milliseconds;
+        if (!filter.isPresent(String.valueOf(interval.obj))) {
+          filter.add(String.valueOf(interval.obj));
+        } else {
+          dups.value++;
+        }
+      }
+    }
+
+    @Override
+    public void output() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        out.isSet = 1;
+        out.value = dups.value;
+      } else {
+        out.isSet = 0;
+      }
+    }
+
+    @Override
+    public void reset() {
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+      interval.obj = new int[3];
+    }
+  }
+
+  @FunctionTemplate(name = "approx_count_dups", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class NullableIntervalCntDupsFunction implements DrillAggFunc {
+    @Param
+    NullableIntervalHolder in;
+    @Workspace
+    ObjectHolder work;
+    @Workspace BigIntHolder dups;
+    @Workspace
+    ObjectHolder interval;
+    @Output
+    NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder ndvBloomFilterElts;
+    @Workspace IntHolder ndvBloomFilterFPProb;
+
+    @Override
+    public void setup() {
+      work = new ObjectHolder();
+      interval = new ObjectHolder();
+      ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
+      ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+      interval.obj = new int[3];
+    }
+
+    @Override
+    public void add() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        if (in.isSet == 1) {
+          if (interval.obj != null) {
+            ((int[]) interval.obj)[0] = in.days;
+            ((int[]) interval.obj)[1] = in.months;
+            ((int[]) interval.obj)[2] = in.milliseconds;
+            if (!filter.isPresent(String.valueOf(interval.obj))) {
+              filter.add(String.valueOf(interval.obj));
+            } else {
+              dups.value++;
+            }
+          }
+        }
+      }
+    }
+
+    @Override
+    public void output() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        out.isSet = 1;
+        out.value = dups.value;
+      } else {
+        out.isSet = 0;
+      }
+    }
+
+    @Override
+    public void reset() {
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+      interval.obj = new int[3];
+    }
+  }
+
+  @FunctionTemplate(name = "approx_count_dups", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class VarCharCntDupsFunction implements DrillAggFunc {
+    @Param
+    VarCharHolder in;
+    @Workspace
+    ObjectHolder work;
+    @Workspace BigIntHolder dups;
+    @Output
+    NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder ndvBloomFilterElts;
+    @Workspace IntHolder ndvBloomFilterFPProb;
+
+    @Override
+    public void setup() {
+      work = new ObjectHolder();
+      ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
+      ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+
+    @Override
+    public void add() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        byte[] buf = org.apache.drill.exec.expr.fn.impl.StringFunctionHelpers.toStringFromUTF8(
+                in.start, in.end, in.buffer).getBytes();
+        if (!filter.isPresent(buf)) {
+          filter.add(buf);
+        } else {
+          dups.value++;
+        }
+      }
+    }
+
+    @Override
+    public void output() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        out.isSet = 1;
+        out.value = dups.value;
+      } else {
+        out.isSet = 0;
+      }
+    }
+
+    @Override
+    public void reset() {
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+  }
+
+  @FunctionTemplate(name = "approx_count_dups", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class NullableVarCharCntDupsFunction implements DrillAggFunc {
+    @Param
+    NullableVarCharHolder in;
+    @Workspace
+    ObjectHolder work;
+    @Workspace BigIntHolder dups;
+    @Output
+    NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder ndvBloomFilterElts;
+    @Workspace IntHolder ndvBloomFilterFPProb;
+
+    @Override
+    public void setup() {
+      work = new ObjectHolder();
+      ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
+      ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+
+    @Override
+    public void add() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        if (in.isSet == 1) {
+          byte[] buf = org.apache.drill.exec.expr.fn.impl.StringFunctionHelpers.toStringFromUTF8(
+                  in.start, in.end, in.buffer).getBytes();
+          if (!filter.isPresent(buf)) {
+            filter.add(buf);
+          } else {
+            dups.value++;
+          }
+        }
+      }
+    }
+
+    @Override
+    public void output() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        out.isSet = 1;
+        out.value = dups.value;
+      } else {
+        out.isSet = 0;
+      }
+    }
+
+    @Override
+    public void reset() {
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+  }
+
+  @FunctionTemplate(name = "approx_count_dups", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class Var16CharCntDupsFunction implements DrillAggFunc {
+    @Param
+    Var16CharHolder in;
+    @Workspace
+    ObjectHolder work;
+    @Workspace BigIntHolder dups;
+    @Output
+    NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder ndvBloomFilterElts;
+    @Workspace IntHolder ndvBloomFilterFPProb;
+
+    @Override
+    public void setup() {
+      work = new ObjectHolder();
+      ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
+      ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+
+    @Override
+    public void add() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        byte[] buf = org.apache.drill.exec.expr.fn.impl.StringFunctionHelpers.toStringFromUTF16
+                (in.start, in.end, in.buffer).getBytes();
+        if (!filter.isPresent(buf)) {
+          filter.add(buf);
+        } else {
+          dups.value++;
+        }
+      }
+    }
+
+    @Override
+    public void output() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        out.isSet = 1;
+        out.value = dups.value;
+      } else {
+        out.isSet = 0;
+      }
+    }
+
+    @Override
+    public void reset() {
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+  }
+
+  @FunctionTemplate(name = "approx_count_dups", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class NullableVar16CharCntDupsFunction implements DrillAggFunc {
+    @Param
+    NullableVar16CharHolder in;
+    @Workspace
+    ObjectHolder work;
+    @Workspace BigIntHolder dups;
+    @Output
+    NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder ndvBloomFilterElts;
+    @Workspace IntHolder ndvBloomFilterFPProb;
+
+    @Override
+    public void setup() {
+      work = new ObjectHolder();
+      ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
+      ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+
+    @Override
+    public void add() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        if (in.isSet == 1) {
+          byte[] buf = org.apache.drill.exec.expr.fn.impl.StringFunctionHelpers.toStringFromUTF16
+                  (in.start, in.end, in.buffer).getBytes();
+          if (!filter.isPresent(buf)) {
+            filter.add(buf);
+          } else {
+            dups.value++;
+          }
+        }
+      }
+    }
+
+    @Override
+    public void output() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        out.isSet = 1;
+        out.value = dups.value;
+      } else {
+        out.isSet = 0;
+      }
+    }
+
+    @Override
+    public void reset() {
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+  }
+
+  @FunctionTemplate(name = "approx_count_dups", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class VarBinaryCntDupsFunction implements DrillAggFunc {
+    @Param
+    VarBinaryHolder in;
+    @Workspace
+    ObjectHolder work;
+    @Workspace BigIntHolder dups;
+    @Output
+    NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder ndvBloomFilterElts;
+    @Workspace IntHolder ndvBloomFilterFPProb;
+
+    @Override
+    public void setup() {
+      work = new ObjectHolder();
+      ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
+      ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+
+    @Override
+    public void add() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        byte[] buf = org.apache.drill.exec.expr.fn.impl.StringFunctionHelpers.toStringFromUTF8
+                (in.start, in.end, in.buffer).getBytes();
+        if (!filter.isPresent(buf)) {
+          filter.add(buf);
+        } else {
+          dups.value++;
+        }
+      }
+    }
+
+    @Override
+    public void output() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        out.isSet = 1;
+        out.value = dups.value;
+      } else {
+        out.isSet = 0;
+      }
+    }
+
+    @Override
+    public void reset() {
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+  }
+
+  @FunctionTemplate(name = "approx_count_dups", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
+  public static class NullableVarBinaryCntDupsFunction implements DrillAggFunc {
+    @Param
+    NullableVarBinaryHolder in;
+    @Workspace
+    ObjectHolder work;
+    @Workspace BigIntHolder dups;
+    @Output
+    NullableBigIntHolder out;
+    @Inject OptionManager options;
+    @Workspace IntHolder ndvBloomFilterElts;
+    @Workspace IntHolder ndvBloomFilterFPProb;
+
+    @Override
+    public void setup() {
+      work = new ObjectHolder();
+      ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
+      ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
+    }
+
+    @Override
+    public void add() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        if (in.isSet == 1) {
+          byte[] buf = org.apache.drill.exec.expr.fn.impl.StringFunctionHelpers.toStringFromUTF8
+                  (in.start, in.end, in.buffer).getBytes();
+          if (!filter.isPresent(buf)) {
+            filter.add(buf);
+          } else {
+            dups.value++;
+          }
+        }
+      }
+    }
+
+    @Override
+    public void output() {
+      if (work.obj != null) {
+        com.clearspring.analytics.stream.membership.BloomFilter filter =
+                (com.clearspring.analytics.stream.membership.BloomFilter ) work.obj;
+        out.isSet = 1;
+        out.value = dups.value;
+      } else {
+        out.isSet = 0;
+      }
+    }
+
+    @Override
+    public void reset() {
+      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
     }
   }
 }

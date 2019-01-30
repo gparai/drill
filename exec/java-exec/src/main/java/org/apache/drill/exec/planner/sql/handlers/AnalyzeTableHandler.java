@@ -146,7 +146,7 @@ public class AnalyzeTableHandler extends DefaultSqlHandler {
       }
     }
     // Convert the query to Drill Logical plan and insert a writer operator on top.
-    DrillRel drel = convertToDrel(relScan, drillSchema, tableName);
+    DrillRel drel = convertToDrel(relScan, drillSchema, tableName, sqlAnalyzeTable.getPercent());
     Prel prel = convertToPrel(drel, validatedRowType);
     logAndSetTextPlan("Drill Physical", prel, logger);
     PhysicalOperator pop = convertToPop(prel);
@@ -214,7 +214,8 @@ public class AnalyzeTableHandler extends DefaultSqlHandler {
   }
 
   /* Converts to Drill logical plan */
-  protected DrillRel convertToDrel(RelNode relNode, AbstractSchema schema, String analyzeTableName)
+  protected DrillRel convertToDrel(RelNode relNode, AbstractSchema schema, String analyzeTableName,
+      double samplePercent)
       throws RelConversionException, SqlUnsupportedException {
     DrillRel convertedRelNode = convertToRawDrel(relNode);
 
@@ -248,7 +249,8 @@ public class AnalyzeTableHandler extends DefaultSqlHandler {
     final RelNode analyzeRel = new DrillAnalyzeRel(
         convertedRelNode.getCluster(),
         convertedRelNode.getTraitSet(),
-        convertedRelNode
+        convertedRelNode,
+        (samplePercent/100.0)
     );
 
     final RelNode writerRel = new DrillWriterRel(
@@ -277,9 +279,9 @@ public class AnalyzeTableHandler extends DefaultSqlHandler {
           .build(logger);
     }
 
-    if (analyzeTable.getPercent() != 100) {
+    if (analyzeTable.getPercent() <= 0 && analyzeTable.getPercent() > 100.0) {
       throw UserException.unsupportedError()
-          .message("Statistics from sampling is not yet supported.")
+          .message("Valid sampling percent between 0-100 is not specified.")
           .build(logger);
     }
   }

@@ -45,8 +45,8 @@ public class AvgWidthMergedStatistic extends AbstractMergedStatistic {
   }
 
   @Override
-  public void initialize(String inputName) {
-    super.initialize(Statistic.AVG_WIDTH, inputName);
+  public void initialize(String inputName, double percent) {
+    super.initialize(Statistic.AVG_WIDTH, inputName, percent);
     state = State.CONFIG;
   }
 
@@ -84,7 +84,7 @@ public class AvgWidthMergedStatistic extends AbstractMergedStatistic {
       throw new IllegalStateException(
           String.format("Statistic `%s` has not completed merging statistics", name));
     }
-    return sumHolder.get(colName)/getRowCount(colName);
+    return sumHolder.get(colName)/(percent*getRowCount(colName));
   }
 
   @Override
@@ -101,7 +101,7 @@ public class AvgWidthMergedStatistic extends AbstractMergedStatistic {
       // take up space. For fixed-length columns NULL values take up space.
       if (sumHolder.get(colName) != null
           && getRowCount(colName) > 0) {
-        vv.getMutator().setSafe(0, sumHolder.get(colName) / getRowCount(colName));
+        vv.getMutator().setSafe(0, sumHolder.get(colName)/(percent*getRowCount(colName)));
       } else {
         vv.getMutator().setNull(0);
       }
