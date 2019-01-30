@@ -39,4 +39,6 @@ public abstract class Statistic {
   public static final String HLL = "hll";
   public static final String AVG_WIDTH = "avg_width";
   public static final String SUM_WIDTH = "sum_width";
+  public static final String CNT_DUPS = "approx_count_dups";
+  public static final String SUM_DUPS = "sum";
 }

@@ -34,6 +34,7 @@ public class MergedStatisticFactory {
     statsClasses.put(Statistic.AVG_WIDTH, AvgWidthMergedStatistic.class);
     statsClasses.put(Statistic.HLL_MERGE, HLLMergedStatistic.class);
     statsClasses.put(Statistic.NDV, NDVMergedStatistic.class);
+    statsClasses.put(Statistic.SUM_DUPS, CntDupsMergedStatistic.class);
   }
 
   private MergedStatistic newMergedStatistic(String outputStatName)
@@ -42,13 +43,13 @@ public class MergedStatisticFactory {
     return stat;
   }
 
-  public static MergedStatistic getMergedStatistic(String outputStatName, String inputStatName) {
+  public static MergedStatistic getMergedStatistic(String outputStatName, String inputStatName, double percent) {
     try {
       MergedStatistic statistic = instance.newMergedStatistic(outputStatName);
       if (statistic == null) {
         throw new IllegalArgumentException("No implementation found for " + outputStatName);
       } else {
-        statistic.initialize(inputStatName);
+        statistic.initialize(inputStatName, percent);
         return statistic;
       }
     } catch (InstantiationException ex) {

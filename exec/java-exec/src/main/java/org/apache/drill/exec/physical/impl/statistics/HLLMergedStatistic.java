@@ -42,8 +42,8 @@ public class HLLMergedStatistic extends AbstractMergedStatistic {
   }
 
   @Override
-  public void initialize(String inputName) {
-    super.initialize(Statistic.HLL_MERGE, inputName);
+  public void initialize(String inputName, double percent) {
+    super.initialize(Statistic.HLL_MERGE, inputName, percent);
     state = State.CONFIG;
   }
 

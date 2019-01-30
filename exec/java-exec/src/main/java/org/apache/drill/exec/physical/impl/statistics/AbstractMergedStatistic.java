@@ -22,15 +22,17 @@ import org.apache.drill.exec.vector.complex.MapVector;
 public abstract class AbstractMergedStatistic extends Statistic implements MergedStatistic {
   protected String name;
   protected String inputName;
+  protected double percent;
   protected State state;
 
-  public void initialize(String name, String inputName) {
+  public void initialize(String name, String inputName, double percent) {
     this.name = name;
     this.inputName = inputName;
+    this.percent = percent;
   }
 
   @Override
-  public abstract void initialize(String inputName);
+  public abstract void initialize(String inputName, double percent);
 
   @Override
   public abstract String getName();

@@ -34,8 +34,8 @@ public class NNStatCountMergedStatistic extends AbstractMergedStatistic {
   }
 
   @Override
-  public void initialize(String inputName) {
-    super.initialize(Statistic.NNROWCOUNT, inputName);
+  public void initialize(String inputName, double percent) {
+    super.initialize(Statistic.NNROWCOUNT, inputName, percent);
     state = State.MERGE;
   }
 
@@ -73,7 +73,7 @@ public class NNStatCountMergedStatistic extends AbstractMergedStatistic {
       throw new IllegalStateException(String.format("Statistic `%s` has not completed merging statistics",
           name));
     }
-    return sumHolder.get(colName);
+    return (long)(sumHolder.get(colName)/percent);
   }
 
   @Override
@@ -85,7 +85,7 @@ public class NNStatCountMergedStatistic extends AbstractMergedStatistic {
       NullableBigIntVector vv = (NullableBigIntVector) outMapCol;
       vv.allocateNewSafe();
       if (sumHolder.get(colName) != null) {
-        vv.getMutator().setSafe(0, sumHolder.get(colName));
+        vv.getMutator().setSafe(0, (long)(sumHolder.get(colName)/percent));
       } else {
         vv.getMutator().setNull(0);
       }

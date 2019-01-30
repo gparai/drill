@@ -92,11 +92,14 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
   private int schema = 0;
   private int recordCount = 0;
   private List<String> columnsList = null;
+  private double percent = 100;
   private List<MergedStatistic> mergedStatisticList = null;
+
   public StatisticsMergeBatch(StatisticsMerge popConfig, RecordBatch incoming,
       FragmentContext context) throws OutOfMemoryException {
     super(popConfig, context, incoming);
     functions = popConfig.getFunctions();
+    percent = popConfig.getPercent();
     mergedStatisticList = new ArrayList<>();
   }
 
@@ -191,7 +194,7 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
       for (String outputStatName : functions.keySet()) {
         if (functions.get(outputStatName).equals(vw.getField().getName())) {
           mergedStatisticList.add(MergedStatisticFactory.getMergedStatistic(outputStatName,
-              functions.get(outputStatName)));
+              functions.get(outputStatName), percent));
         }
       }
     }
@@ -204,6 +207,8 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
             new NDVMergedStatistic.NDVConfiguration(context.getOptions(),
                 mergedStatisticList);
         ((NDVMergedStatistic)statistic).configure(config);
+      } else if (statistic.getName().equals(Statistic.SUM_DUPS)) {
+        ((CntDupsMergedStatistic)statistic).configure(mergedStatisticList);
       } else if (statistic.getName().equals(Statistic.HLL_MERGE)) {
         ((HLLMergedStatistic)statistic).configure(context.getOptions());
       }

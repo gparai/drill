@@ -17,22 +17,25 @@
  */
 package org.apache.drill.exec.planner.physical;
 
-import org.apache.drill.shaded.guava.com.google.common.collect.ImmutableList;
-import org.apache.drill.shaded.guava.com.google.common.collect.ImmutableMap;
-import org.apache.drill.shaded.guava.com.google.common.collect.Lists;
-import org.apache.drill.shaded.guava.com.google.common.collect.Maps;
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.SingleRel;
+import org.apache.calcite.rex.RexBuilder;
+import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.drill.exec.physical.impl.statistics.Statistic;
 import org.apache.drill.exec.planner.logical.DrillAnalyzeRel;
 import org.apache.drill.exec.planner.logical.DrillRel;
 import org.apache.drill.exec.planner.logical.RelOptHelper;
-
-import java.util.List;
-import java.util.Map;
+import org.apache.drill.shaded.guava.com.google.common.collect.ImmutableList;
+import org.apache.drill.shaded.guava.com.google.common.collect.Lists;
+import org.apache.drill.shaded.guava.com.google.common.collect.Maps;
 
 public class AnalyzePrule extends Prule {
 
@@ -41,30 +44,41 @@ public class AnalyzePrule extends Prule {
   private static final List<String> PHASE_1_FUNCTIONS = ImmutableList.of(
       Statistic.ROWCOUNT,    // total number of entries in table fragment
       Statistic.NNROWCOUNT,  // total number of non-null entries in table fragment
-      Statistic.SUM_WIDTH,    // total column width across all entries in table fragment
-      Statistic.HLL           // total distinct values in table fragment
+      Statistic.SUM_WIDTH,   // total column width across all entries in table fragment
+      Statistic.CNT_DUPS,    // total count of non-singletons in table fragment
+      Statistic.HLL          // total distinct values in table fragment
     );
   // Mapping between output functions (from StatsMergeBatch) and
   // input functions (from StatsAggBatch)
-  private static final Map<String, String> PHASE_2_FUNCTIONS = ImmutableMap.of(
+  private static Map<String, String> PHASE_2_FUNCTIONS = new HashMap<>();
+  /*ImmutableMap.of(
       Statistic.ROWCOUNT,    // total number of entries in the table (merged)
       Statistic.ROWCOUNT,    // total number of entries in the table
       Statistic.NNROWCOUNT,  // total number of non-null entries in the table
       Statistic.NNROWCOUNT,  // total number of non-null entries in the table (merged)
-      Statistic.AVG_WIDTH,    // average column width across all entries in the table (merged)
-      Statistic.SUM_WIDTH,    // total column width across all entries in table
-      Statistic.HLL_MERGE,    // total distinct values(computed using hll) in the table (merged)
-      Statistic.HLL,          // total distinct values in table
-      Statistic.NDV,          // total distinct values across all entries in the table (merged)
-      Statistic.HLL           // total distinct values in table fragment
-    );
+      Statistic.AVG_WIDTH,   // average column width across all entries in the table (merged)
+      Statistic.SUM_WIDTH,   // total column width across all entries in table
+      Statistic.HLL_MERGE,   // total distinct values(computed using hll) in the table (merged)
+      Statistic.HLL,         // total distinct values in table
+      Statistic.NDV,         // total distinct values across all entries in the table (merged)
+      Statistic.HLL          // total distinct values in table fragment
+    );*/
+  static {
+    PHASE_2_FUNCTIONS.put(Statistic.ROWCOUNT, Statistic.ROWCOUNT);
+    PHASE_2_FUNCTIONS.put(Statistic.NNROWCOUNT, Statistic.NNROWCOUNT);
+    PHASE_2_FUNCTIONS.put(Statistic.AVG_WIDTH, Statistic.SUM_WIDTH);
+    PHASE_2_FUNCTIONS.put(Statistic.SUM_DUPS, Statistic.CNT_DUPS);
+    PHASE_2_FUNCTIONS.put(Statistic.HLL_MERGE, Statistic.HLL);
+    PHASE_2_FUNCTIONS.put(Statistic.NDV, Statistic.HLL);
+  }
   // List of input functions (from StatsMergeBatch) to UnpivotMapsBatch
   private static final List<String> UNPIVOT_FUNCTIONS = ImmutableList.of(
       Statistic.ROWCOUNT,    // total number of entries in the table
       Statistic.NNROWCOUNT,  // total number of non-null entries in the table
-      Statistic.AVG_WIDTH,    // average column width across all entries in the table
-      Statistic.HLL_MERGE,    // total distinct values(computed using hll) in the table
-      Statistic.NDV           // total distinct values across all entries in the table
+      Statistic.AVG_WIDTH,   // average column width across all entries in the table
+      Statistic.HLL_MERGE,   // total distinct values(computed using hll) in the table
+      Statistic.SUM_DUPS,    // total count of duplicate values across all entries in the table
+      Statistic.NDV          // total distinct values across all entries in the table
   );
 
   public AnalyzePrule() {
@@ -84,7 +98,7 @@ public class AnalyzePrule extends Prule {
     // Writer<-Unpivot<-StatsAgg(Phase2)<-Exchange<-StatsAgg(Phase1)<-Scan
     final RelTraitSet traits = input.getTraitSet().plus(Prel.DRILL_PHYSICAL).
         plus(DrillDistributionTrait.DEFAULT);
-    final RelNode convertedInput = convert(input, traits);
+    RelNode convertedInput = convert(input, traits);
 
     final List<String> mapFields1 = Lists.newArrayList(PHASE_1_FUNCTIONS);
     final Map<String, String> mapFields2 = Maps.newHashMap(PHASE_2_FUNCTIONS);
@@ -97,12 +111,21 @@ public class AnalyzePrule extends Prule {
     mapFields3.add(1, Statistic.COLTYPE);
     // Now generate the two phase plan physical operators bottom-up:
     // STATSAGG->EXCHANGE->STATSMERGE->UNPIVOT
+    if (analyze.getPercent() < 1.0) {
+      // If a sample percent is specified add a filter for Bernoulli sampling
+      RexBuilder builder = convertedInput.getCluster().getRexBuilder();
+      RexNode sampleCondition = builder.makeCall(SqlStdOperatorTable.LESS_THAN_OR_EQUAL,
+          builder.makeCall(SqlStdOperatorTable.RAND),
+          builder.makeExactLiteral(BigDecimal.valueOf(analyze.getPercent())));
+      convertedInput = new FilterPrel(convertedInput.getCluster(), convertedInput.getTraitSet(),
+              convertedInput, sampleCondition);
+    }
     final StatsAggPrel statsAggPrel = new StatsAggPrel(analyze.getCluster(), traits,
         convertedInput, PHASE_1_FUNCTIONS);
     UnionExchangePrel exch = new UnionExchangePrel(statsAggPrel.getCluster(), singleDistTrait,
         statsAggPrel);
     final StatsMergePrel statsMergePrel = new StatsMergePrel(exch.getCluster(), singleDistTrait,
-        exch, mapFields2);
+        exch, mapFields2, analyze.getPercent());
     newAnalyze = new UnpivotMapsPrel(statsMergePrel.getCluster(), singleDistTrait, statsMergePrel,
         mapFields3);
     call.transformTo(newAnalyze);

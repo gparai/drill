@@ -136,7 +136,8 @@ public class JsonStatisticsRecordWriter extends JSONBaseStatisticsRecordWriter {
       } else if (fieldName.equals(Statistic.ROWCOUNT)
             || fieldName.equals(Statistic.NNROWCOUNT)
             || fieldName.equals(Statistic.NDV)
-            || fieldName.equals(Statistic.AVG_WIDTH)) {
+            || fieldName.equals(Statistic.AVG_WIDTH)
+            || fieldName.equals(Statistic.SUM_DUPS)) {
         nextField = fieldName;
       }
     }
@@ -157,6 +158,8 @@ public class JsonStatisticsRecordWriter extends JSONBaseStatisticsRecordWriter {
         ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setNdv(reader.readLong());
       } else if (nextField.equals(Statistic.AVG_WIDTH)) {
         ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setAvgWidth(reader.readLong());
+      } else if (nextField.equals(Statistic.SUM_DUPS)) {
+        // Ignore Count_Approx_Dups statistic
       }
     }
 
@@ -296,7 +299,8 @@ public class JsonStatisticsRecordWriter extends JSONBaseStatisticsRecordWriter {
       if (!skipNullFields || this.reader.isSet()) {
         if (fieldName.equals(Statistic.ROWCOUNT)
             || fieldName.equals(Statistic.NNROWCOUNT)
-            || fieldName.equals(Statistic.NDV)) {
+            || fieldName.equals(Statistic.NDV)
+            || fieldName.equals(Statistic.SUM_DUPS)) {
           nextField = fieldName;
         }
       }
@@ -315,6 +319,8 @@ public class JsonStatisticsRecordWriter extends JSONBaseStatisticsRecordWriter {
           ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setNonNullCount(reader.readLong());
         } else if (nextField.equals(Statistic.NDV)) {
           ((DrillStatsTable.ColumnStatistics_v1) columnStatistics).setNdv(reader.readLong());
+        } else if (nextField.equals(Statistic.SUM_DUPS)) {
+          // Ignore Count_Approx_Dups statistic
         }
       }
     }

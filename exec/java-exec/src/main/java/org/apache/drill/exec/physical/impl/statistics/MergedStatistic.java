@@ -30,8 +30,9 @@ public interface MergedStatistic {
   /** Initialize the merged statistic
    *
    *  @param inputName - the input {@link StatisticsAggBatch} statistic for this merged statistic
+   *  @param percent - the sample percent to use for extrapolation post merge
    */
-  void initialize(String inputName);
+  void initialize(String inputName, double percent);
 
   /** Gets the name of the merged statistic
    *
