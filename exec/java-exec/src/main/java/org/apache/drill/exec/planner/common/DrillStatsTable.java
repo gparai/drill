@@ -92,14 +92,14 @@ public class DrillStatsTable {
    */
   public boolean isMaterialized() { return materialized; }
   /**
-   * Get number of distinct values of given column. If stats are not present for the given column,
-   * a null is returned.
+   * Get the approximate number of distinct values of given column. If stats are not present for the
+   * given column, a null is returned.
    *
-   * Note: returned data may not be accurate. Accuracy depends on whether the table data has changed after the
-   * stats are computed.
+   * Note: returned data may not be accurate. Accuracy depends on whether the table data has changed
+   * after the stats are computed.
    *
-   * @param col
-   * @return
+   * @param col - column for which approximate count distinct is desired
+   * @return approximate count distinct of the column, if available. NULL otherwise.
    */
   public Double getNdv(String col) {
     // Stats might not have materialized because of errors.
@@ -124,7 +124,7 @@ public class DrillStatsTable {
    * Note: returned data may not be accurate. Accuracy depends on whether the table data has
    * changed after the stats are computed.
    *
-   * @return
+   * @return rowcount for the table, if available. NULL otherwise.
    */
   public Double getRowCount() {
     // Stats might not have materialized because of errors.
@@ -147,9 +147,9 @@ public class DrillStatsTable {
     // Deserialize statistics from JSON
     try {
       this.statistics = readStatistics(table, tablePath);
-      //Handle based on the statistics version read from the file
+      // Handle based on the statistics version read from the file
       if (statistics instanceof Statistics_v0) {
-        //Do nothing
+        // Do nothing
       } else if (statistics instanceof Statistics_v1) {
         for (DirectoryStatistics_v1 ds : ((Statistics_v1) statistics).getDirectoryStatistics()) {
           for (ColumnStatistics_v1 cs : ds.getColumnStatistics()) {
@@ -361,13 +361,9 @@ public class DrillStatsTable {
       FormatSelection formatSelection = (FormatSelection) selection;
       FormatPluginConfig formatConfig = formatSelection.getFormat();
 
-      //if ((formatConfig instanceof ParquetFormatConfig)
-      //    || ((formatConfig instanceof NamedFormatPluginConfig)
-      //    && ((NamedFormatPluginConfig) formatConfig).name.equals("parquet")))
-      //    || formatConfig instanceof MapRDBFormatPluginConfig
       if (storagePlugin instanceof FileSystemPlugin
           && (formatConfig instanceof ParquetFormatConfig)) {
-        FormatPlugin fmtPlugin = ((FileSystemPlugin) storagePlugin).getFormatPlugin(formatConfig);
+        FormatPlugin fmtPlugin = storagePlugin.getFormatPlugin(formatConfig);
         if (fmtPlugin.supportsStatistics()) {
           return fmtPlugin.readStatistics(fs, path);
         }
@@ -378,13 +374,13 @@ public class DrillStatsTable {
 
   public static TableStatistics generateDirectoryStructure(String dirComputedTime,
       List<ColumnStatistics> columnStatisticsList) {
-    //TODO: Split up columnStatisticsList() based on directory names. We assume only
-    //one directory right now but this WILL change in the future
-    //HashMap<String, Boolean> dirNames = new HashMap<String, Boolean>();
+    // TODO: Split up columnStatisticsList() based on directory names. We assume only
+    // one directory right now but this WILL change in the future
+    // HashMap<String, Boolean> dirNames = new HashMap<String, Boolean>();
     TableStatistics statistics = new Statistics_v1();
     List<DirectoryStatistics_v1> dirStats = new ArrayList<DirectoryStatistics_v1>();
     List<ColumnStatistics_v1> columnStatisticsV1s = new ArrayList<DrillStatsTable.ColumnStatistics_v1>();
-    //Create dirStats
+    // Create dirStats
     DirectoryStatistics_v1 dirStat = new DirectoryStatistics_v1();
     // Add columnStats corresponding to this dirStats
     for (ColumnStatistics colStats : columnStatisticsList) {
@@ -392,9 +388,9 @@ public class DrillStatsTable {
     }
     dirStat.setComputedTime(dirComputedTime);
     dirStat.setColumnStatistics(columnStatisticsV1s);
-    //Add this dirStats to the list of dirStats
+    // Add this dirStats to the list of dirStats
     dirStats.add(dirStat);
-    //Add list of dirStats to tableStats
+    // Add list of dirStats to tableStats
     ((Statistics_v1) statistics).setDirectoryStatistics(dirStats);
     return statistics;
   }
@@ -419,7 +415,7 @@ public class DrillStatsTable {
    */
   public static ObjectMapper getMapper() {
     ObjectMapper mapper = new ObjectMapper();
-    SimpleModule deModule = new SimpleModule("StatisticsSerDeModule") //
+    SimpleModule deModule = new SimpleModule("StatisticsSerDeModule")
         .addSerializer(TypeProtos.MajorType.class, new MajorTypeSerDe.Se())
         .addDeserializer(TypeProtos.MajorType.class, new MajorTypeSerDe.De());
     mapper.registerModule(deModule);

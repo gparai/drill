@@ -29,8 +29,8 @@ public class ColumnMergedStatistic extends AbstractMergedStatistic {
   }
 
   @Override
-  public void initialize(String inputName, double percent) {
-    super.initialize(Statistic.COLNAME, inputName, percent);
+  public void initialize(String inputName, double samplePercent) {
+    super.initialize(Statistic.COLNAME, inputName, samplePercent);
     state = State.MERGE;
   }
 

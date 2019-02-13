@@ -921,6 +921,14 @@ public final class ExecConstants {
       new OptionDescription("Controls trade-off between NDV statistic computation memory cost and accuracy"));
 
   /**
+   * Option whose value is a boolean value representing whether to perform deterministic sampling. It translates to using
+   * the same (pre-defined) seed for the underlying pseudo-random number generator.
+   */
+  public static final String DETERMINISTIC_SAMPLING = "exec.statistics.deterministic_sampling";
+  public static final BooleanValidator DETERMINISTIC_SAMPLING_VALIDATOR = new BooleanValidator(DETERMINISTIC_SAMPLING,
+      new OptionDescription("Deterministic sampling"));
+
+  /**
    * Option whose value is a long value representing the expected number of elements in the bloom filter. The bloom filter
    * computes the number of duplicates which is used for extrapolating the NDV when using sampling. Controls the trade-off
    * between accuracy and memory requirements. The number of elements correlates positively with accuracy.

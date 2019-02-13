@@ -221,1352 +221,6 @@ public class StatisticsAggrFunctions {
     }
   }
 
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class BitNDVFunction implements DrillAggFunc {
-    @Param
-    BitHolder in;
-    @Workspace
-    ObjectHolder work;
-    @Output NullableBigIntHolder out;
-    @Inject OptionManager options;
-    @Workspace IntHolder hllAccuracy;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-      work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(1000000, 0.10);
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        hll.offer(in.value);
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class NullableBitNDVFunction implements DrillAggFunc {
-    @Param
-    NullableBitHolder in;
-    @Workspace
-    ObjectHolder work;
-    @Output NullableBigIntHolder out;
-    @Inject OptionManager options;
-    @Workspace IntHolder hllAccuracy;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        if (in.isSet == 1) {
-          hll.offer(in.value);
-        } else {
-          hll.offer(null);
-        }
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class IntNDVFunction implements DrillAggFunc {
-    @Param
-    IntHolder in;
-    @Workspace
-    ObjectHolder work;
-    @Output
-    NullableBigIntHolder out;
-    @Inject OptionManager options;
-    @Workspace IntHolder hllAccuracy;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        hll.offer(in.value);
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class NullableIntNDVFunction implements DrillAggFunc {
-    @Param
-    NullableIntHolder in;
-    @Workspace
-    ObjectHolder work;
-    @Output
-    NullableBigIntHolder out;
-    @Inject OptionManager options;
-    @Workspace IntHolder hllAccuracy;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        if (in.isSet == 1) {
-          hll.offer(in.value);
-        } else {
-          hll.offer(null);
-        }
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class BigIntNDVFunction implements DrillAggFunc {
-    @Param
-    BigIntHolder in;
-    @Workspace
-    ObjectHolder work;
-    @Output
-    NullableBigIntHolder out;
-    @Inject OptionManager options;
-    @Workspace IntHolder hllAccuracy;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        hll.offer(in.value);
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class NullableBigIntNDVFunction implements DrillAggFunc {
-    @Param
-    NullableBigIntHolder in;
-    @Workspace
-    ObjectHolder work;
-    @Output
-    NullableBigIntHolder out;
-    @Inject OptionManager options;
-    @Workspace IntHolder hllAccuracy;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        if (in.isSet == 1) {
-          hll.offer(in.value);
-        } else {
-          hll.offer(null);
-        }
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class Float4NDVFunction implements DrillAggFunc {
-    @Param
-    Float4Holder in;
-    @Workspace
-    ObjectHolder work;
-    @Output
-    NullableBigIntHolder out;
-    @Inject OptionManager options;
-    @Workspace IntHolder hllAccuracy;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        hll.offer(in.value);
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class NullableFloat4NDVFunction implements DrillAggFunc {
-    @Param
-    NullableFloat4Holder in;
-    @Workspace
-    ObjectHolder work;
-    @Output
-    NullableBigIntHolder out;
-    @Inject OptionManager options;
-    @Workspace IntHolder hllAccuracy;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        if (in.isSet == 1) {
-          hll.offer(in.value);
-        } else {
-          hll.offer(null);
-        }
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class Float8NDVFunction implements DrillAggFunc {
-    @Param
-    Float8Holder in;
-    @Workspace
-    ObjectHolder work;
-    @Output
-    NullableBigIntHolder out;
-    @Inject OptionManager options;
-    @Workspace IntHolder hllAccuracy;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        hll.offer(in.value);
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class NullableFloat8NDVFunction implements DrillAggFunc {
-    @Param
-    NullableFloat8Holder in;
-    @Workspace
-    ObjectHolder work;
-    @Output
-    NullableBigIntHolder out;
-    @Inject OptionManager options;
-    @Workspace IntHolder hllAccuracy;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        if (in.isSet == 1) {
-          hll.offer(in.value);
-        } else {
-          hll.offer(null);
-        }
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class Decimal9NDVFunction implements DrillAggFunc {
-    @Param
-    Decimal9Holder in;
-    @Workspace
-    ObjectHolder work;
-    @Output
-    NullableBigIntHolder out;
-    @Inject OptionManager options;
-    @Workspace IntHolder hllAccuracy;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        hll.offer(in.value);
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class NullableDecimal9NDVFunction implements DrillAggFunc {
-    @Param
-    NullableDecimal9Holder in;
-    @Workspace
-    ObjectHolder work;
-    @Output
-    NullableBigIntHolder out;
-    @Inject OptionManager options;
-    @Workspace IntHolder hllAccuracy;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        if (in.isSet == 1) {
-          hll.offer(in.value);
-        } else {
-          hll.offer(null);
-        }
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class Decimal18NDVFunction implements DrillAggFunc {
-    @Param
-    Decimal18Holder in;
-    @Workspace
-    ObjectHolder work;
-    @Output
-    NullableBigIntHolder out;
-    @Inject OptionManager options;
-    @Workspace IntHolder hllAccuracy;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        hll.offer(in.value);
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class NullableDecimal18NDVFunction implements DrillAggFunc {
-    @Param
-    NullableDecimal18Holder in;
-    @Workspace
-    ObjectHolder work;
-    @Output
-    NullableBigIntHolder out;
-    @Inject OptionManager options;
-    @Workspace IntHolder hllAccuracy;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        if (in.isSet == 1) {
-          hll.offer(in.value);
-        } else {
-          hll.offer(null);
-        }
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class DateNDVFunction implements DrillAggFunc {
-    @Param
-    DateHolder in;
-    @Workspace
-    ObjectHolder work;
-    @Output
-    NullableBigIntHolder out;
-    @Inject OptionManager options;
-    @Workspace IntHolder hllAccuracy;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        hll.offer(in.value);
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class NullableDateNDVFunction implements DrillAggFunc {
-    @Param
-    NullableDateHolder in;
-    @Workspace
-    ObjectHolder work;
-    @Output
-    NullableBigIntHolder out;
-    @Inject OptionManager options;
-    @Workspace IntHolder hllAccuracy;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        if (in.isSet == 1) {
-          hll.offer(in.value);
-        } else {
-          hll.offer(null);
-        }
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class TimeNDVFunction implements DrillAggFunc {
-    @Param
-    TimeHolder in;
-    @Workspace
-    ObjectHolder work;
-    @Output
-    NullableBigIntHolder out;
-    @Inject OptionManager options;
-    @Workspace IntHolder hllAccuracy;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        hll.offer(in.value);
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class NullableTimeNDVFunction implements DrillAggFunc {
-    @Param
-    NullableTimeHolder in;
-    @Workspace
-    ObjectHolder work;
-    @Output
-    NullableBigIntHolder out;
-    @Inject OptionManager options;
-    @Workspace IntHolder hllAccuracy;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        if (in.isSet == 1) {
-          hll.offer(in.value);
-        } else {
-          hll.offer(null);
-        }
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class TimeStampNDVFunction implements DrillAggFunc {
-    @Param
-    TimeStampHolder in;
-    @Workspace
-    ObjectHolder work;
-    @Output
-    NullableBigIntHolder out;
-    @Inject OptionManager options;
-    @Workspace IntHolder hllAccuracy;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        hll.offer(in.value);
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class NullableTimeStampNDVFunction implements DrillAggFunc {
-    @Param
-    NullableTimeStampHolder in;
-    @Workspace
-    ObjectHolder work;
-    @Output
-    NullableBigIntHolder out;
-    @Inject OptionManager options;
-    @Workspace IntHolder hllAccuracy;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        if (in.isSet == 1) {
-          hll.offer(in.value);
-        } else {
-          hll.offer(null);
-        }
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class IntervalNDVFunction implements DrillAggFunc {
-    @Param
-    IntervalHolder in;
-    @Workspace
-    ObjectHolder work;
-    @Workspace
-    ObjectHolder interval;
-    @Output
-    NullableBigIntHolder out;
-    @Inject OptionManager options;
-    @Workspace IntHolder hllAccuracy;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      interval = new ObjectHolder();
-      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-      interval.obj = new int[3];
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null
-              && interval.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        ((int[])interval.obj)[0] = in.days;
-        ((int[])interval.obj)[1] = in.months;
-        ((int[])interval.obj)[2] = in.milliseconds;
-        hll.offer(interval.obj);
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-      interval.obj = new int[3];
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class NullableIntervalNDVFunction implements DrillAggFunc {
-    @Param
-    NullableIntervalHolder in;
-    @Workspace
-    ObjectHolder work;
-    @Workspace
-    ObjectHolder interval;
-    @Output
-    NullableBigIntHolder out;
-    @Inject OptionManager options;
-    @Workspace IntHolder hllAccuracy;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      interval = new ObjectHolder();
-      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-      interval.obj = new int[3];
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        if (in.isSet == 1) {
-          if (interval.obj != null) {
-            ((int[]) interval.obj)[0] = in.days;
-            ((int[]) interval.obj)[1] = in.months;
-            ((int[]) interval.obj)[2] = in.milliseconds;
-            hll.offer(interval.obj);
-          }
-        } else {
-          hll.offer(null);
-        }
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-      interval.obj = new int[3];
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class VarCharNDVFunction implements DrillAggFunc {
-    @Param
-    VarCharHolder in;
-    @Workspace
-    ObjectHolder work;
-    @Output
-    NullableBigIntHolder out;
-    @Inject OptionManager options;
-    @Workspace IntHolder hllAccuracy;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        byte[] buf = org.apache.drill.exec.expr.fn.impl.StringFunctionHelpers.toStringFromUTF8(
-                in.start, in.end, in.buffer).getBytes();
-        hll.offer(buf);
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class NullableVarCharNDVFunction implements DrillAggFunc {
-    @Param
-    NullableVarCharHolder in;
-    @Workspace
-    ObjectHolder work;
-    @Output
-    NullableBigIntHolder out;
-    @Inject OptionManager options;
-    @Workspace IntHolder hllAccuracy;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        if (in.isSet == 1) {
-          byte[] buf = org.apache.drill.exec.expr.fn.impl.StringFunctionHelpers.toStringFromUTF8(
-                  in.start, in.end, in.buffer).getBytes();
-          hll.offer(buf);
-        } else {
-          hll.offer(null);
-        }
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class Var16CharNDVFunction implements DrillAggFunc {
-    @Param
-    Var16CharHolder in;
-    @Workspace
-    ObjectHolder work;
-    @Output
-    NullableBigIntHolder out;
-    @Inject OptionManager options;
-    @Workspace IntHolder hllAccuracy;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        byte[] buf = org.apache.drill.exec.expr.fn.impl.StringFunctionHelpers.toStringFromUTF16
-                (in.start, in.end, in.buffer).getBytes();
-        hll.offer(buf);
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class NullableVar16CharNDVFunction implements DrillAggFunc {
-    @Param
-    NullableVar16CharHolder in;
-    @Workspace
-    ObjectHolder work;
-    @Output
-    NullableBigIntHolder out;
-    @Inject OptionManager options;
-    @Workspace IntHolder hllAccuracy;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        if (in.isSet == 1) {
-          byte[] buf = org.apache.drill.exec.expr.fn.impl.StringFunctionHelpers.toStringFromUTF16
-                  (in.start, in.end, in.buffer).getBytes();
-          hll.offer(buf);
-        } else {
-          hll.offer(null);
-        }
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class VarBinaryNDVFunction implements DrillAggFunc {
-    @Param
-    VarBinaryHolder in;
-    @Workspace
-    ObjectHolder work;
-    @Output
-    NullableBigIntHolder out;
-    @Inject OptionManager options;
-    @Workspace IntHolder hllAccuracy;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        byte[] buf = org.apache.drill.exec.expr.fn.impl.StringFunctionHelpers.toStringFromUTF8
-                (in.start, in.end, in.buffer).getBytes();
-        hll.offer(buf);
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-  }
-
-  @FunctionTemplate(name = "ndv", scope = FunctionTemplate.FunctionScope.POINT_AGGREGATE)
-  public static class NullableVarBinaryNDVFunction implements DrillAggFunc {
-    @Param
-    NullableVarBinaryHolder in;
-    @Workspace
-    ObjectHolder work;
-    @Output
-    NullableBigIntHolder out;
-    @Inject OptionManager options;
-    @Workspace IntHolder hllAccuracy;
-
-    @Override
-    public void setup() {
-      work = new ObjectHolder();
-      hllAccuracy.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.HLL_ACCURACY);
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-
-    @Override
-    public void add() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        if (in.isSet == 1) {
-          byte[] buf = org.apache.drill.exec.expr.fn.impl.StringFunctionHelpers.toStringFromUTF8
-                  (in.start, in.end, in.buffer).getBytes();
-          hll.offer(buf);
-        } else {
-          hll.offer(null);
-        }
-      }
-    }
-
-    @Override
-    public void output() {
-      if (work.obj != null) {
-        com.clearspring.analytics.stream.cardinality.HyperLogLog hll =
-                (com.clearspring.analytics.stream.cardinality.HyperLogLog) work.obj;
-        out.isSet = 1;
-        out.value = hll.cardinality();
-      } else {
-        out.isSet = 0;
-      }
-    }
-
-    @Override
-    public void reset() {
-      work.obj = new com.clearspring.analytics.stream.cardinality.HyperLogLog(hllAccuracy.value);
-    }
-  }
-
   /**
    * The log2m parameter defines the accuracy of the counter.  The larger the log2m the better the accuracy where:
    * accuracy = 1.04/sqrt(2^log2m)
@@ -5530,6 +4184,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
+      dups.value = 0;
       ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
       ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
@@ -5562,6 +4217,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
+      dups.value = 0;
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
     }
   }
@@ -5581,6 +4237,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
+      dups.value = 0;
       ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
       ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
@@ -5615,6 +4272,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
+      dups.value = 0;
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
     }
   }
@@ -5635,6 +4293,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
+      dups.value = 0;
       ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
       ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
@@ -5667,6 +4326,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
+      dups.value = 0;
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
     }
   }
@@ -5687,6 +4347,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
+      dups.value = 0;
       ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
       ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
@@ -5721,6 +4382,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
+      dups.value = 0;
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
     }
   }
@@ -5741,6 +4403,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
+      dups.value = 0;
       ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
       ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
@@ -5773,6 +4436,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
+      dups.value = 0;
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
     }
   }
@@ -5793,6 +4457,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
+      dups.value = 0;
       ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
       ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
@@ -5827,6 +4492,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
+      dups.value = 0;
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
     }
   }
@@ -5847,6 +4513,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
+      dups.value = 0;
       ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
       ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
@@ -5879,6 +4546,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
+      dups.value = 0;
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
     }
   }
@@ -5899,6 +4567,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
+      dups.value = 0;
       ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
       ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
@@ -5933,6 +4602,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
+      dups.value = 0;
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
     }
   }
@@ -5953,6 +4623,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
+      dups.value = 0;
       ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
       ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
@@ -5985,6 +4656,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
+      dups.value = 0;
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
     }
   }
@@ -6005,6 +4677,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
+      dups.value = 0;
       ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
       ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
@@ -6039,6 +4712,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
+      dups.value = 0;
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
     }
   }
@@ -6059,6 +4733,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
+      dups.value = 0;
       ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
       ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
@@ -6091,6 +4766,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
+      dups.value = 0;
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
     }
   }
@@ -6111,6 +4787,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
+      dups.value = 0;
       ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
       ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
@@ -6145,6 +4822,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
+      dups.value = 0;
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
     }
   }
@@ -6165,6 +4843,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
+      dups.value = 0;
       ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
       ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
@@ -6197,6 +4876,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
+      dups.value = 0;
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
     }
   }
@@ -6217,6 +4897,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
+      dups.value = 0;
       ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
       ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
@@ -6251,6 +4932,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
+      dups.value = 0;
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
     }
   }
@@ -6271,6 +4953,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
+      dups.value = 0;
       ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
       ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
@@ -6303,6 +4986,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
+      dups.value = 0;
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
     }
   }
@@ -6323,6 +5007,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
+      dups.value = 0;
       ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
       ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
@@ -6357,6 +5042,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
+      dups.value = 0;
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
     }
   }
@@ -6377,6 +5063,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
+      dups.value = 0;
       ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
       ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
@@ -6409,6 +5096,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
+      dups.value = 0;
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
     }
   }
@@ -6429,6 +5117,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
+      dups.value = 0;
       ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
       ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
@@ -6463,6 +5152,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
+      dups.value = 0;
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
     }
   }
@@ -6483,6 +5173,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
+      dups.value = 0;
       ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
       ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
@@ -6515,6 +5206,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
+      dups.value = 0;
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
     }
   }
@@ -6535,6 +5227,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
+      dups.value = 0;
       ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
       ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
@@ -6569,6 +5262,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
+      dups.value = 0;
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
     }
   }
@@ -6592,6 +5286,7 @@ public class StatisticsAggrFunctions {
     public void setup() {
       work = new ObjectHolder();
       interval = new ObjectHolder();
+      dups.value = 0;
       ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
       ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
@@ -6629,6 +5324,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
+      dups.value = 0;
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
       interval.obj = new int[3];
     }
@@ -6653,6 +5349,7 @@ public class StatisticsAggrFunctions {
     public void setup() {
       work = new ObjectHolder();
       interval = new ObjectHolder();
+      dups.value = 0;
       ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
       ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
@@ -6693,6 +5390,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
+      dups.value = 0;
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
       interval.obj = new int[3];
     }
@@ -6714,6 +5412,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
+      dups.value = 0;
       ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
       ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
@@ -6748,6 +5447,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
+      dups.value = 0;
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
     }
   }
@@ -6768,6 +5468,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
+      dups.value = 0;
       ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
       ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
@@ -6804,6 +5505,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
+      dups.value = 0;
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
     }
   }
@@ -6824,6 +5526,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
+      dups.value = 0;
       ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
       ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
@@ -6858,6 +5561,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
+      dups.value = 0;
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
     }
   }
@@ -6878,6 +5582,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
+      dups.value = 0;
       ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
       ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
@@ -6914,6 +5619,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
+      dups.value = 0;
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
     }
   }
@@ -6934,6 +5640,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
+      dups.value = 0;
       ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
       ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
@@ -6968,6 +5675,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
+      dups.value = 0;
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
     }
   }
@@ -6988,6 +5696,7 @@ public class StatisticsAggrFunctions {
     @Override
     public void setup() {
       work = new ObjectHolder();
+      dups.value = 0;
       ndvBloomFilterElts.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_ELEMENTS);
       ndvBloomFilterFPProb.value = (int) options.getLong(org.apache.drill.exec.ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB);
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
@@ -7024,6 +5733,7 @@ public class StatisticsAggrFunctions {
 
     @Override
     public void reset() {
+      dups.value = 0;
       work.obj = new com.clearspring.analytics.stream.membership.BloomFilter(ndvBloomFilterElts.value, ndvBloomFilterFPProb.value);
     }
   }

@@ -33,8 +33,8 @@ public class ColTypeMergedStatistic extends AbstractMergedStatistic {
   }
 
   @Override
-  public void initialize(String inputName, double percent) {
-    super.initialize(Statistic.COLTYPE, inputName, percent);
+  public void initialize(String inputName, double samplePercent) {
+    super.initialize(Statistic.COLTYPE, inputName, samplePercent);
     state = State.MERGE;
   }
 

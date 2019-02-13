@@ -105,8 +105,7 @@ public class QueryContext implements AutoCloseable, OptimizerRulesContext, Schem
       this.table = drillbitContext.getOperatorTable();
     }
 
-    queryContextInfo = Utilities.createQueryContextInfo(session.getDefaultSchemaPath(), session.getSessionId(),
-        queryOptions);
+    queryContextInfo = Utilities.createQueryContextInfo(session.getDefaultSchemaPath(), session.getSessionId());
 
     contextInformation = new ContextInformation(session.getCredentials(), queryContextInfo);
 

@@ -25,14 +25,14 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 @JsonTypeName("analyze")
 public class Analyze extends SingleInputOperator {
 
-  double percent = 100.0;
+  double samplePercent = 100.0;
 
   @JsonCreator
   public Analyze() { }
 
   @JsonCreator
-  public Analyze(double percent) {
-    this.percent = percent;
+  public Analyze(double samplePercent) {
+    this.samplePercent = samplePercent;
   }
 
   @Override
@@ -40,7 +40,7 @@ public class Analyze extends SingleInputOperator {
     return logicalVisitor.visitAnalyze(this, value);
   }
 
-  public double getPercent() {
-    return percent;
+  public double getSamplePercent() {
+    return samplePercent;
   }
 }

@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.drill.common.types.TypeProtos;
-import org.apache.drill.exec.vector.BigIntVector;
 import org.apache.drill.exec.vector.NullableBigIntVector;
 import org.apache.drill.exec.vector.ValueVector;
 import org.apache.drill.exec.vector.complex.MapVector;
@@ -35,8 +34,8 @@ public class CntDupsMergedStatistic extends AbstractMergedStatistic {
     }
 
     @Override
-    public void initialize(String inputName, double percent) {
-        super.initialize(Statistic.SUM_DUPS, inputName, percent);
+    public void initialize(String inputName, double samplePercent) {
+        super.initialize(Statistic.SUM_DUPS, inputName, samplePercent);
         state = State.CONFIG;
     }
 
@@ -85,7 +84,7 @@ public class CntDupsMergedStatistic extends AbstractMergedStatistic {
         assert (state == State.MERGE);
         for (ValueVector outMapCol : output) {
             String colName = outMapCol.getField().getName();
-            BigIntVector vv = (BigIntVector) outMapCol;
+            NullableBigIntVector vv = (NullableBigIntVector) outMapCol;
             vv.allocateNewSafe();
             // For variable-length columns, we divide by non-null rows since NULL values do not
             // take up space. For fixed-length columns NULL values take up space.

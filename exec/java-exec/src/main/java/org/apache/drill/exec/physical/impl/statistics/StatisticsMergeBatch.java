@@ -17,13 +17,18 @@
  */
 package org.apache.drill.exec.physical.impl.statistics;
 
+import java.util.ArrayList;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 import org.apache.drill.common.exceptions.UserException;
 import org.apache.drill.common.expression.LogicalExpression;
-import org.apache.drill.common.expression.FunctionCallFactory;
-import org.apache.drill.common.expression.SchemaPath;
 import org.apache.drill.common.expression.ValueExpressions;
 import org.apache.drill.common.types.TypeProtos;
 import org.apache.drill.common.types.TypeProtos.MajorType;
+import org.apache.drill.common.types.Types;
 import org.apache.drill.exec.exception.OutOfMemoryException;
 import org.apache.drill.exec.exception.SchemaChangeException;
 import org.apache.drill.exec.expr.TypeHelper;
@@ -35,17 +40,10 @@ import org.apache.drill.exec.record.MaterializedField;
 import org.apache.drill.exec.record.RecordBatch;
 import org.apache.drill.exec.record.VectorContainer;
 import org.apache.drill.exec.record.VectorWrapper;
-import org.apache.drill.exec.vector.ValueVector;
-import org.apache.drill.exec.vector.DateVector;
 import org.apache.drill.exec.vector.BigIntVector;
+import org.apache.drill.exec.vector.DateVector;
+import org.apache.drill.exec.vector.ValueVector;
 import org.apache.drill.exec.vector.complex.MapVector;
-
-import java.util.ArrayList;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
 import org.apache.drill.shaded.guava.com.google.common.collect.Lists;
 
 /**
@@ -92,14 +90,14 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
   private int schema = 0;
   private int recordCount = 0;
   private List<String> columnsList = null;
-  private double percent = 100;
+  private double samplePercent = 100.0;
   private List<MergedStatistic> mergedStatisticList = null;
 
   public StatisticsMergeBatch(StatisticsMerge popConfig, RecordBatch incoming,
       FragmentContext context) throws OutOfMemoryException {
     super(popConfig, context, incoming);
     functions = popConfig.getFunctions();
-    percent = popConfig.getPercent();
+    samplePercent = popConfig.getSamplePercent();
     mergedStatisticList = new ArrayList<>();
   }
 
@@ -194,7 +192,7 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
       for (String outputStatName : functions.keySet()) {
         if (functions.get(outputStatName).equals(vw.getField().getName())) {
           mergedStatisticList.add(MergedStatisticFactory.getMergedStatistic(outputStatName,
-              functions.get(outputStatName), percent));
+              functions.get(outputStatName), samplePercent));
         }
       }
     }
@@ -222,9 +220,6 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
     // Create output map vectors corresponding to each statistic (e.g. rowcount)
     for (MergedStatistic statistic : mergedStatisticList) {
       String targetTypeStatistic = statistic.getInput();
-      if (statistic instanceof NDVMergedStatistic) {
-        targetTypeStatistic = ((NDVMergedStatistic) statistic).getMajorTypeFromStatistic();
-      }
       for (VectorWrapper<?> vw : incoming) {
         if (targetTypeStatistic.equals(vw.getField().getName())) {
           addVectorToOutgoingContainer(statistic.getName(), vw);
@@ -261,13 +256,18 @@ public class StatisticsMergeBatch extends AbstractSingleRecordBatch<StatisticsMe
           || outStatName.equals(Statistic.COLTYPE)) {
         outputVector.addOrGet(columnName, vv.getField().getType(), vv.getClass());
       } else {
-        List<LogicalExpression> args = Lists.newArrayList();
-        LogicalExpression call;
-        args.add(SchemaPath.getSimplePath(vv.getField().getName()));
-        // Add a call to the statistic function (e.g. ndv) passing in the column value
-        // as arguments
-        call = FunctionCallFactory.createExpression(outStatName, args);
-        addMapVector(columnName, outputVector, call);
+        TypeProtos.MinorType minorType;
+        if (outStatName.equals(Statistic.AVG_WIDTH)) {
+          minorType = TypeProtos.MinorType.FLOAT8;
+        } else if (outStatName.equals(Statistic.HLL_MERGE)) {
+          minorType = TypeProtos.MinorType.VARBINARY;
+        } else {
+          minorType = TypeProtos.MinorType.BIGINT;
+        }
+        Class<? extends ValueVector> vvc =
+                TypeHelper.getValueVectorClass(minorType,
+                        TypeProtos.DataMode.OPTIONAL);
+        outputVector.addOrGet(columnName, Types.optional(minorType), vvc);
       }
     }
   }
