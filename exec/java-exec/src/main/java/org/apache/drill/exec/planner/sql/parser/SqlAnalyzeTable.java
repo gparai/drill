@@ -56,15 +56,15 @@ public class SqlAnalyzeTable extends DrillSqlCall {
   private final SqlIdentifier tblName;
   private final SqlLiteral estimate;
   private final SqlNodeList fieldList;
-  private final SqlNumericLiteral percent;
+  private final SqlNumericLiteral samplePercent;
 
   public SqlAnalyzeTable(SqlParserPos pos, SqlIdentifier tblName, SqlLiteral estimate,
-      SqlNodeList fieldList, SqlNumericLiteral percent) {
+      SqlNodeList fieldList, SqlNumericLiteral samplePercent) {
     super(pos);
     this.tblName = tblName;
     this.estimate = estimate;
     this.fieldList = fieldList;
-    this.percent = percent;
+    this.samplePercent = samplePercent;
   }
 
   @Override
@@ -78,7 +78,7 @@ public class SqlAnalyzeTable extends DrillSqlCall {
     operands.add(tblName);
     operands.add(estimate);
     operands.add(fieldList);
-    operands.add(percent);
+    operands.add(samplePercent);
     return operands;
   }
 
@@ -100,7 +100,7 @@ public class SqlAnalyzeTable extends DrillSqlCall {
       writer.keyword(")");
     }
     writer.keyword("SAMPLE");
-    percent.unparse(writer, leftPrec, rightPrec);
+    samplePercent.unparse(writer, leftPrec, rightPrec);
     writer.keyword("PERCENT");
   }
 
@@ -150,7 +150,7 @@ public class SqlAnalyzeTable extends DrillSqlCall {
     return estimate.booleanValue();
   }
 
-  public int getPercent() {
-    return percent.intValue(true);
+  public int getSamplePercent() {
+    return samplePercent.intValue(true);
   }
 }

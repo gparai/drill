@@ -33,8 +33,8 @@ import org.apache.drill.exec.vector.complex.MapVector;
 public class AvgWidthMergedStatistic extends AbstractMergedStatistic {
   private Map<String, Double> sumHolder;
   ColTypeMergedStatistic types;
-  NNStatCountMergedStatistic nonNullStatCounts;
-  StatCountMergedStatistic statCounts;
+  NNRowCountMergedStatistic nonNullStatCounts;
+  RowCountMergedStatistic statCounts;
 
   public AvgWidthMergedStatistic () {
     this.sumHolder = new HashMap<>();
@@ -45,8 +45,8 @@ public class AvgWidthMergedStatistic extends AbstractMergedStatistic {
   }
 
   @Override
-  public void initialize(String inputName, double percent) {
-    super.initialize(Statistic.AVG_WIDTH, inputName, percent);
+  public void initialize(String inputName, double samplePercent) {
+    super.initialize(Statistic.AVG_WIDTH, inputName, samplePercent);
     state = State.CONFIG;
   }
 
@@ -84,7 +84,7 @@ public class AvgWidthMergedStatistic extends AbstractMergedStatistic {
       throw new IllegalStateException(
           String.format("Statistic `%s` has not completed merging statistics", name));
     }
-    return sumHolder.get(colName)/(percent*getRowCount(colName));
+    return sumHolder.get(colName)/((samplePercent/100.0) *getRowCount(colName));
   }
 
   @Override
@@ -101,7 +101,7 @@ public class AvgWidthMergedStatistic extends AbstractMergedStatistic {
       // take up space. For fixed-length columns NULL values take up space.
       if (sumHolder.get(colName) != null
           && getRowCount(colName) > 0) {
-        vv.getMutator().setSafe(0, sumHolder.get(colName)/(percent*getRowCount(colName)));
+        vv.getMutator().setSafe(0, sumHolder.get(colName)/((samplePercent/100.0) *getRowCount(colName)));
       } else {
         vv.getMutator().setNull(0);
       }
@@ -115,9 +115,9 @@ public class AvgWidthMergedStatistic extends AbstractMergedStatistic {
       if (statistic.getName().equals(Statistic.COLTYPE)) {
         types = (ColTypeMergedStatistic) statistic;
       } else if (statistic.getName().equals(Statistic.ROWCOUNT)) {
-        statCounts = (StatCountMergedStatistic) statistic;
+        statCounts = (RowCountMergedStatistic) statistic;
       } else if (statistic.getName().equals(Statistic.NNROWCOUNT)) {
-        nonNullStatCounts = (NNStatCountMergedStatistic) statistic;
+        nonNullStatCounts = (NNRowCountMergedStatistic) statistic;
       }
     }
     assert (types != null && statCounts != null && nonNullStatCounts != null);

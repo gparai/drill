@@ -29,7 +29,6 @@ import org.apache.drill.exec.planner.logical.DrillTranslatableTable;
 import org.apache.drill.exec.proto.BitControl.QueryContextInformation;
 import org.apache.drill.exec.proto.ExecProtos;
 import org.apache.drill.exec.proto.helper.QueryIdHelper;
-import org.apache.drill.exec.server.options.OptionManager;
 import org.apache.drill.shaded.guava.com.google.common.base.Preconditions;
 import org.apache.drill.shaded.guava.com.google.common.base.Predicate;
 import org.apache.drill.shaded.guava.com.google.common.collect.Iterables;
@@ -61,11 +60,10 @@ public class Utilities {
    *
    * @param defaultSchemaName
    * @param sessionId
-   * @param manager
    * @return A {@link org.apache.drill.exec.proto.BitControl.QueryContextInformation} with given <i>defaultSchemaName</i>.
    */
   public static QueryContextInformation createQueryContextInfo(final String defaultSchemaName,
-      final String sessionId, final OptionManager manager) {
+      final String sessionId) {
     final long queryStartTime = System.currentTimeMillis();
     final int timeZone = DateUtility.getIndex(System.getProperty("user.timezone"));
     return QueryContextInformation.newBuilder()

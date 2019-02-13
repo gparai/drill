@@ -31,24 +31,24 @@ import org.apache.drill.shaded.guava.com.google.common.collect.ImmutableMap;
 public class StatisticsMerge extends AbstractSingle {
 
   private final Map<String, String> functions;
-  private final double percent;
+  private final double samplePercent;
 
   @JsonCreator
   public StatisticsMerge(
       @JsonProperty("child") PhysicalOperator child,
       @JsonProperty("functions") Map<String, String> functions,
-      @JsonProperty("percent") double percent) {
+      @JsonProperty("samplePercent") double samplePercent) {
     super(child);
     this.functions = ImmutableMap.copyOf(functions);
-    this.percent = percent;
+    this.samplePercent = samplePercent;
   }
 
   public Map<String, String> getFunctions() {
     return functions;
   }
 
-  public double getPercent() {
-    return percent;
+  public double getSamplePercent() {
+    return samplePercent;
   }
 
   @Override
@@ -59,7 +59,7 @@ public class StatisticsMerge extends AbstractSingle {
 
   @Override
   protected PhysicalOperator getNewWithChild(PhysicalOperator child) {
-    return new StatisticsMerge(child, functions, percent);
+    return new StatisticsMerge(child, functions, samplePercent);
   }
 
   @Override

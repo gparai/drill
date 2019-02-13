@@ -41,10 +41,9 @@ import org.apache.drill.exec.vector.complex.MapVector;
 public class NDVMergedStatistic extends AbstractMergedStatistic {
   private Map<String, HyperLogLog> hllHolder;
   ColTypeMergedStatistic types;
-  NNStatCountMergedStatistic nonNullStatCounts;
-  StatCountMergedStatistic statCounts;
+  NNRowCountMergedStatistic nonNullStatCounts;
+  RowCountMergedStatistic statCounts;
   CntDupsMergedStatistic sumDups;
-  private MergedStatistic targetTypeStatistic;
 
   public NDVMergedStatistic () {
     this.hllHolder = new HashMap<>();
@@ -66,8 +65,8 @@ public class NDVMergedStatistic extends AbstractMergedStatistic {
   }
 
   @Override
-  public void initialize(String inputName, double percent) {
-    super.initialize(Statistic.NDV, inputName, percent);
+  public void initialize(String inputName, double samplePercent) {
+    super.initialize(Statistic.NDV, inputName, samplePercent);
     state = State.CONFIG;
   }
 
@@ -134,7 +133,8 @@ public class NDVMergedStatistic extends AbstractMergedStatistic {
       NullableBigIntVector vv = (NullableBigIntVector) outMapCol;
       vv.allocateNewSafe();
       if (colHLLHolder != null) {
-        /* Hass and Stokes Duj1 estimator. See IBM Research Report RJ 10025 for more details.
+        /* Duj1 estimator - Peter J. Haas & Lynne Stokes (1998) Estimating the Number of Classes in a Finite Population,
+         * Journal of the American Statistical Association, 93:444, 1475-1487
          * n*d / (n - f1 + f1*n/N) where
          * n  - sample rows
          * N  - total rows
@@ -142,11 +142,11 @@ public class NDVMergedStatistic extends AbstractMergedStatistic {
          * f1 - number of singletons
          * Cap estimate at N
          */
-        double sampleRows = percent*getRowCount(colName);
+        double sampleRows = (samplePercent/100.0)*getRowCount(colName);
         double sampleSingletons = sampleRows - sumDups.getStat(colName);
         double estNdv = (sampleRows * colHLLHolder.cardinality()) /
-                (sampleRows - sampleSingletons + sampleSingletons*percent);
-        estNdv = Math.min(estNdv, sampleRows/percent);
+                (sampleRows - sampleSingletons + sampleSingletons* samplePercent/100.0);
+        estNdv = Math.min(estNdv, 100.0*sampleRows/samplePercent);
         vv.getMutator().setSafe(0, 1, (long) estNdv);
       } else {
         vv.getMutator().setNull(0);
@@ -161,25 +161,16 @@ public class NDVMergedStatistic extends AbstractMergedStatistic {
       if (statistic.getName().equals(Statistic.COLTYPE)) {
         types = (ColTypeMergedStatistic) statistic;
       } else if (statistic.getName().equals(Statistic.ROWCOUNT)) {
-        statCounts = (StatCountMergedStatistic) statistic;
+        statCounts = (RowCountMergedStatistic) statistic;
       } else if (statistic.getName().equals(Statistic.NNROWCOUNT)) {
-        nonNullStatCounts = (NNStatCountMergedStatistic) statistic;
+        nonNullStatCounts = (NNRowCountMergedStatistic) statistic;
       } else if (statistic.getName().equals(Statistic.SUM_DUPS)) {
         sumDups = (CntDupsMergedStatistic) statistic;
-      } else if (statistic instanceof AvgWidthMergedStatistic) {
-        targetTypeStatistic = statistic;
       }
     }
     assert (types != null && statCounts != null && nonNullStatCounts != null && sumDups != null);
-    assert (targetTypeStatistic != null);
     // Now config complete - moving to MERGE state
     state = State.MERGE;
-  }
-
-  public String getMajorTypeFromStatistic() {
-    // Dependencies have been configured correctly
-    assert (state == State.MERGE);
-    return targetTypeStatistic.getInput();
   }
 
   private long getRowCount(String colName) {

@@ -29,6 +29,7 @@ import org.apache.calcite.rel.SingleRel;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
+import org.apache.drill.exec.ExecConstants;
 import org.apache.drill.exec.physical.impl.statistics.Statistic;
 import org.apache.drill.exec.planner.logical.DrillAnalyzeRel;
 import org.apache.drill.exec.planner.logical.DrillRel;
@@ -48,21 +49,10 @@ public class AnalyzePrule extends Prule {
       Statistic.CNT_DUPS,    // total count of non-singletons in table fragment
       Statistic.HLL          // total distinct values in table fragment
     );
+
   // Mapping between output functions (from StatsMergeBatch) and
   // input functions (from StatsAggBatch)
   private static Map<String, String> PHASE_2_FUNCTIONS = new HashMap<>();
-  /*ImmutableMap.of(
-      Statistic.ROWCOUNT,    // total number of entries in the table (merged)
-      Statistic.ROWCOUNT,    // total number of entries in the table
-      Statistic.NNROWCOUNT,  // total number of non-null entries in the table
-      Statistic.NNROWCOUNT,  // total number of non-null entries in the table (merged)
-      Statistic.AVG_WIDTH,   // average column width across all entries in the table (merged)
-      Statistic.SUM_WIDTH,   // total column width across all entries in table
-      Statistic.HLL_MERGE,   // total distinct values(computed using hll) in the table (merged)
-      Statistic.HLL,         // total distinct values in table
-      Statistic.NDV,         // total distinct values across all entries in the table (merged)
-      Statistic.HLL          // total distinct values in table fragment
-    );*/
   static {
     PHASE_2_FUNCTIONS.put(Statistic.ROWCOUNT, Statistic.ROWCOUNT);
     PHASE_2_FUNCTIONS.put(Statistic.NNROWCOUNT, Statistic.NNROWCOUNT);
@@ -71,6 +61,7 @@ public class AnalyzePrule extends Prule {
     PHASE_2_FUNCTIONS.put(Statistic.HLL_MERGE, Statistic.HLL);
     PHASE_2_FUNCTIONS.put(Statistic.NDV, Statistic.HLL);
   }
+
   // List of input functions (from StatsMergeBatch) to UnpivotMapsBatch
   private static final List<String> UNPIVOT_FUNCTIONS = ImmutableList.of(
       Statistic.ROWCOUNT,    // total number of entries in the table
@@ -111,12 +102,19 @@ public class AnalyzePrule extends Prule {
     mapFields3.add(1, Statistic.COLTYPE);
     // Now generate the two phase plan physical operators bottom-up:
     // STATSAGG->EXCHANGE->STATSMERGE->UNPIVOT
-    if (analyze.getPercent() < 1.0) {
-      // If a sample percent is specified add a filter for Bernoulli sampling
+    if (analyze.getSamplePercent() < 100.0) {
+      // If a sample samplePercent is specified add a filter for Bernoulli sampling
       RexBuilder builder = convertedInput.getCluster().getRexBuilder();
-      RexNode sampleCondition = builder.makeCall(SqlStdOperatorTable.LESS_THAN_OR_EQUAL,
-          builder.makeCall(SqlStdOperatorTable.RAND),
-          builder.makeExactLiteral(BigDecimal.valueOf(analyze.getPercent())));
+      RexNode sampleCondition;
+      if (PrelUtil.getSettings(convertedInput.getCluster()).getOptions().getOption(ExecConstants.DETERMINISTIC_SAMPLING_VALIDATOR)) {
+        sampleCondition = builder.makeCall(SqlStdOperatorTable.LESS_THAN_OR_EQUAL,
+            builder.makeCall(SqlStdOperatorTable.RAND, builder.makeExactLiteral(BigDecimal.valueOf(1))),
+            builder.makeExactLiteral(BigDecimal.valueOf(analyze.getSamplePercent()/100.0)));
+      } else {
+        sampleCondition = builder.makeCall(SqlStdOperatorTable.LESS_THAN_OR_EQUAL,
+            builder.makeCall(SqlStdOperatorTable.RAND),
+            builder.makeExactLiteral(BigDecimal.valueOf(analyze.getSamplePercent()/100.0)));
+      }
       convertedInput = new FilterPrel(convertedInput.getCluster(), convertedInput.getTraitSet(),
               convertedInput, sampleCondition);
     }
@@ -125,7 +123,7 @@ public class AnalyzePrule extends Prule {
     UnionExchangePrel exch = new UnionExchangePrel(statsAggPrel.getCluster(), singleDistTrait,
         statsAggPrel);
     final StatsMergePrel statsMergePrel = new StatsMergePrel(exch.getCluster(), singleDistTrait,
-        exch, mapFields2, analyze.getPercent());
+        exch, mapFields2, analyze.getSamplePercent());
     newAnalyze = new UnpivotMapsPrel(statsMergePrel.getCluster(), singleDistTrait, statsMergePrel,
         mapFields3);
     call.transformTo(newAnalyze);

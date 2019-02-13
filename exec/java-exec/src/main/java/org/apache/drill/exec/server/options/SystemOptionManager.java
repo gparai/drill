@@ -121,7 +121,6 @@ public class SystemOptionManager extends BaseOptionManager implements AutoClosea
       new OptionDefinition(PlannerSettings.JOIN_OPTIMIZATION),
       new OptionDefinition(PlannerSettings.ENABLE_UNNEST_LATERAL),
       new OptionDefinition(PlannerSettings.FORCE_2PHASE_AGGR), // for testing
-      new OptionDefinition(PlannerSettings.STATISTICS_PARALLEL_ANALYZE),
       new OptionDefinition(PlannerSettings.STATISTICS_USE),
       new OptionDefinition(ExecConstants.HASHJOIN_NUM_PARTITIONS_VALIDATOR),
       new OptionDefinition(ExecConstants.HASHJOIN_MAX_MEMORY_VALIDATOR, new OptionMetaData(OptionValue.AccessibleScopes.SYSTEM, true, true)),
@@ -275,6 +274,7 @@ public class SystemOptionManager extends BaseOptionManager implements AutoClosea
       new OptionDefinition(ExecConstants.QUERY_ROWKEYJOIN_BATCHSIZE),
       new OptionDefinition(ExecConstants.RETURN_RESULT_SET_FOR_DDL_VALIDATOR),
       new OptionDefinition(ExecConstants.HLL_ACCURACY_VALIDATOR),
+      new OptionDefinition(ExecConstants.DETERMINISTIC_SAMPLING_VALIDATOR),
       new OptionDefinition(ExecConstants.NDV_BLOOM_FILTER_ELEMENTS_VALIDATOR),
       new OptionDefinition(ExecConstants.NDV_BLOOM_FILTER_FPOS_PROB_VALIDATOR)
     };

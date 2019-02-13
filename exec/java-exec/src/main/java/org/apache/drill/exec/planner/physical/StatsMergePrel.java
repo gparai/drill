@@ -37,18 +37,18 @@ public class StatsMergePrel extends SingleRel implements DrillRelNode, Prel {
 
   private Map<String, String> functions;
   // Percent will be used to extrapolate statistics
-  private double percent;
+  private double samplePercent;
 
   public StatsMergePrel(RelOptCluster cluster, RelTraitSet traits, RelNode child,
-      Map<String, String> functions, double percent) {
+      Map<String, String> functions, double samplePercent) {
     super(cluster, traits, child);
     this.functions = ImmutableMap.copyOf(functions);
-    this.percent = percent;
+    this.samplePercent = samplePercent;
   }
 
   @Override
   public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-    return new StatsMergePrel(getCluster(), traitSet, sole(inputs), ImmutableMap.copyOf(functions), percent);
+    return new StatsMergePrel(getCluster(), traitSet, sole(inputs), ImmutableMap.copyOf(functions), samplePercent);
   }
 
   @Override
@@ -56,7 +56,7 @@ public class StatsMergePrel extends SingleRel implements DrillRelNode, Prel {
       throws IOException {
     Prel child = (Prel) this.getInput();
     PhysicalOperator childPOP = child.getPhysicalOperator(creator);
-    StatisticsMerge g = new StatisticsMerge(childPOP, functions, percent);
+    StatisticsMerge g = new StatisticsMerge(childPOP, functions, samplePercent);
     return creator.addMetadata(this, g);
   }
 

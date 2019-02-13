@@ -99,10 +99,13 @@ public class TestAnalyze extends BaseTestQuery {
     }
   }
 
+  // Analyze with sampling percentage
+  @Test
   public void basic3() throws Exception {
     try {
       test("ALTER SESSION SET `planner.slice_target` = 1");
       test("ALTER SESSION SET `store.format` = 'parquet'");
+      test("ALTER SESSION SET `exec.statistics.deterministic_sampling` = true");
       test("CREATE TABLE dfs.tmp.employee_basic3 AS SELECT * from cp.`employee.json`");
       test("ANALYZE TABLE dfs.tmp.employee_basic3 COMPUTE STATISTICS (employee_id, birth_date) SAMPLE 55 PERCENT");
       test("SELECT * FROM dfs.tmp.`employee_basic3/.stats.drill`");
@@ -113,14 +116,14 @@ public class TestAnalyze extends BaseTestQuery {
               .sqlQuery("SELECT tbl.`columns`.`column` as `column`, tbl.`columns`.rowcount as rowcount,"
                       + " tbl.`columns`.nonnullrowcount as nonnullrowcount, tbl.`columns`.ndv as ndv,"
                       + " tbl.`columns`.avgwidth as avgwidth"
-                      + " FROM dfs.tmp.flatstats2 tbl")
+                      + " FROM dfs.tmp.flatstats3 tbl")
               .unOrdered()
-              .approximateEquality(0.1)
               .baselineColumns("column", "rowcount", "nonnullrowcount", "ndv", "avgwidth")
-              .baselineValues("`employee_id`", 1155.0, 1155.0, 1155L, 8.0)
-              .baselineValues("`birth_date`", 1155.0, 1155.0, 52L, 10.0)
+              .baselineValues("`employee_id`", 1138.0, 1138.0, 1138L, 8.00127815945039)
+              .baselineValues("`birth_date`", 1138.0, 1138.0, 38L, 10.001597699312988)
               .go();
     } finally {
+      test("ALTER SESSION SET `exec.statistics.deterministic_sampling` = false");
       test("ALTER SESSION SET `planner.slice_target` = " + ExecConstants.SLICE_TARGET_DEFAULT);
     }
   }
@@ -149,17 +152,17 @@ public class TestAnalyze extends BaseTestQuery {
     try {
       test("ALTER SESSION SET `planner.slice_target` = 1");
       test("ALTER SESSION SET `store.format` = 'json'");
-      test("CREATE TABLE dfs.tmp.employee_basic3 AS SELECT * from cp.`employee.json`");
+      test("CREATE TABLE dfs.tmp.employee_basic4 AS SELECT * from cp.`employee.json`");
       //Should display not supported
-      verifyAnalyzeOutput("ANALYZE TABLE dfs.tmp.employee_basic3 COMPUTE STATISTICS",
-          "Table employee_basic3 is not supported by ANALYZE. "
+      verifyAnalyzeOutput("ANALYZE TABLE dfs.tmp.employee_basic4 COMPUTE STATISTICS",
+          "Table employee_basic4 is not supported by ANALYZE. "
           + "Support is currently limited to directory-based Parquet tables.");
 
-      test("DROP TABLE dfs.tmp.employee_basic3");
+      test("DROP TABLE dfs.tmp.employee_basic4");
       test("ALTER SESSION SET `store.format` = 'parquet'");
-      test("CREATE TABLE dfs.tmp.employee_basic3 AS SELECT * from cp.`employee.json`");
+      test("CREATE TABLE dfs.tmp.employee_basic4 AS SELECT * from cp.`employee.json`");
       //Should complete successfully (16 columns in employee.json)
-      verifyAnalyzeOutput("ANALYZE TABLE dfs.tmp.employee_basic3 COMPUTE STATISTICS",
+      verifyAnalyzeOutput("ANALYZE TABLE dfs.tmp.employee_basic4 COMPUTE STATISTICS",
           "16");
     } finally {
       test("ALTER SESSION SET `planner.slice_target` = " + ExecConstants.SLICE_TARGET_DEFAULT);
@@ -176,14 +179,14 @@ public class TestAnalyze extends BaseTestQuery {
       test("CREATE TABLE dfs.tmp.parquet1 AS SELECT * from dfs.`%s`", tmpLocation);
       verifyAnalyzeOutput("ANALYZE TABLE dfs.tmp.parquet1 COMPUTE STATISTICS", "11");
       test("SELECT * FROM dfs.tmp.`parquet1/.stats.drill`");
-      test("create table dfs.tmp.flatstats3 as select flatten(`directories`[0].`columns`) as `columns` " +
+      test("create table dfs.tmp.flatstats4 as select flatten(`directories`[0].`columns`) as `columns` " +
            "from dfs.tmp.`parquet1/.stats.drill`");
       //Verify statistics
       testBuilder()
           .sqlQuery("SELECT tbl.`columns`.`column` as `column`, tbl.`columns`.rowcount as rowcount,"
               + " tbl.`columns`.nonnullrowcount as nonnullrowcount, tbl.`columns`.ndv as ndv,"
               + " tbl.`columns`.avgwidth as avgwidth"
-              + " FROM dfs.tmp.flatstats3 tbl")
+              + " FROM dfs.tmp.flatstats4 tbl")
           .unOrdered()
           .baselineColumns("column", "rowcount", "nonnullrowcount", "ndv", "avgwidth")
           .baselineValues("`o_orderkey`", 120.0, 120.0, 119L, 4.0)

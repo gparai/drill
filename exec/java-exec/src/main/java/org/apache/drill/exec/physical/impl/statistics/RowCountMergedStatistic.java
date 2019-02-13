@@ -24,19 +24,19 @@ import org.apache.drill.exec.vector.NullableBigIntVector;
 import org.apache.drill.exec.vector.ValueVector;
 import org.apache.drill.exec.vector.complex.MapVector;
 
-public class StatCountMergedStatistic extends AbstractMergedStatistic {
+public class RowCountMergedStatistic extends AbstractMergedStatistic {
 
   private Map<String, Long> sumHolder;
 
-  public StatCountMergedStatistic () {
+  public RowCountMergedStatistic() {
     this.sumHolder = new HashMap<>();
     //No CONFIG state so move directly to MERGE state
     state = State.INIT;
   }
 
   @Override
-  public void initialize(String inputName, double percent) {
-    super.initialize(Statistic.ROWCOUNT, inputName, percent);
+  public void initialize(String inputName, double samplePercent) {
+    super.initialize(Statistic.ROWCOUNT, inputName, samplePercent);
     state = State.MERGE;
   }
 
@@ -74,7 +74,7 @@ public class StatCountMergedStatistic extends AbstractMergedStatistic {
       throw new IllegalStateException(String.format("Statistic `%s` has not completed merging statistics",
           name));
     }
-    return (long)(sumHolder.get(colName)/percent);
+    return (long)(100.0*sumHolder.get(colName)/ samplePercent);
   }
 
   @Override
@@ -86,7 +86,7 @@ public class StatCountMergedStatistic extends AbstractMergedStatistic {
       NullableBigIntVector vv = (NullableBigIntVector) outMapCol;
       vv.allocateNewSafe();
       if (sumHolder.get(colName) != null) {
-        vv.getMutator().setSafe(0, (long)(sumHolder.get(colName)/percent));
+        vv.getMutator().setSafe(0, (long)(100.0*sumHolder.get(colName)/ samplePercent));
       } else {
         vv.getMutator().setNull(0);
       }

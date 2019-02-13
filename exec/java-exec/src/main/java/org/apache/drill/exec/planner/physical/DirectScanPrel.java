@@ -42,7 +42,6 @@ import org.apache.drill.exec.record.BatchSchema;
 
 import org.apache.drill.exec.planner.cost.DrillCostBase.DrillCostFactory;
 
-//public class DirectScanPrel extends AbstractRelNode implements DrillScanPrel
 public class DirectScanPrel extends AbstractRelNode implements Prel, HasDistributionAffinity {
   static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(DirectScanPrel.class);
 
@@ -52,7 +51,6 @@ public class DirectScanPrel extends AbstractRelNode implements Prel, HasDistribu
   DirectScanPrel(RelOptCluster cluster, RelTraitSet traits,
                  GroupScan groupScan, RelDataType rowType) {
     super(cluster, traits);
-    //this.groupScan = getCopy(groupScan);
     this.groupScan = groupScan;
     this.rowType = rowType;
   }
@@ -109,7 +107,6 @@ public class DirectScanPrel extends AbstractRelNode implements Prel, HasDistribu
 
   @Override
   public <T, X, E extends Throwable> T accept(PrelVisitor<T, X, E> logicalVisitor, X value) throws E {
-    //return logicalVisitor.visitScan(this, value);
     return logicalVisitor.visitPrel(this, value);
   }
 

@@ -34,7 +34,7 @@ public abstract class Statistic {
   public static final String COMPUTED = "computed";
   public static final String ROWCOUNT = "rowcount";
   public static final String NNROWCOUNT = "nonnullrowcount";
-  public static final String NDV = "ndv";
+  public static final String NDV = "approx_count_distinct";
   public static final String HLL_MERGE = "hll_merge";
   public static final String HLL = "hll";
   public static final String AVG_WIDTH = "avg_width";
