@@ -190,7 +190,9 @@ public class PlannerSettings implements Context{
       QUOTING_IDENTIFIERS_KEY,
       new OptionDescription("Sets the type of identifier quotes for the SQL parser. Default is backticks ('`'). The SQL parser accepts double quotes ('\"') and square brackets ('['). (Drill 1.11+)"),
       Quoting.BACK_TICK.string, Quoting.DOUBLE_QUOTE.string, Quoting.BRACKET.string);
-
+  public static final String TRANSITIVE_PPD = "planner.transitive_predicate_pushdown";
+  public static final BooleanValidator TRANSITIVE_PPD_VALIDATOR = new BooleanValidator(TRANSITIVE_PPD,
+          new OptionDescription("Enables transitive predicate gen/push"));
   /*
     "planner.enable_unnest_lateral" is to allow users to choose enable unnest+lateraljoin feature.
    */
@@ -387,6 +389,10 @@ public class PlannerSettings implements Context{
 
   public boolean isUnionAllDistributeEnabled() {
     return options.getOption(UNIONALL_DISTRIBUTE);
+  }
+
+  public boolean isTransitivePPD() {
+    return options.getBoolean(TRANSITIVE_PPD_VALIDATOR.getOptionName());
   }
 
   public boolean isParquetRowGroupFilterPushdownPlanningEnabled() {

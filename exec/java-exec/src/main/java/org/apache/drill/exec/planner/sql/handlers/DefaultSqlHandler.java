@@ -252,11 +252,13 @@ public class DefaultSqlHandler extends AbstractSqlHandler {
         if (context.getPlannerSettings().isHepPartitionPruningEnabled()) {
 
           final RelNode intermediateNode = transform(PlannerType.VOLCANO, PlannerPhase.LOGICAL, pruned, logicalTraits);
-
+          final RelNode transitiveClosureNode;
           // HEP Join Push Transitive Predicates
-          final RelNode transitiveClosureNode =
-              transform(PlannerType.HEP, PlannerPhase.TRANSITIVE_CLOSURE, intermediateNode);
-
+          if (context.getPlannerSettings().isTransitivePPD()) {
+            transitiveClosureNode = transform(PlannerType.HEP, PlannerPhase.TRANSITIVE_CLOSURE, intermediateNode);
+          } else {
+            transitiveClosureNode = intermediateNode;
+          }
           // hep is enabled and hep pruning is enabled.
           intermediateNode2 = transform(PlannerType.HEP_BOTTOM_UP, PlannerPhase.PARTITION_PRUNING, transitiveClosureNode);
 
@@ -266,7 +268,11 @@ public class DefaultSqlHandler extends AbstractSqlHandler {
               transform(PlannerType.VOLCANO, PlannerPhase.LOGICAL_PRUNE, pruned, logicalTraits);
 
           // HEP Join Push Transitive Predicates
-          intermediateNode2 = transform(PlannerType.HEP, PlannerPhase.TRANSITIVE_CLOSURE, intermediateNode);
+          if (context.getPlannerSettings().isTransitivePPD()) {
+            intermediateNode2 = transform(PlannerType.HEP, PlannerPhase.TRANSITIVE_CLOSURE, intermediateNode);
+          } else {
+            intermediateNode2 = intermediateNode;
+          }
         }
 
         // Do Join Planning.
