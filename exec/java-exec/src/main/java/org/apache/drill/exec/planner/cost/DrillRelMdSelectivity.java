@@ -138,8 +138,9 @@ public class DrillRelMdSelectivity extends RelMdSelectivity {
     for (RexNode pred : RelOptUtil.conjunctions(predicate)) {
       double orSel = 0;
       for (RexNode orPred : RelOptUtil.disjunctions(pred)) {
-
-        if (orPred.isA(SqlKind.EQUALS)) {
+        if (isMultiColumnPredicate(orPred)) {
+          orSel += RelMdUtil.guessSelectivity(orPred);  //CALCITE guess
+        } else if (orPred.isA(SqlKind.EQUALS)) {
           orSel += computeEqualsSelectivity(table, orPred, fieldNames);
         } else if (orPred.isA(SqlKind.NOT_EQUALS)) {
           orSel += 1.0 - computeEqualsSelectivity(table, orPred, fieldNames);
@@ -285,7 +286,7 @@ public class DrillRelMdSelectivity extends RelMdSelectivity {
     return sel;
   }
 
-  public static RexInputRef findRexInputRef(final RexNode node) {
+  private static RexInputRef findRexInputRef(final RexNode node) {
     try {
       RexVisitor<Void> visitor =
           new RexVisitorImpl<Void>(true) {
@@ -306,5 +307,28 @@ public class DrillRelMdSelectivity extends RelMdSelectivity {
       Util.swallow(e, null);
       return (RexInputRef) e.getNode();
     }
+  }
+
+  private boolean isMultiColumnPredicate(final RexNode node) {
+    return findAllRexInputRefs(node).size() > 1;
+  }
+
+  private static List<RexInputRef> findAllRexInputRefs(final RexNode node) {
+      List<RexInputRef> rexRefs = new ArrayList<>();
+      RexVisitor<Void> visitor =
+          new RexVisitorImpl<Void>(true) {
+            public Void visitCall(RexCall call) {
+              for (RexNode child : call.getOperands()) {
+                child.accept(this);
+              }
+              return super.visitCall(call);
+            }
+            public Void visitInputRef(RexInputRef inputRef) {
+              rexRefs.add(inputRef);
+              return super.visitInputRef(inputRef);
+            }
+          };
+      node.accept(visitor);
+      return rexRefs;
   }
 }
