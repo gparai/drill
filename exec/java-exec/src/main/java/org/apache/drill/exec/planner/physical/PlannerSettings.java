@@ -229,6 +229,8 @@ public class PlannerSettings implements Context{
 
   public static final BooleanValidator STATISTICS_USE = new BooleanValidator("planner.statistics.use", null);
 
+  public static final BooleanValidator STATISTICS_OLD_JOIN_USE = new BooleanValidator("planner.statistics.use_old_join", null);
+
   public OptionManager options = null;
   public FunctionImplementationRegistry functionImplementationRegistry = null;
 
@@ -471,6 +473,10 @@ public class PlannerSettings implements Context{
 
   public boolean useStatistics() {
     return options.getOption(STATISTICS_USE);
+  }
+
+  public boolean useOldJoinStatistics() {
+    return options.getOption(STATISTICS_OLD_JOIN_USE);
   }
 
   @Override

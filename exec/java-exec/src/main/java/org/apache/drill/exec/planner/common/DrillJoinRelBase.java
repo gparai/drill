@@ -107,7 +107,8 @@ public abstract class DrillJoinRelBase extends Join implements DrillJoin {
     LogicalJoin jr = LogicalJoin.create(this.getLeft(), this.getRight(), this.getCondition(),
             this.getVariablesSet(), this.getJoinType());
 
-    if (!DrillRelOptUtil.guessRows(this)         //Statistics present for left and right side of the join
+    if (!PrelUtil.getPlannerSettings(this.getCluster().getPlanner()).useOldJoinStatistics()
+        && !DrillRelOptUtil.guessRows(this)         //Statistics present for left and right side of the join
         && jr.getJoinType() == JoinRelType.INNER
         && DrillRelOptUtil.analyzeSimpleEquiJoin((Join)jr, joinFields)) {
       ImmutableBitSet leq = ImmutableBitSet.of(joinFields[0]);
