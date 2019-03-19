@@ -229,6 +229,10 @@ public class PlannerSettings implements Context{
 
   public static final BooleanValidator STATISTICS_USE = new BooleanValidator("planner.statistics.use", null);
 
+  public static final PositiveLongValidator STATISTICS_JOIN_CARDINALITY_MODE = new PositiveLongValidator("planner.statistics.join_cardinality_mode", Integer.MAX_VALUE, null);
+
+  public static final RangeDoubleValidator STATISTICS_MULTICOL_NDV_ADJUST_FACTOR = new RangeDoubleValidator("planner.statistics.multicol_ndv_adjustment_factor", 0.0, 1.0, null);
+
   public OptionManager options = null;
   public FunctionImplementationRegistry functionImplementationRegistry = null;
 
@@ -471,6 +475,14 @@ public class PlannerSettings implements Context{
 
   public boolean useStatistics() {
     return options.getOption(STATISTICS_USE);
+  }
+
+  public long getStatisticsJoinCardinalityMode() {
+    return options.getOption(STATISTICS_JOIN_CARDINALITY_MODE);
+  }
+
+  public double getStatisticsMultiColNdvAdjustmentFactor() {
+    return options.getOption(STATISTICS_MULTICOL_NDV_ADJUST_FACTOR);
   }
 
   @Override
