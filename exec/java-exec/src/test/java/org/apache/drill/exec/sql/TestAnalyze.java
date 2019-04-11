@@ -129,6 +129,50 @@ public class TestAnalyze extends BaseTestQuery {
     }
   }
 
+  // Analyze with duplicate columns
+  @Test
+  public void testAnalyzeWithDuplicateCols() throws Exception {
+    try {
+      test("ALTER SESSION SET `planner.slice_target` = 1");
+      test("ALTER SESSION SET `store.format` = 'parquet'");
+      test("ALTER SESSION SET `exec.statistics.deterministic_sampling` = true");
+      test("CREATE TABLE dfs.tmp.employee_dup AS SELECT * from cp.`employee.json`");
+      test("ANALYZE TABLE dfs.tmp.employee_dup COMPUTE STATISTICS " +
+              "(employee_id, employee_id, birth_date, employee_id, birth_date, birth_date)");
+      test("create table dfs.tmp.flatstatsdup as select flatten(`directories`[0].`columns`) as `columns`"
+              + " from dfs.tmp.`employee_dup/.stats.drill`");
+      testBuilder()
+              .sqlQuery("SELECT tbl.`columns`.`column` as `column`, tbl.`columns`.rowcount as rowcount,"
+                      + " tbl.`columns`.nonnullrowcount as nonnullrowcount, tbl.`columns`.ndv as ndv,"
+                      + " tbl.`columns`.avgwidth as avgwidth"
+                      + " FROM dfs.tmp.flatstatsdup tbl")
+              .unOrdered()
+              .baselineColumns("column", "rowcount", "nonnullrowcount", "ndv", "avgwidth")
+              .baselineValues("`employee_id`", 1155.0, 1155.0, 1155L, 8.0)
+              .baselineValues("`birth_date`", 1155.0, 1155.0, 52L, 10.0)
+              .go();
+      test("DROP TABLE dfs.tmp.`employee_dup/.stats.drill");
+      test("ANALYZE TABLE dfs.tmp.employee_dup COMPUTE STATISTICS " +
+              "(employee_id, employee_id, birth_date, employee_id, birth_date, birth_date) SAMPLE 55 PERCENT");
+      test("SELECT * FROM dfs.tmp.`employee_dup/.stats.drill`");
+      test("create table dfs.tmp.flatstatsdup as select flatten(`directories`[0].`columns`) as `columns`"
+              + " from dfs.tmp.`employee_dup/.stats.drill`");
+      testBuilder()
+              .sqlQuery("SELECT tbl.`columns`.`column` as `column`, tbl.`columns`.rowcount as rowcount,"
+                      + " tbl.`columns`.nonnullrowcount as nonnullrowcount, tbl.`columns`.ndv as ndv,"
+                      + " tbl.`columns`.avgwidth as avgwidth"
+                      + " FROM dfs.tmp.flatstatsdup tbl")
+              .unOrdered()
+              .baselineColumns("column", "rowcount", "nonnullrowcount", "ndv", "avgwidth")
+              .baselineValues("`employee_id`", 1138.0, 1138.0, 1138L, 8.00127815945039)
+              .baselineValues("`birth_date`", 1138.0, 1138.0, 38L, 10.001597699312988)
+              .go();
+    } finally {
+      test("ALTER SESSION SET `exec.statistics.deterministic_sampling` = false");
+      test("ALTER SESSION SET `planner.slice_target` = " + ExecConstants.SLICE_TARGET_DEFAULT);
+    }
+  }
+
   @Test
   public void join() throws Exception {
     try {

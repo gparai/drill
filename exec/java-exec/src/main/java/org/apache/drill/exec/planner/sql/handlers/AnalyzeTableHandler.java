@@ -19,11 +19,14 @@ package org.apache.drill.exec.planner.sql.handlers;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexBuilder;
+import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.schema.Table;
@@ -216,17 +219,24 @@ public class AnalyzeTableHandler extends DefaultSqlHandler {
     if (convertedRelNode instanceof DrillProjectRel) {
       DrillProjectRel projectRel = (DrillProjectRel) convertedRelNode;
       DrillScanRel scanRel = findScan(projectRel);
-      List<RelDataTypeField> fields = Lists.newArrayList();
       RexBuilder b = projectRel.getCluster().getRexBuilder();
       List<RexNode> projections = Lists.newArrayList();
       // Get the original scan column names - after projection pushdown they should refer to the full col names
       List<String> fieldNames = new ArrayList<>();
-      List<RelDataTypeField> fieldTypes = projectRel.getRowType().getFieldList();
-      for (SchemaPath colPath : scanRel.getGroupScan().getColumns()) {
-        fieldNames.add(colPath.toString());
-      }
-      for (int i =0; i < fieldTypes.size(); i++) {
-        projections.add(b.makeInputRef(projectRel, i));
+      List<RelDataTypeField> fields = projectRel.getRowType().getFieldList();
+      List<SchemaPath> scanCols = scanRel.getGroupScan().getColumns();
+      Set<Integer> inputRefsSet = new HashSet<>();
+      for (int idx=0; idx < projectRel.getChildExps().size(); idx++) {
+        RexNode expr = projectRel.getChildExps().get(idx);
+        if (expr instanceof RexInputRef) {
+          int inputRefIdx = ((RexInputRef) expr).getIndex();
+          // Eliminate any duplicates if specified
+          if (!inputRefsSet.contains(inputRefIdx)) {
+            inputRefsSet.add(inputRefIdx);
+            fieldNames.add(scanCols.get(inputRefIdx).toString());
+            projections.add(b.makeInputRef(projectRel, idx));
+          }
+        }
       }
       // Get the projection row-types
       RelDataType newRowType = RexUtil.createStructType(projectRel.getCluster().getTypeFactory(),
