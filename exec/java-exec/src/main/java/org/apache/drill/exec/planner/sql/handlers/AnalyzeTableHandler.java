@@ -43,6 +43,7 @@ import org.apache.drill.common.logical.FormatPluginConfig;
 import org.apache.drill.exec.dotdrill.DotDrillType;
 import org.apache.drill.exec.physical.PhysicalPlan;
 import org.apache.drill.exec.physical.base.PhysicalOperator;
+import org.apache.drill.exec.planner.common.DrillRelOptUtil;
 import org.apache.drill.exec.planner.common.DrillStatsTable;
 import org.apache.drill.exec.planner.logical.DrillAnalyzeRel;
 import org.apache.drill.exec.planner.logical.DrillProjectRel;
@@ -227,15 +228,13 @@ public class AnalyzeTableHandler extends DefaultSqlHandler {
       List<SchemaPath> scanCols = scanRel.getGroupScan().getColumns();
       Set<Integer> inputRefsSet = new HashSet<>();
       for (int idx=0; idx < projectRel.getChildExps().size(); idx++) {
-        RexNode expr = projectRel.getChildExps().get(idx);
-        if (expr instanceof RexInputRef) {
-          int inputRefIdx = ((RexInputRef) expr).getIndex();
-          // Eliminate any duplicates if specified
-          if (!inputRefsSet.contains(inputRefIdx)) {
-            inputRefsSet.add(inputRefIdx);
-            fieldNames.add(scanCols.get(inputRefIdx).toString());
-            projections.add(b.makeInputRef(projectRel, idx));
-          }
+        List<RexInputRef> refs = DrillRelOptUtil.findAllRexInputRefs(projectRel.getChildExps().get(idx));
+        int inputRefIdx = refs.get(0).getIndex();
+        // Eliminate any duplicates if specified
+        if (!inputRefsSet.contains(inputRefIdx)) {
+          inputRefsSet.add(inputRefIdx);
+          fieldNames.add(scanCols.get(inputRefIdx).toString());
+          projections.add(b.makeInputRef(projectRel, idx));
         }
       }
       // Get the projection row-types

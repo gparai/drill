@@ -667,4 +667,17 @@ public abstract class DrillRelOptUtil {
     }
     return drillTable;
   }
+
+  public static List<RexInputRef> findAllRexInputRefs(final RexNode node) {
+    List<RexInputRef> rexRefs = new ArrayList<>();
+    RexVisitor<Void> visitor =
+            new RexVisitorImpl<Void>(true) {
+              public Void visitInputRef(RexInputRef inputRef) {
+                rexRefs.add(inputRef);
+                return super.visitInputRef(inputRef);
+              }
+            };
+    node.accept(visitor);
+    return rexRefs;
+  }
 }
